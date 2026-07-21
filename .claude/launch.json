@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "amanah-dev",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["PATH=/Users/maher/.local/node22/bin:/usr/bin:/bin", "npm", "run", "dev"],
+      "cwd": "/Users/maher/Desktop/amanah-website",
+      "port": 3000
+    }
+  ]
+}
