@@ -27,6 +27,8 @@ export default async function DestinationPage({ params }: Props) {
   if (!dest) notFound();
 
   const others = DESTINATIONS.filter((d) => d.slug !== dest.slug).slice(0, 4);
+  const idx = DESTINATIONS.findIndex((d) => d.slug === dest.slug);
+  const next = DESTINATIONS[(idx + 1) % DESTINATIONS.length];
 
   return (
     <main>
@@ -45,12 +47,12 @@ export default async function DestinationPage({ params }: Props) {
         <div className="relative z-10 mx-auto grid w-full max-w-[1320px] items-start gap-6 px-5 py-[clamp(28px,4vw,64px)] lg:grid-cols-[1.7fr_1fr] lg:gap-8 lg:px-8">
           {/* White content card */}
           <article className="overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(10,26,16,0.25)]">
-            <div className="bg-cream/95 px-[clamp(22px,2.5vw,40px)] py-[clamp(18px,2vw,30px)] backdrop-blur-sm">
+            <div className="bg-cream/80 px-[clamp(22px,2.5vw,40px)] py-[clamp(18px,2vw,30px)]">
               <h1 className="font-serif text-[clamp(32px,4vw,54px)] font-semibold leading-[1.02] tracking-[-1px] text-ink">
                 {dest.title}
               </h1>
             </div>
-            <div className="bg-white/75 px-[clamp(22px,2.5vw,40px)] py-[clamp(24px,2.5vw,36px)] backdrop-blur-md">
+            <div className="bg-white/55 px-[clamp(22px,2.5vw,40px)] py-[clamp(24px,2.5vw,36px)] backdrop-blur-[2px]">
               <div className="mb-4 flex items-center gap-2.5 border-b border-ink/15 pb-3 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
                 Description
               </div>
@@ -75,7 +77,7 @@ export default async function DestinationPage({ params }: Props) {
                 }}
               />
             </div>
-            <div className="bg-cream/95 px-6 py-6 backdrop-blur-sm">
+            <div className="bg-cream/80 px-6 py-6">
               <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
                 Amanah Vacations
               </div>
@@ -98,6 +100,19 @@ export default async function DestinationPage({ params }: Props) {
                   <span aria-hidden>←</span>
                 </Link>
               </div>
+            </div>
+
+            {/* Next activity */}
+            <div className="flex justify-end bg-cream/80 px-6 pb-5">
+              <Link
+                href={`/destinations/${next.slug}`}
+                className="group inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[1.5px] text-forest transition hover:text-terracotta"
+              >
+                Next · {next.title}
+                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
             </div>
           </aside>
         </div>
