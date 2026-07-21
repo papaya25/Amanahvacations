@@ -21,7 +21,7 @@ export default function DreamAdventure() {
                 "linear-gradient(to top, rgba(10,26,16,0.25), transparent 45%)",
             }}
           />
-          <div className="absolute bottom-5 left-5 rounded-full border border-white/25 bg-black/30 px-4 py-2 text-[11px] font-medium uppercase tracking-[2px] text-white backdrop-blur-md">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/25 bg-black/30 px-4 py-2 text-[11px] font-medium uppercase tracking-[2px] text-white backdrop-blur-md">
             Riviera Maya · Mexico
           </div>
         </div>

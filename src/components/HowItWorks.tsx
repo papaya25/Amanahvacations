@@ -1,85 +1,114 @@
 const STEPS = [
   {
     n: "01",
-    icon: "🧭",
     title: "Tell us your travel style",
-    desc: "Pick a vibe — family, water, culture, romance or VIP — and share your dates and group size. It takes two minutes.",
+    desc: "Family, water, culture, romance or VIP — share your dates, your group and the pace you love. It takes two minutes.",
   },
   {
     n: "02",
-    icon: "✍️",
     title: "Get a tailor-made plan",
-    desc: "We craft a day-by-day itinerary around you: private transport, trusted guides and transparent prices. No hidden fees.",
+    desc: "A day-by-day itinerary crafted around you: private transport, trusted guides and transparent prices. No hidden fees.",
   },
   {
     n: "03",
-    icon: "🔐",
     title: "Book securely online",
-    desc: "Confirm your trip with a secure online payment and receive instant confirmation with everything in one place.",
+    desc: "Confirm with a secure payment and receive instant confirmation — every detail of your trip in one place.",
   },
   {
     n: "04",
-    icon: "🌴",
     title: "Travel with trust",
-    desc: "Your private guide handles every detail on the ground — family-safe, halal-friendly on request — so you just enjoy.",
+    desc: "Your private guide takes care of everything on the ground — family-safe, halal-friendly on request — while you live it.",
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section className="bg-white py-[clamp(56px,7vw,96px)]" aria-labelledby="how-heading">
-      <div className="mx-auto max-w-[1320px] px-5 lg:px-8">
-        <div className="mb-[clamp(32px,4vw,56px)] text-center">
-          <div className="mb-3 flex items-center justify-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
-            <span aria-hidden className="h-[1.5px] w-[26px] bg-terracotta" />
-            Simple &amp; Transparent
-            <span aria-hidden className="h-[1.5px] w-[26px] bg-terracotta" />
+    <section
+      className="relative overflow-hidden bg-night py-[clamp(64px,8vw,120px)]"
+      aria-labelledby="how-heading"
+    >
+      {/* Ambient glows */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-40 top-0 h-[480px] w-[480px] rounded-full opacity-[0.14]"
+        style={{ background: "radial-gradient(circle, #E8A84B, transparent 65%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-48 bottom-0 h-[520px] w-[520px] rounded-full opacity-[0.1]"
+        style={{ background: "radial-gradient(circle, #3A8A5E, transparent 65%)" }}
+      />
+      {/* Watermark */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-6 right-4 select-none whitespace-nowrap font-serif text-[clamp(110px,14vw,190px)] leading-none text-white/[0.03]"
+      >
+        أمانة
+      </div>
+
+      <div className="relative mx-auto max-w-[1320px] px-5 lg:px-8">
+        <div className="mb-[clamp(40px,5vw,72px)] text-center">
+          <div className="mb-4 flex items-center justify-center gap-3 text-[10.5px] font-semibold uppercase tracking-[3.5px] text-gold">
+            <span aria-hidden className="h-[1.5px] w-[30px] bg-gold/60" />
+            The Amanah Way
+            <span aria-hidden className="h-[1.5px] w-[30px] bg-gold/60" />
           </div>
           <h2
             id="how-heading"
-            className="font-serif text-[clamp(32px,3.6vw,48px)] font-semibold leading-[1.02] tracking-[-1px] text-ink"
+            className="font-serif text-[clamp(34px,4vw,54px)] font-semibold leading-[1.02] tracking-[-1px] text-white"
           >
-            How it <em className="italic text-forest">works</em>
+            From dream to <em className="italic text-gold">departure</em>
           </h2>
-          <p className="mx-auto mt-4 max-w-[520px] text-[clamp(13px,1vw,15px)] leading-[1.75] text-sage">
-            Amanah means <em className="italic">trust</em> in Arabic — and that
-            is exactly how we plan your trip. Four steps, zero stress.
+          <p className="mx-auto mt-4 max-w-[520px] text-[clamp(13px,1vw,15px)] leading-[1.75] text-white/55">
+            Amanah means <em className="italic text-white/75">trust</em> in
+            Arabic — and trust is how we plan every trip. Four steps, zero
+            stress.
           </p>
         </div>
 
-        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-          {STEPS.map((s, i) => (
-            <li
-              key={s.n}
-              className="group relative rounded-[20px] border border-sand bg-cream p-[clamp(20px,2vw,28px)] transition duration-300 hover:-translate-y-1 hover:border-forest/40 hover:shadow-[0_18px_44px_rgba(28,43,30,0.10)]"
-            >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute right-4 top-3 select-none font-serif text-[56px] font-semibold leading-none text-forest/8"
-              >
-                {s.n}
-              </div>
-              <div
-                aria-hidden
-                className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[22px] shadow-[0_2px_10px_rgba(28,43,30,0.06)]"
-              >
-                {s.icon}
-              </div>
-              <h3 className="mb-2 font-serif text-[clamp(19px,1.6vw,22px)] font-semibold leading-tight text-ink">
-                {s.title}
-              </h3>
-              <p className="text-[13px] leading-[1.7] text-sage">{s.desc}</p>
-              {i < STEPS.length - 1 && (
-                <div
-                  aria-hidden
-                  className="absolute -right-[14px] top-1/2 z-10 hidden -translate-y-1/2 text-gold lg:block"
-                >
-                  →
+        {/* Journey line (desktop) */}
+        <div className="relative">
+          <svg
+            aria-hidden
+            className="absolute left-0 right-0 top-[54px] hidden w-full lg:block"
+            height="2"
+            preserveAspectRatio="none"
+          >
+            <line
+              x1="6%"
+              y1="1"
+              x2="94%"
+              y2="1"
+              stroke="#E8A84B"
+              strokeOpacity="0.35"
+              strokeWidth="1.5"
+              strokeDasharray="2 7"
+            />
+          </svg>
+
+          <ol className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((s) => (
+              <li key={s.n} className="group relative text-center lg:px-2">
+                {/* Numeral medallion */}
+                <div className="relative z-10 mx-auto mb-6 flex h-[108px] w-[108px] items-center justify-center rounded-full border border-gold/30 bg-night transition-all duration-500 group-hover:border-gold group-hover:shadow-[0_0_44px_rgba(232,168,75,0.25)]">
+                  <div
+                    aria-hidden
+                    className="absolute inset-[7px] rounded-full border border-white/8"
+                  />
+                  <span className="font-serif text-[40px] font-semibold italic leading-none text-gold transition-transform duration-500 group-hover:scale-110">
+                    {s.n}
+                  </span>
                 </div>
-              )}
-            </li>
-          ))}
-        </ol>
+                <h3 className="mb-2.5 font-serif text-[clamp(20px,1.7vw,24px)] font-semibold leading-tight text-white">
+                  {s.title}
+                </h3>
+                <p className="mx-auto max-w-[280px] text-[13px] leading-[1.75] text-white/55">
+                  {s.desc}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   );

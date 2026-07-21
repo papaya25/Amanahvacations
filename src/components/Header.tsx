@@ -56,6 +56,7 @@ export default function Header() {
   const dropdownRef = useOutsideClose(() => setOpenMenu(null));
 
   return (
+    <>
     <header
       className={`sticky top-0 z-50 border-b transition-shadow ${
         scrolled ? "border-sand shadow-[0_4px_24px_rgba(28,43,30,0.08)]" : "border-transparent"
@@ -203,9 +204,11 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
+    </header>
+
+      {/* Mobile drawer — outside <header> so its backdrop-filter can't clip the fixed overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[100] lg:hidden">
           <div
             className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
@@ -276,7 +279,7 @@ export default function Header() {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
 

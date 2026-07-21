@@ -53,29 +53,29 @@ const SOCIALS = [
 export default function Footer() {
   return (
     <footer className="bg-night text-white">
-      <div className="mx-auto max-w-[1320px] px-5 py-[clamp(48px,5vw,72px)] lg:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr] lg:gap-16">
+      <div className="mx-auto max-w-[1320px] px-5 py-8 md:py-[clamp(48px,5vw,72px)] lg:px-8">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-[1.4fr_1fr_1fr] md:gap-10 lg:gap-16">
           {/* Brand */}
-          <div>
+          <div className="col-span-2 flex flex-col items-center text-center md:col-span-1 md:items-start md:text-left">
             <Link href="/" className="flex items-center gap-3" aria-label="Amanah Vacations — Home">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cream p-1.5">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-cream p-1 md:h-14 md:w-14 md:rounded-2xl md:p-1.5">
                 <Image src="/images/logo.png" alt="" width={44} height={46} />
               </span>
               <span className="leading-none">
-                <span className="block font-serif text-[22px] font-semibold tracking-wide">
+                <span className="block font-serif text-[19px] font-semibold tracking-wide md:text-[22px]">
                   AMANAH
                 </span>
-                <span className="block text-[10.5px] font-medium uppercase tracking-[3px] text-gold">
+                <span className="block text-[10px] font-medium uppercase tracking-[3px] text-gold md:text-[10.5px]">
                   Vacations
                 </span>
               </span>
             </Link>
-            <p className="mt-5 max-w-[320px] text-[13.5px] leading-[1.75] text-white/55">
+            <p className="mt-4 hidden max-w-[320px] text-[13.5px] leading-[1.75] text-white/55 md:block">
               Trust in Adventure. Private tours, hidden cenotes and Caribbean
               beaches in the Riviera Maya — curated for families and couples,
               halal-friendly on request.
             </p>
-            <div className="mt-6 flex gap-2.5">
+            <div className="mt-4 flex gap-2.5 md:mt-6">
               {SOCIALS.map((s) => (
                 <a
                   key={s.label}
@@ -83,7 +83,7 @@ export default function Footer() {
                   aria-label={s.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-gold hover:text-gold"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-gold hover:text-gold md:h-10 md:w-10"
                 >
                   {s.icon}
                 </a>
@@ -93,15 +93,15 @@ export default function Footer() {
 
           {/* Explore */}
           <nav aria-label="Explore">
-            <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[2.5px] text-gold">
+            <h3 className="mb-3 text-[10.5px] font-semibold uppercase tracking-[2.5px] text-gold md:mb-4 md:text-[11px]">
               Explore
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2 md:space-y-2.5">
               {EXPLORE.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[14px] text-white/70 transition hover:text-white"
+                    className="text-[13px] text-white/70 transition hover:text-white md:text-[14px]"
                   >
                     {l.label}
                   </Link>
@@ -112,15 +112,15 @@ export default function Footer() {
 
           {/* Support */}
           <nav aria-label="Support & legal">
-            <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[2.5px] text-gold">
+            <h3 className="mb-3 text-[10.5px] font-semibold uppercase tracking-[2.5px] text-gold md:mb-4 md:text-[11px]">
               Support
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2 md:space-y-2.5">
               {SUPPORT.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[14px] text-white/70 transition hover:text-white"
+                    className="text-[13px] text-white/70 transition hover:text-white md:text-[14px]"
                   >
                     {l.label}
                   </Link>
@@ -130,9 +130,9 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="mt-[clamp(36px,4vw,56px)] flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[12.5px] text-white/45 sm:flex-row">
+        <div className="mt-7 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-5 text-[11.5px] text-white/45 sm:flex-row md:mt-[clamp(36px,4vw,56px)] md:pt-6 md:text-[12.5px]">
           <span>Amanah Vacations © {new Date().getFullYear()} All Rights Reserved</span>
-          <span className="font-serif text-[15px] italic text-white/35">
+          <span className="font-serif text-[14px] italic text-white/35 md:text-[15px]">
             Trust in Adventure · أمانة
           </span>
         </div>

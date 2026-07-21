@@ -30,8 +30,8 @@ export default async function DestinationPage({ params }: Props) {
 
   return (
     <main>
-      {/* Full-page background image with content on top — original design */}
-      <section className="relative flex min-h-[calc(100svh-84px)] items-center overflow-hidden">
+      {/* Full-page background image with floating cards — original design */}
+      <section className="relative overflow-hidden">
         <Image
           src={dest.hero}
           alt={dest.alt}
@@ -40,67 +40,66 @@ export default async function DestinationPage({ params }: Props) {
           sizes="100vw"
           className="object-cover"
         />
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to right, rgba(10,26,16,0.78) 0%, rgba(10,26,16,0.55) 45%, rgba(10,26,16,0.25) 100%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-40"
-          style={{
-            background: "linear-gradient(to top, rgba(10,26,16,0.6), transparent)",
-          }}
-        />
+        <div aria-hidden className="absolute inset-0 bg-night/15" />
 
-        <div className="relative z-10 mx-auto w-full max-w-[1320px] px-5 py-[clamp(48px,7vw,96px)] lg:px-8">
-          <nav aria-label="Breadcrumb" className="mb-5 text-[12px] text-white/60">
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
-            <span aria-hidden className="mx-2">
-              /
-            </span>
-            <Link href="/activities" className="transition hover:text-white">
-              Activities
-            </Link>
-            <span aria-hidden className="mx-2">
-              /
-            </span>
-            <span className="text-gold">{dest.title}</span>
-          </nav>
+        <div className="relative z-10 mx-auto grid w-full max-w-[1320px] items-start gap-6 px-5 py-[clamp(28px,4vw,64px)] lg:grid-cols-[1.7fr_1fr] lg:gap-8 lg:px-8">
+          {/* White content card */}
+          <article className="overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(10,26,16,0.25)]">
+            <div className="bg-cream/95 px-[clamp(22px,2.5vw,40px)] py-[clamp(18px,2vw,30px)] backdrop-blur-sm">
+              <h1 className="font-serif text-[clamp(32px,4vw,54px)] font-semibold leading-[1.02] tracking-[-1px] text-ink">
+                {dest.title}
+              </h1>
+            </div>
+            <div className="bg-white/75 px-[clamp(22px,2.5vw,40px)] py-[clamp(24px,2.5vw,36px)] backdrop-blur-md">
+              <div className="mb-4 flex items-center gap-2.5 border-b border-ink/15 pb-3 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
+                Description
+              </div>
+              <div className="space-y-4 text-[clamp(14px,1.05vw,15.5px)] leading-[1.85] text-ink/85">
+                {dest.paragraphs.map((p) => (
+                  <p key={p.slice(0, 40)}>{p}</p>
+                ))}
+              </div>
+            </div>
+          </article>
 
-          <h1 className="max-w-[720px] font-serif text-[clamp(40px,5.5vw,72px)] font-semibold leading-[0.98] tracking-[-1px] text-white">
-            {dest.title}
-          </h1>
-
-          <div className="mt-7 mb-3 flex items-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-gold">
-            <span aria-hidden className="h-[1.5px] w-[26px] bg-gold" />
-            Description
-          </div>
-          <div className="max-w-[680px] space-y-4 text-[clamp(13.5px,1.05vw,15.5px)] leading-[1.85] text-white/85">
-            {dest.paragraphs.map((p) => (
-              <p key={p.slice(0, 40)}>{p}</p>
-            ))}
-          </div>
-
-          <div className="mt-9 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/contact"
-              className="rounded-full bg-gradient-to-br from-terracotta to-gold px-7 py-3.5 text-center text-[14px] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
-            >
-              Contact Us to Book It →
-            </Link>
-            <Link
-              href="/packages"
-              className="rounded-full border-[1.5px] border-white/60 px-6 py-3.5 text-center text-[14px] font-medium text-white transition hover:border-white hover:bg-white hover:text-ink"
-            >
-              Check Our Packages
-            </Link>
-          </div>
+          {/* Side booking card */}
+          <aside className="overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(10,26,16,0.25)] lg:sticky lg:top-[108px]">
+            {/* Barcode strip */}
+            <div className="flex items-center justify-center bg-gradient-to-br from-gold to-terracotta px-6 py-7">
+              <div
+                aria-hidden
+                className="h-14 w-44 opacity-90"
+                style={{
+                  background:
+                    "repeating-linear-gradient(90deg, #1C2B1E 0 2px, transparent 2px 5px, #1C2B1E 5px 9px, transparent 9px 11px, #1C2B1E 11px 12px, transparent 12px 16px)",
+                }}
+              />
+            </div>
+            <div className="bg-cream/95 px-6 py-6 backdrop-blur-sm">
+              <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
+                Amanah Vacations
+              </div>
+              <p className="mb-5 font-serif text-[19px] font-semibold italic leading-snug text-ink">
+                Private · Family Safe · Halal Friendly
+              </p>
+              <div className="space-y-2.5">
+                <Link
+                  href="/contact"
+                  className="flex items-center justify-between rounded-full bg-ink px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[1px] text-white transition hover:bg-forest"
+                >
+                  Contact Us to Book It
+                  <span aria-hidden>→</span>
+                </Link>
+                <Link
+                  href="/packages"
+                  className="flex items-center justify-between rounded-full bg-gradient-to-br from-terracotta to-gold px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[1px] text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
+                >
+                  Check Our Packages
+                  <span aria-hidden>←</span>
+                </Link>
+              </div>
+            </div>
+          </aside>
         </div>
       </section>
 
