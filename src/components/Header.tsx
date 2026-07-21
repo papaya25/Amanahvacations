@@ -61,21 +61,21 @@ export default function Header() {
         scrolled ? "border-sand shadow-[0_4px_24px_rgba(28,43,30,0.08)]" : "border-transparent"
       } bg-cream/92 backdrop-blur-md`}
     >
-      <div className="mx-auto flex h-[72px] max-w-[1320px] items-center gap-6 px-5 lg:px-8">
+      <div className="mx-auto flex h-[84px] max-w-[1320px] items-center gap-6 px-5 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Amanah Vacations — Home">
+        <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="Amanah Vacations — Home">
           <Image
             src="/images/logo.png"
             alt="Amanah Vacations logo"
-            width={44}
-            height={46}
+            width={62}
+            height={64}
             priority
           />
           <span className="hidden sm:block leading-none">
-            <span className="block font-serif text-[19px] font-semibold tracking-wide text-ink">
+            <span className="block font-serif text-[23px] font-semibold tracking-wide text-ink">
               AMANAH
             </span>
-            <span className="block text-[10px] font-medium uppercase tracking-[3px] text-terracotta">
+            <span className="block text-[11px] font-medium uppercase tracking-[3.5px] text-terracotta">
               Vacations
             </span>
           </span>

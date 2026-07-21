@@ -78,7 +78,7 @@ export default function Hero() {
   const pad = (n: number) => String(n + 1).padStart(2, "0");
 
   return (
-    <section className="flex min-h-[calc(100svh-72px)] flex-col overflow-hidden md:flex-row">
+    <section className="flex min-h-[calc(100svh-84px)] flex-col overflow-hidden md:flex-row">
       {/* Left panel */}
       <div className="relative flex w-full shrink-0 flex-col justify-center overflow-hidden bg-cream px-6 py-11 md:w-[42%] md:min-w-[320px] md:px-[clamp(28px,4vw,60px)] md:py-[clamp(32px,4vw,64px)]">
         <div
