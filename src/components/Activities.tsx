@@ -82,14 +82,14 @@ export default function Activities() {
             <Link
               key={a.href}
               href={a.href}
-              className="group relative aspect-[3/4] overflow-hidden rounded-[18px]"
+              className="group relative aspect-[3/4] overflow-hidden rounded-[18px] transition-transform duration-500 ease-out hover:scale-[1.03] hover:shadow-[0_18px_44px_rgba(28,43,30,0.18)]"
             >
               <Image
                 src={a.img}
                 alt={a.alt}
                 fill
                 sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+                className="object-cover"
               />
               <div
                 aria-hidden
