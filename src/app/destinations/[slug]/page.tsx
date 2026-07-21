@@ -82,19 +82,6 @@ export default async function DestinationPage({ params }: Props) {
               <p key={p.slice(0, 40)}>{p}</p>
             ))}
           </div>
-
-          {dest.tags.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-2">
-              {dest.tags.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full border border-sand bg-white px-3.5 py-1.5 text-[12px] font-medium text-forest"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
         </article>
 
         {/* Booking card */}
