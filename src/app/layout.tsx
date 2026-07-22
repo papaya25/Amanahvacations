@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import SiteFrame from "@/components/SiteFrame";
 import { CartProvider } from "@/lib/cart";
 import { CurrencyProvider } from "@/lib/currency";
 import "./globals.css";
@@ -59,9 +58,7 @@ export default function RootLayout({
       >
         <CurrencyProvider>
           <CartProvider>
-            <Header />
-            {children}
-            <Footer />
+            <SiteFrame>{children}</SiteFrame>
           </CartProvider>
         </CurrencyProvider>
       </body>
