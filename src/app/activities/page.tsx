@@ -2,16 +2,48 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { DESTINATIONS } from "@/data/destinations";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema, itemListSchema } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Activities & Day Trips in the Riviera Maya",
+  title: "Things to Do in the Riviera Maya — Activities & Day Trips",
   description:
-    "Explore all our activities in the Riviera Maya: cenotes, Chichén Itzá, Holbox, whale sharks, catamaran trips, snorkeling, spa days and more — private, family-safe and halal-friendly.",
+    "24 handpicked activities in the Riviera Maya: cenotes, Chichén Itzá, Tulum, snorkeling with turtles in Akumal, Holbox, whale sharks, Xcaret parks and more. Private, family-safe and halal-friendly, from Playa del Carmen.",
+  keywords: [
+    "things to do Playa del Carmen",
+    "Riviera Maya activities",
+    "fun activities Playa del Carmen",
+    "cenotes Riviera Maya",
+    "snorkeling Akumal turtles",
+    "whale shark tour",
+    "Xcaret Xel-Há Xplor",
+    "Chichén Itzá day trip",
+  ],
+  alternates: { canonical: "/activities" },
+  openGraph: {
+    type: "website",
+    title: "Things to Do in the Riviera Maya — Activities & Day Trips",
+    description:
+      "24 handpicked private activities across the Riviera Maya & Yucatán — cenotes, ruins, islands, reefs and parks.",
+    url: "/activities",
+    images: ["/images/act-whaleshark.jpg"],
+  },
 };
 
 export default function ActivitiesPage() {
   return (
     <main className="bg-cream">
+      <JsonLd
+        data={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Activities", path: "/activities" },
+          ]),
+          itemListSchema(
+            DESTINATIONS.map((d) => ({ name: d.title, url: `/destinations/${d.slug}` }))
+          ),
+        ]}
+      />
       {/* Page header */}
       <section className="border-b border-sand bg-white/40">
         <div className="mx-auto max-w-[1320px] px-5 py-[clamp(40px,5vw,72px)] lg:px-8">

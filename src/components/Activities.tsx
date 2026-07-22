@@ -1,56 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
+import { DESTINATIONS } from "@/data/destinations";
 
-const ACTIVITIES = [
-  {
-    title: "Whale Sharks Tour",
-    href: "/destinations/whaleshark",
-    img: "/images/act-whaleshark.jpg",
-    alt: "Swimming with whale sharks in the Riviera Maya",
-  },
-  {
-    title: "Cobá Ruins",
-    href: "/destinations/coba",
-    img: "/images/act-coba.jpg",
-    alt: "Cobá day trip — visit the ruins and cenotes of the Riviera Maya",
-  },
-  {
-    title: "Akumal",
-    href: "/destinations/akumal",
-    img: "/images/act-akumal.jpg",
-    alt: "Akumal day trip — sea turtles and the Monkey Sanctuary",
-  },
-  {
-    title: "Sian Ka'an Reserve",
-    href: "/destinations/siankaan",
-    img: "/images/act-siankaan.jpg",
-    alt: "Discover the Sian Ka'an biosphere reserve in the Riviera Maya",
-  },
-  {
-    title: "Holbox",
-    href: "/destinations/holbox",
-    img: "/images/act-holbox.jpg",
-    alt: "Relax on Holbox Island — flamingos and white sand",
-  },
-  {
-    title: "Zipline & ATV",
-    href: "/destinations/zipline",
-    img: "/images/act-zipline.jpg",
-    alt: "Zipline and ATV adventures in Playa del Carmen",
-  },
-  {
-    title: "Tulum",
-    href: "/destinations/tulum",
-    img: "/images/act-tulum.jpg",
-    alt: "The Tulum Ruins above the Caribbean Sea",
-  },
-  {
-    title: "Xcaret Park",
-    href: "/destinations/xcaret",
-    img: "/images/act-xcaret.jpg",
-    alt: "Xcaret Park — nature and culture in the Riviera Maya",
-  },
-];
+// Featured on the homepage — sourced from the real destinations data so the
+// links always resolve to existing pages (no drift / 404s).
+const FEATURED = ["whaleshark", "coba", "cenotes", "siankaan", "holbox", "zipline", "xcaret", "chichenitza"];
+
+const ACTIVITIES = FEATURED.map((slug) => {
+  const d = DESTINATIONS.find((x) => x.slug === slug)!;
+  return { title: d.title, href: `/destinations/${d.slug}`, img: d.card, alt: d.alt };
+});
 
 export default function Activities() {
   return (

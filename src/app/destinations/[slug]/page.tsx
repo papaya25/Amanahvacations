@@ -3,6 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DESTINATIONS, getDestination } from "@/data/destinations";
+import JsonLd from "@/components/JsonLd";
+import Faq from "@/components/Faq";
+import { breadcrumbSchema, faqSchema, touristAttractionSchema } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -14,11 +17,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const dest = getDestination(slug);
   if (!dest) return {};
+  const title = `${dest.title} — Private Tour from Playa del Carmen`;
+  const description = `${dest.title} in the Riviera Maya with Amanah Vacations: a private, family-safe${
+    " and halal-friendly"
+  } experience with hotel pickup and trusted guides. ${dest.paragraphs[0] ?? ""}`.slice(0, 158);
   return {
-    title: `${dest.title} | Riviera Maya Activities`,
-    description: dest.paragraphs[0]?.slice(0, 155),
-    openGraph: { images: [dest.hero] },
+    title,
+    description,
+    keywords: [
+      dest.title,
+      `${dest.title} tour`,
+      `${dest.title} Playa del Carmen`,
+      `private ${dest.title} tour`,
+      "Riviera Maya activities",
+      "things to do Playa del Carmen",
+    ],
+    alternates: { canonical: `/destinations/${dest.slug}` },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `/destinations/${dest.slug}`,
+      images: [dest.hero],
+    },
   };
+}
+
+function faqsFor(title: string) {
+  return [
+    {
+      q: `Is the ${title} experience private?`,
+      a: `Yes. Every Amanah Vacations tour is fully private — it's just your group, never combined with other travelers — so you set the pace and enjoy ${title} on your own terms.`,
+    },
+    {
+      q: `Is ${title} suitable for families and children?`,
+      a: `Absolutely. We design ${title} to be family-safe and comfortable for all ages, with trusted local guides and private, air-conditioned transport included.`,
+    },
+    {
+      q: `Do you offer halal-friendly options for ${title}?`,
+      a: `Yes — we regularly host Muslim travelers and can arrange halal dining, prayer times and modest, private setups around your ${title} experience. Just let us know when you book.`,
+    },
+    {
+      q: `How do I book ${title}?`,
+      a: `Pick your dates and tell us your group size, then book online or message us on WhatsApp for a tailored quote. We confirm availability and hotel pickup within a few hours.`,
+    },
+  ];
 }
 
 export default async function DestinationPage({ params }: Props) {
@@ -29,9 +72,26 @@ export default async function DestinationPage({ params }: Props) {
   const others = DESTINATIONS.filter((d) => d.slug !== dest.slug).slice(0, 4);
   const idx = DESTINATIONS.findIndex((d) => d.slug === dest.slug);
   const next = DESTINATIONS[(idx + 1) % DESTINATIONS.length];
+  const faqs = faqsFor(dest.title);
 
   return (
     <main>
+      <JsonLd
+        data={[
+          touristAttractionSchema({
+            name: dest.title,
+            description: dest.paragraphs[0] ?? dest.alt,
+            image: dest.hero,
+            url: `/destinations/${dest.slug}`,
+          }),
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Activities", path: "/activities" },
+            { name: dest.title, path: `/destinations/${dest.slug}` },
+          ]),
+          faqSchema(faqs),
+        ]}
+      />
       {/* Full-page background image with floating cards — original design */}
       <section className="relative overflow-hidden">
         <Image
@@ -117,6 +177,8 @@ export default async function DestinationPage({ params }: Props) {
           </aside>
         </div>
       </section>
+
+      <Faq items={faqs} heading={`${dest.title} — your questions answered`} />
 
       {/* More activities */}
       <section className="bg-cream">
