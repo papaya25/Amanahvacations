@@ -6,10 +6,11 @@
    WhatsApp/email request flow for on-request tours. */
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/lib/cart";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
-const BOOKING_URL = "https://www.amanahvacations.com/booking";
 const USD_RATE = 17;
 
 type Stop = [string, string, string];
@@ -136,6 +137,8 @@ const fmtDate = (v: string) =>
   v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Not selected";
 
 export default function ToursClient() {
+  const router = useRouter();
+  const { add } = useCart();
   const [people, setPeople] = useState<Record<number, number>>({});
   const [dates, setDates] = useState<Record<number, string>>({});
   const [openItin, setOpenItin] = useState<Record<number, boolean>>({});
@@ -168,26 +171,28 @@ export default function ToursClient() {
     }
     const ppl = people[idx] || 1;
     const total = (t.price as number) * ppl;
-    const params = new URLSearchParams({
-      package: t.name,
-      pkgId: "tour",
-      tour_only: "1",
-      experience: "Standard",
-      addon_ids: t.key ?? "",
-      amount: String(total),
-      total: String(total),
-      payment: "full",
-      currency: "MXN",
-      adults: String(ppl),
-      kids: "0",
-      people: String(ppl),
-      nights: "0",
-      checkin: fmtDate(date),
-      checkout: fmtDate(date),
-      accommodation: "Not needed",
-      addons: t.name,
+    add({
+      kind: "tour",
+      title: t.name,
+      subtitle: t.sub,
+      image: t.img,
+      details: [
+        fmtDate(date),
+        `${ppl} ${ppl === 1 ? "person" : "people"}`,
+        t.dur,
+      ],
+      total,
+      people: ppl,
+      meta: {
+        pkgId: "tour",
+        tour_only: "1",
+        tour_key: t.key ?? "",
+        currency: "MXN",
+        people: String(ppl),
+        date: fmtDate(date),
+      },
     });
-    window.open(`${BOOKING_URL}?${params.toString()}`, "_blank");
+    router.push("/checkout");
   };
 
   const contactLinks = useMemo(() => {

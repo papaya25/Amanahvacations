@@ -5,22 +5,13 @@
    intact — only the rendering moved from DOM manipulation to React state. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCart } from "@/lib/cart";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
-const BUY_MODE: "wix" | "stripe" = "wix";
-const WIX_CHECKOUT_URL = "https://www.amanahvacations.com/booking";
-const STRIPE_LINKS: Record<string, string> = {
-  basic: "",
-  family: "",
-  water: "",
-  explorer: "",
-  honeymoon: "",
-};
 const CURRENCY = "MXN";
-const DEPOSIT_PCT = 0;
 const MIN_NIGHTS_PACKAGE = 3;
 const MIN_NIGHTS_BYO = 1;
 
@@ -196,6 +187,8 @@ type ModalState =
 
 export default function PackagesClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { add } = useCart();
 
   const [adults, setAdults] = useState(2);
   const [kids, setKids] = useState(0);
@@ -305,7 +298,7 @@ export default function PackagesClient() {
     return PRICES[pkgId] * mult;
   };
 
-  /* ── BUY NOW — identical checkout handoff ── */
+  /* ── BUY NOW — adds the configured booking to the cart, then goes to checkout ── */
   const buyNow = (pkgId: PkgId, pkgName: string, experience = "Standard") => {
     if (nights === null || nights < MIN_NIGHTS_PACKAGE) {
       alert(`Please select your check-in and check-out dates (minimum ${MIN_NIGHTS_PACKAGE} nights) before booking this package.`);
@@ -331,7 +324,7 @@ export default function PackagesClient() {
       const proceed = confirm(
         "These add-ons need to be arranged personally and are NOT charged now:\n\n" +
           humanAddons.join(", ") +
-          "\n\nOur team will follow up to finalize and charge those separately. Continue to payment for your package" +
+          "\n\nOur team will follow up to finalize and charge those separately. Continue to checkout for your package" +
           (cartAddons.length > 0 || recSelected ? " and the other add-ons" : "") +
           "?"
       );
@@ -345,36 +338,48 @@ export default function PackagesClient() {
       cartAddons = [...cartAddons, rec.name];
     }
     const total = packageTotalMXN(pkgId) + addonsTotal;
-    const charge = DEPOSIT_PCT > 0 ? Math.round(total * DEPOSIT_PCT) : total;
-    if ((BUY_MODE as string) === "stripe") {
-      const link = STRIPE_LINKS[pkgId];
-      if (link) window.open(link, "_blank");
-      else alert("Payment link is not set up yet for this package. Please use Contact Us.");
-      return;
-    }
-    const params = new URLSearchParams({
-      package: pkgName,
-      pkgId,
-      experience,
-      family_choice: pkgId === "family" ? familyChoice : "",
-      amount: String(charge),
-      total: String(total),
-      payment: DEPOSIT_PCT > 0 ? `${Math.round(DEPOSIT_PCT * 100)}% deposit` : "full",
-      currency: CURRENCY,
-      adults: String(adults),
-      kids: String(kids),
-      people: String(n),
-      children_ages: getKidsAgesText(),
-      nights: String(nights),
-      checkin: fmtDate(checkin),
-      checkout: fmtDate(checkout),
-      accommodation: accomText(),
-      accom_type: accom ? accomTier : "",
-      addon_ids: cartAddonIdList.join(",") || "None",
-      addons: cartAddons.join(", ") || "None",
-      addons_human: humanAddons.join(", ") || "None",
+
+    const details: string[] = [];
+    details.push(`${fmtDate(checkin)} → ${fmtDate(checkout)}`);
+    details.push(
+      `${nights} night${nights !== 1 ? "s" : ""}${accom ? " · with hotel" : " · no hotel"}`
+    );
+    details.push(
+      `${adults} adult${adults !== 1 ? "s" : ""}${
+        kids > 0 ? `, ${kids} child${kids !== 1 ? "ren" : ""}` : ""
+      }`
+    );
+    if (pkgId === "family") details.push(`Choice: ${familyChoice}`);
+    if (cartAddons.length) details.push(`Add-ons: ${cartAddons.join(", ")}`);
+    if (humanAddons.length) details.push(`On request: ${humanAddons.join(", ")}`);
+
+    add({
+      kind: "package",
+      title: pkgName,
+      subtitle: PKG_META[pkgId].tagline,
+      image: PKG_META[pkgId].photo,
+      details,
+      total,
+      people: n,
+      meta: {
+        pkgId,
+        experience,
+        family_choice: pkgId === "family" ? familyChoice : "",
+        currency: CURRENCY,
+        adults: String(adults),
+        kids: String(kids),
+        children_ages: getKidsAgesText(),
+        nights: String(nights),
+        checkin: fmtDate(checkin),
+        checkout: fmtDate(checkout),
+        accommodation: accomText(),
+        accom_type: accom ? accomTier : "",
+        addon_ids: cartAddonIdList.join(",") || "None",
+        addons: cartAddons.join(", ") || "None",
+        addons_human: humanAddons.join(", ") || "None",
+      },
     });
-    window.open(`${WIX_CHECKOUT_URL}?${params.toString()}`, "_blank");
+    router.push("/checkout");
   };
 
   /* ── Contact links (built live so they include the latest comment) ── */

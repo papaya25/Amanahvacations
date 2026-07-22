@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useCart } from "@/lib/cart";
 
 const NAV = [
   { label: "Home", href: "/" },
@@ -45,6 +46,7 @@ export default function Header() {
   const [openMenu, setOpenMenu] = useState<"lang" | "currency" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { count } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -179,16 +181,18 @@ export default function Header() {
           {/* Cart */}
           <Link
             href="/cart"
-            aria-label="Cart, 0 items"
+            aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
             className="relative flex h-10 w-10 items-center justify-center rounded-full bg-forest text-white transition hover:bg-ink"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <path d="M6 7h12l-1.2 12.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 7Z" />
               <path d="M9 7V5a3 3 0 0 1 6 0v2" />
             </svg>
-            <span className="absolute -right-0.5 -top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gold text-[10px] font-bold text-ink">
-              0
-            </span>
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-ink">
+                {count}
+              </span>
+            )}
           </Link>
 
           {/* Mobile hamburger */}
