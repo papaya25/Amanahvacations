@@ -33,11 +33,13 @@ export default function CheckoutClient() {
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<{ code: string; label: string; amount: number } | null>(null);
   const [promoError, setPromoError] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
 
   const discount = promo?.amount ?? 0;
   const total = Math.max(0, subtotal - discount);
   const validContact = name.trim() && /.+@.+\..+/.test(email);
+  const canPlace = Boolean(validContact) && agreed && items.length > 0;
 
   const applyPromo = () => {
     const code = promoInput.trim().toUpperCase();
@@ -55,7 +57,7 @@ export default function CheckoutClient() {
   };
 
   const placeOrder = () => {
-    if (!validContact || items.length === 0) return;
+    if (!canPlace) return;
     setPlacing(true);
     const id = newOrderId();
     saveOrder({
@@ -252,18 +254,47 @@ export default function CheckoutClient() {
             </div>
           </div>
 
+          {/* Legal consent — required before payment */}
+          <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-xl bg-cream px-4 py-3.5">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
+            />
+            <span className="text-[12px] leading-[1.6] text-ink/80">
+              I have read and accept the{" "}
+              <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="font-semibold text-forest underline underline-offset-2">
+                Terms &amp; Conditions
+              </a>
+              , the{" "}
+              <a href="/liability-waiver" target="_blank" rel="noopener noreferrer" className="font-semibold text-forest underline underline-offset-2">
+                Liability Waiver
+              </a>
+              , and the{" "}
+              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-forest underline underline-offset-2">
+                Privacy Policy
+              </a>
+              . I understand the inherent risks of adventure activities.
+            </span>
+          </label>
+
           <button
             onClick={placeOrder}
-            disabled={!validContact || placing}
-            className="mt-5 w-full rounded-full bg-gradient-to-br from-terracotta to-gold py-3.5 text-center text-[14px] font-semibold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!canPlace || placing}
+            className="mt-4 w-full rounded-full bg-gradient-to-br from-terracotta to-gold py-3.5 text-center text-[14px] font-semibold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {placing ? "Placing order…" : "Place Order →"}
           </button>
-          {!validContact && (
+          {!validContact ? (
             <p className="mt-2 text-center text-[11.5px] text-sage">
               Enter your name and email to continue.
             </p>
-          )}
+          ) : !agreed ? (
+            <p className="mt-2 text-center text-[11.5px] text-sage">
+              Please accept the terms above to place your order.
+            </p>
+          ) : null}
         </section>
         <div className="flex items-center justify-center gap-2 text-[11.5px] text-sage">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>

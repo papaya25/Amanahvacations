@@ -5,7 +5,7 @@
    intact — only the rendering moved from DOM manipulation to React state. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 
 /* ── CONFIG ── */
@@ -186,7 +186,6 @@ type ModalState =
   | null;
 
 export default function PackagesClient() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { add } = useCart();
 
@@ -213,23 +212,30 @@ export default function PackagesClient() {
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  /* Highlight card from ?plan= (links from the home trip picker) */
+  // Highlight the card matching ?plan= (arriving from the home trip picker).
+  // A layout effect on mount sets the target before paint; a second effect
+  // scrolls to it and clears the glow. Kept out of the initial render so the
+  // hydrated HTML matches the server (no mismatch), and out of any Suspense
+  // boundary so React 19 doesn't defer it until the first interaction.
   useEffect(() => {
-    const plan = searchParams.get("plan");
-    const map: Record<string, PkgId | "vip"> = {
-      basic: "basic", family: "family", water: "water",
-      explorer: "explorer", honeymoon: "honeymoon", vip: "vip" as const,
+    const plan = new URLSearchParams(window.location.search).get("plan");
+    const valid = ["basic", "family", "water", "explorer", "honeymoon", "vip"];
+    if (plan && valid.includes(plan)) setHighlighted(plan);
+  }, []);
+
+  useEffect(() => {
+    if (!highlighted) return;
+    const t = window.setTimeout(() => {
+      gridRef.current
+        ?.querySelector(`.pkg-card.${highlighted}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+    const clear = window.setTimeout(() => setHighlighted(null), 6000);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(clear);
     };
-    const target = plan ? map[plan] : undefined;
-    if (!target) return;
-    const t = setTimeout(() => {
-      const card = gridRef.current?.querySelector(`.pkg-card.${target}`);
-      card?.scrollIntoView({ behavior: "smooth", block: "center" });
-      setHighlighted(target);
-      setTimeout(() => setHighlighted(null), 6000);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [searchParams]);
+  }, [highlighted]);
 
   /* ── helpers (logic identical to the embed) ── */
   const nights = (() => {

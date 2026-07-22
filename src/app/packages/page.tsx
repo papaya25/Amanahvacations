@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import PackagesClient from "./PackagesClient";
 import "./packages.css";
 
@@ -10,9 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function PackagesPage() {
-  return (
-    <Suspense>
-      <PackagesClient />
-    </Suspense>
-  );
+  return <PackagesClient />;
 }
