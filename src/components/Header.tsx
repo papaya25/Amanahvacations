@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
+import { CURRENCIES, SYMBOLS, useCurrency } from "@/lib/currency";
 
 const NAV = [
   { label: "Home", href: "/" },
@@ -22,12 +23,6 @@ const LANGUAGES = [
   { code: "ar", flag: "🇸🇦", label: "العربية" },
 ];
 
-const CURRENCIES = [
-  { code: "USD", symbol: "$" },
-  { code: "MXN", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-];
-
 function useOutsideClose(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -42,7 +37,7 @@ function useOutsideClose(onClose: () => void) {
 
 export default function Header() {
   const [lang, setLang] = useState(LANGUAGES[0]);
-  const [currency, setCurrency] = useState(CURRENCIES[0]);
+  const { currency, setCurrency } = useCurrency();
   const [openMenu, setOpenMenu] = useState<"lang" | "currency" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -143,7 +138,7 @@ export default function Header() {
               aria-haspopup="listbox"
               aria-expanded={openMenu === "currency"}
             >
-              {currency.code}
+              {currency}
               <Chevron open={openMenu === "currency"} />
             </button>
             {openMenu === "currency" && (
@@ -152,17 +147,17 @@ export default function Header() {
                 className="absolute right-0 top-[calc(100%+8px)] w-32 overflow-hidden rounded-2xl border border-sand bg-white py-1.5 shadow-[0_16px_40px_rgba(28,43,30,0.14)]"
               >
                 {CURRENCIES.map((c) => (
-                  <li key={c.code}>
+                  <li key={c}>
                     <button
                       onClick={() => {
                         setCurrency(c);
                         setOpenMenu(null);
                       }}
                       className={`flex w-full items-center justify-between px-4 py-2 text-left text-[13px] transition hover:bg-cream ${
-                        c.code === currency.code ? "font-semibold text-forest" : "text-ink"
+                        c === currency ? "font-semibold text-forest" : "text-ink"
                       }`}
                     >
-                      {c.code} <span className="text-sage">{c.symbol}</span>
+                      {c} <span className="text-sage">{SYMBOLS[c]}</span>
                     </button>
                   </li>
                 ))}
@@ -260,15 +255,15 @@ export default function Header() {
               <div className="flex gap-2">
                 {CURRENCIES.map((c) => (
                   <button
-                    key={c.code}
+                    key={c}
                     onClick={() => setCurrency(c)}
                     className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition ${
-                      c.code === currency.code
+                      c === currency
                         ? "border-forest bg-forest text-white"
                         : "border-sand bg-white text-ink"
                     }`}
                   >
-                    {c.code}
+                    {c}
                   </button>
                 ))}
               </div>

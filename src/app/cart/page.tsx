@@ -3,10 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { fmtMXN, fmtUSD, useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 
 export default function CartPage() {
   const { items, subtotal, remove, ready } = useCart();
+  const { format } = useCurrency();
   const router = useRouter();
 
   return (
@@ -81,10 +83,7 @@ export default function CartPage() {
                       ))}
                     </ul>
                     <div className="mt-2 font-serif text-[18px] font-semibold text-forest">
-                      {fmtMXN(item.total)}{" "}
-                      <span className="font-sans text-[11px] font-normal text-sage">
-                        {fmtUSD(item.total)}
-                      </span>
+                      {format(item.total)}
                     </div>
                   </div>
                 </div>
@@ -96,13 +95,12 @@ export default function CartPage() {
               <h2 className="mb-4 font-serif text-[22px] font-semibold text-ink">Summary</h2>
               <div className="flex items-center justify-between border-b border-sand pb-3 text-[14px]">
                 <span className="text-sage">Subtotal</span>
-                <span className="font-semibold text-ink">{fmtMXN(subtotal)}</span>
+                <span className="font-semibold text-ink">{format(subtotal)}</span>
               </div>
               <div className="mt-3 flex items-baseline justify-between">
                 <span className="font-serif text-[18px] font-semibold text-ink">Total</span>
                 <div className="text-right">
-                  <div className="font-serif text-[24px] font-bold text-forest">{fmtMXN(subtotal)}</div>
-                  <div className="text-[11px] text-sage">{fmtUSD(subtotal)}</div>
+                  <div className="font-serif text-[24px] font-bold text-forest">{format(subtotal)}</div>
                 </div>
               </div>
               <p className="mt-2 text-[11.5px] leading-[1.6] text-sage">

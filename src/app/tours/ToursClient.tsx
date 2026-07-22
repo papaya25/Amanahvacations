@@ -8,10 +8,10 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
-const USD_RATE = 17;
 
 type Stop = [string, string, string];
 type Tour = {
@@ -132,13 +132,13 @@ const WA_ICON = (
   </svg>
 );
 
-const fmtUSD = (m: number) => `≈ ${Math.round(m / USD_RATE).toLocaleString("en-US").replace(/,/g, "")} USD`;
 const fmtDate = (v: string) =>
   v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Not selected";
 
 export default function ToursClient() {
   const router = useRouter();
   const { add } = useCart();
+  const { format } = useCurrency();
   const [people, setPeople] = useState<Record<number, number>>({});
   const [dates, setDates] = useState<Record<number, string>>({});
   const [openItin, setOpenItin] = useState<Record<number, boolean>>({});
@@ -328,10 +328,7 @@ export default function ToursClient() {
                         <div className="at-price-row">
                           <div className="at-label">Total</div>
                           <div className="at-amount">
-                            <span className="at-total">
-                              {total.toLocaleString("en-US").replace(/,/g, "")} <span className="cur">MXN</span>
-                            </span>
-                            <span className="at-per">{fmtUSD(total)}</span>
+                            <span className="at-total">{format(total)}</span>
                           </div>
                         </div>
                         <button type="button" className="at-buy-btn" onClick={() => buy(idx)}>

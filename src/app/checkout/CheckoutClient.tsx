@@ -4,7 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { fmtMXN, fmtUSD, useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 import { newOrderId, saveOrder } from "@/lib/orders";
 
 /* Demo promo codes for the flow-first build. Real validation moves to the
@@ -22,6 +23,7 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutClient() {
   const { items, subtotal, clear, ready } = useCart();
+  const { format } = useCurrency();
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -189,7 +191,7 @@ export default function CheckoutClient() {
                   <div className="text-[13.5px] font-semibold leading-tight text-ink">{item.title}</div>
                   <div className="truncate text-[11.5px] text-sage">{item.details[0]}</div>
                 </div>
-                <div className="shrink-0 text-[13px] font-semibold text-ink">{fmtMXN(item.total)}</div>
+                <div className="shrink-0 text-[13px] font-semibold text-ink">{format(item.total)}</div>
               </div>
             ))}
           </div>
@@ -237,19 +239,18 @@ export default function CheckoutClient() {
           <div className="mt-4 space-y-2 border-t border-sand pt-4 text-[14px]">
             <div className="flex justify-between text-sage">
               <span>Subtotal</span>
-              <span className="font-medium text-ink">{fmtMXN(subtotal)}</span>
+              <span className="font-medium text-ink">{format(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-forest">
                 <span>Discount ({promo?.label})</span>
-                <span>−{fmtMXN(discount)}</span>
+                <span>−{format(discount)}</span>
               </div>
             )}
             <div className="flex items-baseline justify-between pt-2">
               <span className="font-serif text-[18px] font-semibold text-ink">Total</span>
               <div className="text-right">
-                <div className="font-serif text-[26px] font-bold text-forest">{fmtMXN(total)}</div>
-                <div className="text-[11px] text-sage">{fmtUSD(total)}</div>
+                <div className="font-serif text-[26px] font-bold text-forest">{format(total)}</div>
               </div>
             </div>
           </div>

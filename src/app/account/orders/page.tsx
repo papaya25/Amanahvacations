@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fmtMXN } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 import { getOrders, type Order } from "@/lib/orders";
 
 export default function OrdersPage() {
+  const { format } = useCurrency();
   const [orders, setOrders] = useState<Order[] | null>(null);
 
   useEffect(() => {
@@ -54,13 +55,13 @@ export default function OrdersPage() {
                   <div className="font-semibold text-ink">{item.title}</div>
                   <div className="text-[12px] text-sage">{item.details.join(" · ")}</div>
                 </div>
-                <div className="shrink-0 font-semibold text-ink">{fmtMXN(item.total)}</div>
+                <div className="shrink-0 font-semibold text-ink">{format(item.total)}</div>
               </div>
             ))}
           </div>
           <div className="flex items-center justify-between border-t border-sand pt-3">
             <span className="text-[12.5px] text-sage">{o.paymentMethod}</span>
-            <span className="font-serif text-[18px] font-bold text-forest">Total {fmtMXN(o.total)}</span>
+            <span className="font-serif text-[18px] font-bold text-forest">Total {format(o.total)}</span>
           </div>
         </div>
       ))}

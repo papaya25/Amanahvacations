@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529844521184";
@@ -75,7 +76,6 @@ const PRICES: Record<PkgId, number> = {
   honeymoon: 14300,
 };
 const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3 };
-const USD_RATE = 17;
 
 const RECOMMENDED: Partial<Record<PkgId, { id: string; name: string; price: number }>> = {
   basic: { id: "xcaret", name: "Xcaret Park", price: 3500 },
@@ -188,6 +188,7 @@ type ModalState =
 export default function PackagesClient() {
   const router = useRouter();
   const { add } = useCart();
+  const { format } = useCurrency();
 
   const [adults, setAdults] = useState(2);
   const [kids, setKids] = useState(0);
@@ -398,7 +399,7 @@ export default function PackagesClient() {
       const addons = [...(selectedAddons[modal.pkgId] ?? [])];
       const rec = RECOMMENDED[modal.pkgId];
       if (rec && recommendedActive[modal.pkgId])
-        addons.push(`${rec.name} (+$${rec.price.toLocaleString("en-US")} MXN/person)`);
+        addons.push(`${rec.name} (+${format(rec.price)}/person)`);
       const addonStr = addons.length > 0 ? addons.join(", ") : "None";
       lines =
         `📦 Package: ${modal.pkgName}\n` +
@@ -578,13 +579,13 @@ export default function PackagesClient() {
             ) : !act.inCart ? (
               <>
                 <span className="addon-item-price">
-                  ${act.price.toLocaleString("en-US")} MXN{act.unit}
+                  {format(act.price)}{act.unit}
                 </span>{" "}
                 <span className="addon-onreq">Booked via Contact Us</span>
               </>
             ) : (
               <span className="addon-item-price">
-                ${act.price.toLocaleString("en-US")} MXN{act.unit}
+                {format(act.price)}{act.unit}
               </span>
             )}
           </div>
@@ -672,9 +673,7 @@ export default function PackagesClient() {
                     i
                   </span>
                   <span className="rec-price">
-                    {recommendedActive[pkgId]
-                      ? "✓ Added"
-                      : `+$${rec.price.toLocaleString("en-US")}/person`}
+                    {recommendedActive[pkgId] ? "✓ Added" : `+${format(rec.price)}/person`}
                   </span>
                 </button>
               </div>
@@ -685,9 +684,7 @@ export default function PackagesClient() {
           <div>
             <div className="pkg-price-label">From</div>
             <div className="pkg-price">
-              ${Math.round(mxn).toLocaleString("en-US")} <small>MXN/person</small>
-              <br />
-              <span className="usd-line">≈ ${Math.round(mxn / USD_RATE).toLocaleString("en-US")} USD</span>
+              {format(mxn)} <small>/person</small>
             </div>
           </div>
           <div className="pkg-nights">{pkgNightsText}</div>
@@ -734,7 +731,7 @@ export default function PackagesClient() {
       const addons = [...(selectedAddons[modal.pkgId] ?? [])];
       const rec = RECOMMENDED[modal.pkgId];
       if (rec && recommendedActive[modal.pkgId])
-        addons.push(`${rec.name} (+$${rec.price.toLocaleString("en-US")} MXN/person)`);
+        addons.push(`${rec.name} (+${format(rec.price)}/person)`);
       const addonStr = addons.length > 0 ? addons.join(", ") : "None";
       const mxn = priceMXN(modal.pkgId);
       return (
@@ -751,7 +748,7 @@ export default function PackagesClient() {
           <div className="modal-price-row">
             <span className="lbl">Estimated base</span>
             <span className="modal-price-total">
-              ${Math.round(mxn).toLocaleString("en-US")} MXN/person
+              {format(mxn)}/person
             </span>
           </div>
         </>
@@ -1074,7 +1071,7 @@ export default function PackagesClient() {
                           <span className="addon-onreq">On Request</span>
                         ) : (
                           <span className="addon-item-price">
-                            ${act.price.toLocaleString("en-US")} MXN{act.unit}
+                            {format(act.price)}{act.unit}
                           </span>
                         )}
                       </div>

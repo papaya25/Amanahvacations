@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { fmtMXN, fmtUSD } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 import { getOrder, type Order } from "@/lib/orders";
 
 export default function ThankYouClient() {
   const params = useSearchParams();
+  const { format } = useCurrency();
   const id = params.get("id");
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
 
@@ -48,26 +49,25 @@ export default function ThankYouClient() {
                       <div className="font-semibold text-ink">{item.title}</div>
                       <div className="text-[12px] text-sage">{item.details.join(" · ")}</div>
                     </div>
-                    <div className="shrink-0 font-semibold text-ink">{fmtMXN(item.total)}</div>
+                    <div className="shrink-0 font-semibold text-ink">{format(item.total)}</div>
                   </div>
                 ))}
               </div>
               <div className="space-y-1.5 border-t border-sand pt-3 text-[13.5px]">
                 <div className="flex justify-between text-sage">
                   <span>Subtotal</span>
-                  <span className="text-ink">{fmtMXN(order.subtotal)}</span>
+                  <span className="text-ink">{format(order.subtotal)}</span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-forest">
                     <span>Discount{order.promo ? ` (${order.promo})` : ""}</span>
-                    <span>−{fmtMXN(order.discount)}</span>
+                    <span>−{format(order.discount)}</span>
                   </div>
                 )}
                 <div className="flex items-baseline justify-between pt-1.5">
                   <span className="font-serif text-[17px] font-semibold text-ink">Total</span>
                   <div className="text-right">
-                    <div className="font-serif text-[22px] font-bold text-forest">{fmtMXN(order.total)}</div>
-                    <div className="text-[11px] text-sage">{fmtUSD(order.total)}</div>
+                    <div className="font-serif text-[22px] font-bold text-forest">{format(order.total)}</div>
                   </div>
                 </div>
                 <div className="flex justify-between pt-2 text-[12.5px] text-sage">
