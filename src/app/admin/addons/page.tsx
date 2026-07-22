@@ -3,7 +3,15 @@
 import { useLocalState } from "@/lib/useLocalState";
 import { Card, Field, PageHead, SaveBar } from "../AdminUI";
 
-type Addon = { id: string; name: string; price: number; unit: string; onRequest: boolean };
+type Addon = {
+  id: string;
+  name: string;
+  price: number;
+  offer?: number;
+  unit: string;
+  onRequest: boolean;
+  hidden?: boolean;
+};
 
 const DEFAULT: { addons: Addon[] } = {
   addons: [
@@ -36,25 +44,45 @@ const DEFAULT: { addons: Addon[] } = {
   ],
 };
 
+const blankAddon = (): Addon => ({
+  id: `addon-${Date.now()}`,
+  name: "New add-on",
+  price: 0,
+  offer: 0,
+  unit: "/person",
+  onRequest: false,
+  hidden: false,
+});
+
 export default function AddonsAdmin() {
   const { value, setValue, save, savedAt } = useLocalState("admin_addons", DEFAULT);
+  const addons = value.addons;
   const setAddon = (i: number, k: keyof Addon, v: string | number | boolean) =>
-    setValue({ ...value, addons: value.addons.map((a, j) => (j === i ? { ...a, [k]: v } : a)) });
+    setValue({ ...value, addons: addons.map((a, j) => (j === i ? { ...a, [k]: v } : a)) });
+  const remove = (i: number) => setValue({ ...value, addons: addons.filter((_, j) => j !== i) });
+  const add = () => setValue({ ...value, addons: [blankAddon(), ...addons] });
 
   return (
     <>
       <PageHead
         eyebrow="Content"
         title="Add-ons"
-        desc="The experiences customers can add to a package. Prices are per person in MXN unless the unit says otherwise. 'On request' items are priced by your team (no online price)."
+        desc="The experiences customers can add to a package (and in 'Build Your Own Plan'). Prices are per person in MXN. Set an 'Offer' below the price for a sale, hide any add-on, or add new ones. 'On request' items are priced by your team."
       />
+
+      <button
+        onClick={add}
+        className="mb-5 rounded-full bg-forest px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-ink"
+      >
+        + Add a new add-on
+      </button>
 
       <Card>
         <div className="space-y-2.5">
-          {value.addons.map((a, i) => (
+          {addons.map((a, i) => (
             <div
               key={a.id}
-              className="grid items-end gap-3 rounded-xl border border-sand bg-cream/40 p-3 sm:grid-cols-[1fr_130px_120px_auto]"
+              className="grid items-end gap-3 rounded-xl border border-sand bg-cream/40 p-3 sm:grid-cols-[1fr_110px_110px_100px_auto_auto]"
             >
               <Field label="Name" value={a.name} onChange={(v) => setAddon(i, "name", v)} />
               <Field
@@ -64,16 +92,30 @@ export default function AddonsAdmin() {
                 value={a.price}
                 onChange={(v) => setAddon(i, "price", Number(v) || 0)}
               />
+              <Field
+                label="Offer"
+                type="number"
+                prefix="$"
+                value={a.offer ?? 0}
+                onChange={(v) => setAddon(i, "offer", Number(v) || 0)}
+              />
               <Field label="Unit" value={a.unit} onChange={(v) => setAddon(i, "unit", v)} placeholder="/person" />
-              <label className="flex h-[42px] items-center gap-2 whitespace-nowrap text-[12px] text-ink">
-                <input
-                  type="checkbox"
-                  checked={a.onRequest}
-                  onChange={(e) => setAddon(i, "onRequest", e.target.checked)}
-                  className="h-4 w-4 accent-forest"
-                />
-                On request
-              </label>
+              <div className="flex h-[42px] flex-col justify-center gap-0.5 text-[11px] text-ink">
+                <label className="flex items-center gap-1.5">
+                  <input type="checkbox" checked={a.onRequest} onChange={(e) => setAddon(i, "onRequest", e.target.checked)} className="h-3.5 w-3.5 accent-forest" />
+                  On request
+                </label>
+                <label className="flex items-center gap-1.5">
+                  <input type="checkbox" checked={!!a.hidden} onChange={(e) => setAddon(i, "hidden", e.target.checked)} className="h-3.5 w-3.5 accent-forest" />
+                  Hidden
+                </label>
+              </div>
+              <button
+                onClick={() => remove(i)}
+                className="h-[42px] self-end rounded-lg border border-sand px-3 text-[12px] text-sage transition hover:border-terracotta hover:text-terracotta"
+              >
+                ✕
+              </button>
             </div>
           ))}
         </div>

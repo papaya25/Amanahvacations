@@ -8,11 +8,14 @@ const SECTIONS = [
   { href: "/admin/packages", title: "Packages", desc: "Names, taglines, prices, what's included and photos." },
   { href: "/admin/tours", title: "Tours", desc: "Tour prices, durations, descriptions and images." },
   { href: "/admin/activities", title: "Activities", desc: "Destination photos and descriptions." },
-  { href: "/admin/addons", title: "Add-ons", desc: "Extra experiences, prices and units." },
+  { href: "/admin/addons", title: "Add-ons", desc: "Extra experiences, prices, offers and units." },
+  { href: "/admin/about", title: "About Page", desc: "Your story, values and closing section." },
+  { href: "/admin/faq", title: "FAQ", desc: "Questions & answers on home, tours and packages." },
   { href: "/admin/promos", title: "Promo Codes", desc: "Discount codes shown at checkout." },
   { href: "/admin/currency", title: "Currency & Rates", desc: "Default currency and conversion rates." },
   { href: "/admin/contact", title: "Contact & Social", desc: "Phone, WhatsApp, email, address and social links." },
   { href: "/admin/emails", title: "Emails", desc: "Automated email templates for bookings and quotes." },
+  { href: "/admin/legal", title: "Legal Pages", desc: "Terms, Privacy Policy and Liability Waiver." },
 ];
 
 export default function AdminDashboard() {

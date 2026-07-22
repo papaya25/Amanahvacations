@@ -77,6 +77,11 @@ const PRICES: Record<PkgId, number> = {
 };
 const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3 };
 
+/* Optional sale prices per person (MXN). If a package isn't listed here it shows
+   its normal price. The admin's "Offer price" field drives these once the
+   backend is wired. (Demo: Water Lovers is on offer so you can see the styling.) */
+const OFFERS: Partial<Record<PkgId, number>> = { water: 6650 };
+
 const RECOMMENDED: Partial<Record<PkgId, { id: string; name: string; price: number }>> = {
   basic: { id: "xcaret", name: "Xcaret Park", price: 3500 },
   water: { id: "xelha", name: "Xel-Há Park", price: 2850 },
@@ -267,6 +272,19 @@ export default function PackagesClient() {
     const rec = RECOMMENDED[id];
     if (rec && recommendedActive[id]) mxn += rec.price;
     return mxn;
+  };
+
+  // Offer price for a package's currently-displayed total (offer base + any
+  // selected recommended add-on), or null if the package has no active offer.
+  const offerFor = (id: PkgId, displayedMxn: number) => {
+    const off = OFFERS[id];
+    if (off === undefined || off >= PRICES[id]) return null;
+    return off + (displayedMxn - PRICES[id]);
+  };
+  const offerPct = (id: PkgId) => {
+    const off = OFFERS[id];
+    if (off === undefined) return 0;
+    return Math.round((1 - off / PRICES[id]) * 100);
   };
 
   const adjust = (type: "adults" | "kids", delta: number) => {
@@ -683,9 +701,18 @@ export default function PackagesClient() {
         <div className="pkg-price-area">
           <div>
             <div className="pkg-price-label">From</div>
-            <div className="pkg-price">
-              {format(mxn)} <small>/person</small>
-            </div>
+            {offerFor(pkgId, mxn) !== null ? (
+              <div className="pkg-price">
+                <span className="pkg-price-was">{format(mxn)}</span>
+                <span className="pkg-price-offer">{format(offerFor(pkgId, mxn)!)}</span>{" "}
+                <small>/person</small>
+                <span className="offer-badge">−{offerPct(pkgId)}%</span>
+              </div>
+            ) : (
+              <div className="pkg-price">
+                {format(mxn)} <small>/person</small>
+              </div>
+            )}
           </div>
           <div className="pkg-nights">{pkgNightsText}</div>
         </div>

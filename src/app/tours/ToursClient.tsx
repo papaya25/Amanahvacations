@@ -20,13 +20,16 @@ type Tour = {
   sub: string;
   dur: string;
   price: number | null;
+  /** Optional per-person sale price (MXN). If set below `price`, the card shows
+      the original struck through and this offer price highlighted. */
+  offer?: number;
   img: string;
   desc: string;
   stops: Stop[];
   onreq?: boolean;
 };
 
-const TOURS: Tour[] = [
+export const TOURS: Tour[] = [
   {
     key: "akumalcenotes", name: "Cenotes, Coral & Sea Turtles", sub: "Dos Ojos Cenote + Akumal Snorkeling",
     dur: "6 hours", price: 2350, img: "/images/tours/akumalcenotes.jpg",
@@ -89,7 +92,7 @@ const TOURS: Tour[] = [
   },
   {
     key: "chichen", name: "Chichen Itza & Valladolid", sub: "New 7 Wonders + Suytun & Samulá Cenotes",
-    dur: "Full day", price: 6600, img: "/images/tours/chichen.jpg",
+    dur: "Full day", price: 6600, offer: 5500, img: "/images/tours/chichen.jpg",
     desc: "A wonder of the world, a colonial pueblo mágico, and two of the Yucatán's most beautiful cenotes.",
     stops: [
       ["Early Morning · Pickup", "Playa del Carmen", "An early start for a full day of wonders."],
@@ -227,6 +230,9 @@ export default function ToursClient() {
           {TOURS.map((t, idx) => {
             const ppl = people[idx] || 1;
             const total = t.price ? t.price * ppl : 0;
+            const hasOffer = t.price != null && t.offer != null && t.offer < t.price;
+            const offerTotal = hasOffer ? (t.offer as number) * ppl : 0;
+            const offerPct = hasOffer ? Math.round((1 - (t.offer as number) / (t.price as number)) * 100) : 0;
             return (
               <div key={t.name} className="at-card">
                 <div className="at-card-img">
@@ -328,7 +334,15 @@ export default function ToursClient() {
                         <div className="at-price-row">
                           <div className="at-label">Total</div>
                           <div className="at-amount">
-                            <span className="at-total">{format(total)}</span>
+                            {hasOffer ? (
+                              <span className="at-total">
+                                <span className="at-price-was">{format(total)}</span>
+                                <span className="at-price-offer">{format(offerTotal)}</span>
+                                <span className="at-offer-badge">−{offerPct}%</span>
+                              </span>
+                            ) : (
+                              <span className="at-total">{format(total)}</span>
+                            )}
                           </div>
                         </div>
                         <button type="button" className="at-buy-btn" onClick={() => buy(idx)}>

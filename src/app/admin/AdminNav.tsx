@@ -16,6 +16,8 @@ const GROUPS: { heading: string; links: { href: string; label: string }[] }[] = 
       { href: "/admin/tours", label: "Tours" },
       { href: "/admin/activities", label: "Activities" },
       { href: "/admin/addons", label: "Add-ons" },
+      { href: "/admin/about", label: "About Page" },
+      { href: "/admin/faq", label: "FAQ" },
     ],
   },
   {
@@ -30,6 +32,7 @@ const GROUPS: { heading: string; links: { href: string; label: string }[] }[] = 
     links: [
       { href: "/admin/contact", label: "Contact & Social" },
       { href: "/admin/emails", label: "Emails" },
+      { href: "/admin/legal", label: "Legal Pages" },
     ],
   },
 ];

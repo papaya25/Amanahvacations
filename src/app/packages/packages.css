@@ -504,3 +504,18 @@
   .byo-ctrl-row .accom-toggle { flex: 1 1 100%; width: 100%; }
   .info-icon:hover::after { width: 160px; font-size: 10.5px; }
 }
+
+/* ── SALE / OFFER PRICING ── */
+.pkg-price-was {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 15px; font-weight: 400; color: #a09a86;
+  text-decoration: line-through; margin-right: 8px;
+}
+.pkg-price-offer { color: #d1483c; }
+.offer-badge {
+  display: inline-block; vertical-align: middle;
+  margin-left: 8px; padding: 2px 8px; border-radius: 50px;
+  background: #d1483c; color: #fff;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+}
