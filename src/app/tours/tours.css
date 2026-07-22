@@ -1,0 +1,137 @@
+/* Ported from Maher's Wix tours embed — layout and palette preserved, serif/sans
+   mapped to the site fonts, script accent kept via Caveat, modal converted from
+   the iframe positioning hack to a standard fixed overlay. */
+
+#amanah-tours {
+  --at-cream: #f8f3e9;
+  --at-sand: #efe4d0;
+  --at-forest: #20402c;
+  --at-forest-deep: #152c1e;
+  --at-clay: #c46b3b;
+  --at-gold: #d9a441;
+  --at-ink: #2a2a22;
+  --at-line: #e4dac6;
+  --at-muted: #6a6656;
+  --at-serif: var(--font-cormorant), Georgia, serif;
+  --at-sans: var(--font-outfit), 'Helvetica Neue', Arial, sans-serif;
+  --at-script: var(--font-caveat), cursive;
+  background: var(--at-cream);
+  font-family: var(--at-sans);
+  color: var(--at-ink);
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 30px;
+}
+#amanah-tours .at-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+#amanah-tours .at-header { text-align: center; padding: 52px 20px 20px; }
+#amanah-tours .at-eyebrow { font-family: var(--at-script); color: var(--at-gold); font-size: 26px; line-height: 1; }
+#amanah-tours .at-header h1 { font-family: var(--at-serif); font-weight: 700; font-size: 46px; color: var(--at-forest-deep); margin-top: 4px; }
+#amanah-tours .at-rule { width: 60px; height: 2px; background: var(--at-gold); margin: 16px auto 0; opacity: 0.7; }
+#amanah-tours .at-header p { max-width: 600px; margin: 16px auto 0; font-size: 15px; color: var(--at-muted); font-weight: 300; line-height: 1.65; }
+
+/* Per-card trip controls */
+#amanah-tours .at-divider { height: 1px; background: var(--at-line); margin: 16px 0 0; }
+#amanah-tours .at-controls-c { padding-top: 14px; margin-top: auto; }
+#amanah-tours .at-field-row { display: flex; gap: 12px; }
+#amanah-tours .at-field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+#amanah-tours .at-field label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--at-forest); }
+#amanah-tours .at-field input { border: 1.5px solid var(--at-line); border-radius: 9px; padding: 9px 11px; font-family: var(--at-sans); font-size: 13px; outline: none; background: var(--at-cream); width: 100%; }
+#amanah-tours .at-field input:focus { border-color: var(--at-forest); background: #fff; }
+#amanah-tours .at-stepper { display: flex; align-items: center; justify-content: space-between; border: 1.5px solid var(--at-line); border-radius: 9px; background: var(--at-cream); padding: 3px; }
+#amanah-tours .at-stepper button { width: 30px; height: 30px; border-radius: 7px; border: none; background: #fff; font-size: 16px; cursor: pointer; color: var(--at-forest); transition: all 0.2s; }
+#amanah-tours .at-stepper button:hover { background: var(--at-forest); color: #fff; }
+#amanah-tours .at-count { font-weight: 700; font-size: 15px; }
+
+/* Info tooltip */
+#amanah-tours .at-info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%; background: var(--at-line); color: #fff;
+  font-size: 9px; font-weight: 700; font-style: italic; font-family: Georgia, serif;
+  cursor: help; position: relative; vertical-align: middle; margin-left: 3px;
+}
+#amanah-tours .at-info:hover { background: var(--at-forest); }
+#amanah-tours .at-info:hover::after {
+  content: attr(data-tip); position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%);
+  width: 190px; background: var(--at-forest-deep); color: var(--at-cream); font-family: var(--at-sans);
+  font-size: 11px; font-weight: 400; font-style: normal; line-height: 1.5; letter-spacing: 0;
+  padding: 9px 11px; border-radius: 9px; z-index: 60; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25); text-transform: none;
+}
+#amanah-tours .at-info:hover::before {
+  content: ''; position: absolute; bottom: 138%; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--at-forest-deep); z-index: 60;
+}
+#amanah-tours .at-price-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+#amanah-tours .at-label { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--at-muted); }
+#amanah-tours .at-amount { text-align: right; }
+#amanah-tours .at-total { font-family: var(--at-sans); font-weight: 600; font-size: 17px; color: var(--at-forest-deep); display: block; line-height: 1.15; letter-spacing: 0.2px; }
+#amanah-tours .at-total .cur { font-size: 11px; font-weight: 400; color: var(--at-muted); }
+#amanah-tours .at-per { font-size: 11px; color: var(--at-muted); }
+#amanah-tours .at-buy-btn { width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 50px; background: var(--at-forest); color: #fff; font-family: var(--at-sans); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+#amanah-tours .at-buy-btn:hover { background: var(--at-forest-deep); transform: translateY(-1px); }
+#amanah-tours .at-buy-btn.onreq { background: linear-gradient(135deg, var(--at-clay), var(--at-gold)); }
+
+/* Grid */
+#amanah-tours .at-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 36px 0 10px; }
+@media (max-width: 900px) { #amanah-tours .at-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { #amanah-tours .at-grid { grid-template-columns: 1fr; } }
+
+/* Card */
+#amanah-tours .at-card { background: #fff; border: 1px solid var(--at-line); border-radius: 18px; display: flex; flex-direction: column; transition: transform 0.3s, box-shadow 0.3s; }
+#amanah-tours .at-card:hover { transform: translateY(-6px); box-shadow: 0 22px 48px rgba(21, 44, 30, 0.14); }
+#amanah-tours .at-card-img { position: relative; height: 190px; overflow: hidden; border-radius: 18px 18px 0 0; }
+#amanah-tours .at-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+#amanah-tours .at-card:hover .at-card-img img { transform: scale(1.06); }
+#amanah-tours .at-badge-duration { position: absolute; top: 12px; right: 12px; background: rgba(21, 44, 30, 0.85); color: var(--at-cream); font-size: 11px; font-weight: 500; letter-spacing: 0.5px; padding: 6px 12px; border-radius: 50px; backdrop-filter: blur(4px); }
+#amanah-tours .at-badge-onreq { position: absolute; top: 12px; left: 12px; background: var(--at-gold); color: var(--at-forest-deep); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 5px 11px; border-radius: 50px; }
+#amanah-tours .at-card-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+#amanah-tours .at-card-name { font-family: var(--at-serif); font-weight: 700; font-size: 24px; color: var(--at-forest-deep); line-height: 1.15; }
+#amanah-tours .at-card-subtitle { font-size: 12.5px; color: var(--at-clay); font-weight: 500; margin-top: 5px; letter-spacing: 0.3px; }
+#amanah-tours .at-card-desc { font-size: 13px; color: var(--at-muted); line-height: 1.6; margin-top: 10px; }
+
+/* Itinerary */
+#amanah-tours .at-itin-toggle { background: none; border: none; color: var(--at-forest); font-family: var(--at-sans); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 12px 0 4px; display: flex; align-items: center; gap: 6px; }
+#amanah-tours .at-chev { transition: transform 0.25s; display: inline-block; }
+#amanah-tours .at-itin-toggle.open .at-chev { transform: rotate(180deg); }
+#amanah-tours .at-itin { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+#amanah-tours .at-itin.open { max-height: 800px; }
+#amanah-tours .at-itin-inner { padding: 8px 0 4px; }
+#amanah-tours .at-stop { display: flex; gap: 12px; }
+#amanah-tours .at-stop-num { width: 22px; height: 22px; border-radius: 50%; background: var(--at-forest); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+#amanah-tours .at-stop-content { padding-bottom: 14px; }
+#amanah-tours .at-stop-line-wrap { display: flex; flex-direction: column; align-items: center; }
+#amanah-tours .at-stop-line { width: 2px; flex: 1; background: var(--at-line); margin: 2px 0; }
+#amanah-tours .at-stop-time { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--at-clay); }
+#amanah-tours .at-stop-name { font-size: 13px; font-weight: 600; color: var(--at-ink); margin-top: 1px; }
+#amanah-tours .at-stop-desc { font-size: 12px; color: var(--at-muted); line-height: 1.5; margin-top: 2px; }
+#amanah-tours .at-private-note { text-align: center; font-size: 11px; color: var(--at-muted); margin-top: 10px; }
+
+/* Modal — fixed overlay */
+#amanah-tours .at-modal-ov { display: none; position: fixed; inset: 0; background: rgba(21, 44, 30, 0.6); backdrop-filter: blur(4px); z-index: 200; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+#amanah-tours .at-modal-ov.open { display: flex; }
+#amanah-tours .at-modal { background: #fff; border-radius: 22px; width: 100%; max-width: 480px; margin: 40px 0; overflow: hidden; height: fit-content; }
+#amanah-tours .at-modal-head { padding: 24px 26px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+#amanah-tours .at-modal-title { font-family: var(--at-serif); font-weight: 700; font-size: 24px; color: var(--at-forest-deep); }
+#amanah-tours .at-modal-x { width: 32px; height: 32px; border: none; border-radius: 50%; background: var(--at-cream); cursor: pointer; font-size: 17px; color: var(--at-muted); flex-shrink: 0; }
+#amanah-tours .at-modal-body { padding: 18px 26px 26px; }
+#amanah-tours .at-sum { background: var(--at-cream); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+#amanah-tours .at-sum-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--at-line); }
+#amanah-tours .at-sum-row:last-child { border-bottom: none; }
+#amanah-tours .at-sum-row .l { color: var(--at-muted); }
+#amanah-tours .at-sum-row .v { font-weight: 600; text-align: right; }
+#amanah-tours .at-modal-note { font-size: 12px; color: var(--at-muted); line-height: 1.6; margin-bottom: 16px; }
+#amanah-tours .at-modal-comment { width: 100%; border: 1.5px solid var(--at-line); border-radius: 12px; padding: 10px 13px; font-family: var(--at-sans); font-size: 13px; outline: none; background: var(--at-cream); resize: vertical; min-height: 60px; margin-bottom: 16px; }
+#amanah-tours .at-modal-btns { display: flex; flex-direction: column; gap: 9px; }
+#amanah-tours .at-wa { display: flex; align-items: center; justify-content: center; gap: 9px; background: #25d366; color: #fff; border: none; padding: 13px; border-radius: 50px; font-family: var(--at-sans); font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; }
+#amanah-tours .at-email { display: flex; align-items: center; justify-content: center; gap: 9px; background: var(--at-forest); color: #fff; border: none; padding: 13px; border-radius: 50px; font-family: var(--at-sans); font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; }
+
+/* Toast */
+#amanah-tours .at-toast { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px); background: var(--at-forest-deep); color: var(--at-cream); padding: 14px 22px; border-radius: 12px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 300; max-width: 90%; text-align: center; pointer-events: none; }
+#amanah-tours .at-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 620px) {
+  #amanah-tours .at-header { padding: 36px 16px 12px; }
+  #amanah-tours .at-header h1 { font-size: 36px; }
+  #amanah-tours .at-header p { font-size: 13.5px; }
+  #amanah-tours .at-modal { max-width: calc(100% - 8px); margin: 16px 0 24px; }
+}
