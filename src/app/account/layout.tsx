@@ -19,11 +19,11 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             Welcome to your <em className="italic text-forest">account</em>
           </h1>
         </div>
-        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-          <aside className="h-fit lg:sticky lg:top-[108px]">
+        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <aside className="h-fit min-w-0 lg:sticky lg:top-[108px]">
             <AccountNav />
           </aside>
-          <div>{children}</div>
+          <div className="min-w-0">{children}</div>
         </div>
       </div>
     </main>

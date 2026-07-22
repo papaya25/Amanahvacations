@@ -13,7 +13,7 @@ const LINKS = [
 export default function AccountNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Account" className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+    <nav aria-label="Account" className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-col lg:overflow-visible lg:pb-0">
       {LINKS.map((l) => {
         const active = pathname === l.href;
         return (
