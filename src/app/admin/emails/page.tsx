@@ -4,6 +4,7 @@ import { useLocalState } from "@/lib/useLocalState";
 import { Card, Field, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type Template = { subject: string; body: string };
+type CustomEmail = { id: string; name: string; trigger: string; subject: string; body: string };
 type Emails = {
   senderName: string;
   senderEmail: string;
@@ -11,6 +12,7 @@ type Emails = {
   quoteReply: Template;
   welcome: Template;
   contactAutoReply: Template;
+  custom: CustomEmail[];
 };
 
 const DEFAULT: Emails = {
@@ -32,7 +34,16 @@ const DEFAULT: Emails = {
     subject: "We got your message — Amanah Vacations",
     body: "Hi {{name}},\n\nThanks for reaching out! We've received your message and will reply within a few hours.\n\nFor anything urgent, message us on WhatsApp.\n\nTrust in Adventure,\nThe Amanah Vacations Team",
   },
+  custom: [],
 };
+
+const blankAutomation = (): CustomEmail => ({
+  id: `email-${Date.now()}`,
+  name: "New automation",
+  trigger: "",
+  subject: "",
+  body: "",
+});
 
 const TEMPLATES: { key: keyof Emails; title: string; desc: string }[] = [
   { key: "bookingConfirmation", title: "Booking confirmation", desc: "Sent right after a customer checks out." },
@@ -45,6 +56,12 @@ export default function EmailsAdmin() {
   const { value, setValue, save, savedAt } = useLocalState<Emails>("admin_emails", DEFAULT);
   const setTpl = (key: keyof Emails, field: keyof Template, v: string) =>
     setValue({ ...value, [key]: { ...(value[key] as Template), [field]: v } });
+  const custom = value.custom ?? [];
+  const setCustom = (i: number, p: Partial<CustomEmail>) =>
+    setValue({ ...value, custom: custom.map((c, j) => (j === i ? { ...c, ...p } : c)) });
+  const addAutomation = () => setValue({ ...value, custom: [...custom, blankAutomation()] });
+  const removeAutomation = (i: number) =>
+    setValue({ ...value, custom: custom.filter((_, j) => j !== i) });
 
   return (
     <>
@@ -73,6 +90,57 @@ export default function EmailsAdmin() {
             </Card>
           );
         })}
+
+        {/* Custom automations */}
+        <Card
+          title="Custom automations"
+          desc="Add your own automated emails. Give each one a name and a trigger note (when it should send) — we'll connect the actual sending logic when the backend is built."
+        >
+          <button
+            onClick={addAutomation}
+            className="mb-4 rounded-full bg-forest px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-ink"
+          >
+            + Add email automation
+          </button>
+
+          {custom.length === 0 ? (
+            <p className="text-[13px] text-sage">
+              No custom automations yet. Click “Add email automation” to create one — for example a
+              trip-reminder the day before, a review request after a tour, or a seasonal offer.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {custom.map((c, i) => (
+                <div key={c.id} className="rounded-[12px] border border-sand bg-cream/40 p-3.5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
+                      Automation {i + 1}
+                    </span>
+                    <button
+                      onClick={() => removeAutomation(i)}
+                      className="text-[12px] font-medium text-sage underline underline-offset-2 transition hover:text-terracotta"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Name" value={c.name} onChange={(v) => setCustom(i, { name: v })} placeholder="Trip reminder" />
+                      <Field
+                        label="Trigger / when it sends"
+                        value={c.trigger}
+                        onChange={(v) => setCustom(i, { trigger: v })}
+                        placeholder="1 day before the tour date"
+                      />
+                    </div>
+                    <Field label="Subject" value={c.subject} onChange={(v) => setCustom(i, { subject: v })} />
+                    <TextArea label="Body" value={c.body} onChange={(v) => setCustom(i, { body: v })} rows={7} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
 
       <SaveBar onSave={save} savedAt={savedAt} />
