@@ -25,6 +25,8 @@ const GROUPS: { heading: string; links: { href: string; label: string }[] }[] = 
     links: [
       { href: "/admin/promos", label: "Promo Codes" },
       { href: "/admin/currency", label: "Currency & Rates" },
+      { href: "/admin/transfers", label: "Airport Transfers" },
+      { href: "/admin/costs", label: "Costs" },
     ],
   },
   {

@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/tours", priority: 0.9, freq: "weekly" },
     { path: "/vip", priority: 0.7, freq: "monthly" },
     { path: "/halal", priority: 0.8, freq: "monthly" },
+    { path: "/airport-transfers", priority: 0.7, freq: "monthly" },
     { path: "/aboutus", priority: 0.5, freq: "monthly" },
     { path: "/contact", priority: 0.6, freq: "monthly" },
     { path: "/terms-and-conditions", priority: 0.2, freq: "yearly" },

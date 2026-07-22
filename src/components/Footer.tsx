@@ -12,6 +12,7 @@ const EXPLORE = [
 
 const SUPPORT = [
   { label: "Contact", href: "/contact" },
+  { label: "Airport Transfers", href: "/airport-transfers" },
   { label: "Halal Friendly Options", href: "/halal" },
   { label: "Terms & Conditions", href: "/terms-and-conditions" },
   { label: "Privacy Policy", href: "/privacy-policy" },

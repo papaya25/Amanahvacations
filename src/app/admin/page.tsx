@@ -13,6 +13,8 @@ const SECTIONS = [
   { href: "/admin/faq", title: "FAQ", desc: "Questions & answers on home, tours and packages." },
   { href: "/admin/promos", title: "Promo Codes", desc: "Discount codes shown at checkout." },
   { href: "/admin/currency", title: "Currency & Rates", desc: "Default currency and conversion rates." },
+  { href: "/admin/transfers", title: "Airport Transfers", desc: "Transfer pricing, group rates and conditions." },
+  { href: "/admin/costs", title: "Costs", desc: "Your cost per item — feeds the profit dashboard." },
   { href: "/admin/contact", title: "Contact & Social", desc: "Phone, WhatsApp, email, address and social links." },
   { href: "/admin/emails", title: "Emails", desc: "Automated email templates for bookings and quotes." },
   { href: "/admin/legal", title: "Legal Pages", desc: "Terms, Privacy Policy and Liability Waiver." },

@@ -35,6 +35,8 @@ export default function CheckoutClient() {
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<{ code: string; label: string; amount: number } | null>(null);
   const [promoError, setPromoError] = useState("");
+  const [transfer, setTransfer] = useState(false);
+  const [flightInfo, setFlightInfo] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
 
@@ -62,10 +64,27 @@ export default function CheckoutClient() {
     if (!canPlace) return;
     setPlacing(true);
     const id = newOrderId();
+    const orderItems = transfer
+      ? [
+          ...items,
+          {
+            id: `transfer-${Date.now()}`,
+            kind: "activity" as const,
+            title: "Private Airport Transfer",
+            details: [
+              "Cancún Airport ↔ your accommodation",
+              flightInfo.trim() ? `Flight: ${flightInfo.trim()}` : "Flight details to be confirmed",
+              "Price confirmed by our team (not charged now)",
+            ],
+            total: 0,
+            people: items[0]?.people ?? 1,
+          },
+        ]
+      : items;
     saveOrder({
       id,
       date: new Date().toISOString(),
-      items,
+      items: orderItems,
       subtotal,
       discount,
       discountLabel: promo?.label,
@@ -131,6 +150,44 @@ export default function CheckoutClient() {
               <textarea id="co-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={`${inputCls} resize-y`} placeholder="Flight times, dietary needs, a special occasion..." />
             </div>
           </div>
+        </section>
+
+        {/* Airport transfer add-on */}
+        <section className="rounded-[20px] border border-sand bg-white p-[clamp(20px,2.5vw,32px)]">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={transfer}
+              onChange={(e) => setTransfer(e.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 accent-forest"
+            />
+            <span>
+              <span className="block font-serif text-[19px] font-semibold text-ink">
+                Add a private airport transfer
+              </span>
+              <span className="mt-1 block text-[12.5px] leading-[1.65] text-sage">
+                Cancún Airport ↔ your hotel or villa, just for your group. Our team confirms the
+                price by group size and destination — nothing is charged for it now.{" "}
+                <Link href="/airport-transfers" target="_blank" className="font-medium text-forest underline underline-offset-2">
+                  Learn more
+                </Link>
+              </span>
+            </span>
+          </label>
+          {transfer && (
+            <div className="mt-4">
+              <label htmlFor="co-flight" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
+                Flight details (optional)
+              </label>
+              <input
+                id="co-flight"
+                value={flightInfo}
+                onChange={(e) => setFlightInfo(e.target.value)}
+                className={inputCls}
+                placeholder="e.g. AA1234, arriving Aug 10, 2:30 PM"
+              />
+            </div>
+          )}
         </section>
 
         {/* Payment */}
