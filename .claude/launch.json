@@ -3,10 +3,9 @@
   "configurations": [
     {
       "name": "amanah-dev",
-      "runtimeExecutable": "env",
-      "runtimeArgs": ["PATH=/Users/maher/.local/node22/bin:/usr/bin:/bin", "npm", "run", "dev"],
-      "cwd": "/Users/maher/Desktop/amanah-website",
-      "port": 3000
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "PATH=\"$HOME/.local/node22/bin:$PATH\" npm run dev -- -p 3010"],
+      "port": 3010
     }
   ]
 }
