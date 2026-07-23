@@ -32,6 +32,12 @@ export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
 }
 
+/* Render public pages on demand so they always read the current translation
+   cache (in Supabase) instead of baking translations in at build time. This
+   keeps the deployed site's translations in sync with the database and makes
+   the build fast and reliable — no per-page translation work at build time. */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.amanahvacations.com"),
   title: {
