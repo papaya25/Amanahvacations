@@ -8,7 +8,43 @@ import { getFaqs } from "@/lib/content/faq";
 import { getSavedAddons } from "@/lib/content/addons";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
+import {
+  ACTIVITIES,
+  ACCOM_TIERS,
+  RECOMMENDED,
+  REC_TIPS,
+  type Activity,
+  type PkgId,
+} from "./data";
 import "./packages.css";
+
+/* Translate the built-in configurator catalogue (add-on names/descriptions,
+   accommodation tier labels, recommended add-ons) for display. Ids/prices are
+   untouched, so cart handling and pricing are unaffected. */
+async function translateCatalogue(locale: Locale) {
+  if (locale === "en") return {};
+  const [actNames, actDescs, tierLabels, recNames, recTipLabels, recTipTexts] = await Promise.all([
+    translateMany(ACTIVITIES.map((a) => a.name), locale),
+    translateMany(ACTIVITIES.map((a) => a.desc), locale),
+    translateMany(ACCOM_TIERS.map((t) => t.label), locale),
+    translateMany(Object.values(RECOMMENDED).map((r) => r!.name), locale),
+    translateMany(Object.values(REC_TIPS).map((r) => r!.label), locale),
+    translateMany(Object.values(REC_TIPS).map((r) => r!.tip), locale),
+  ]);
+  const tActivities: Activity[] = ACTIVITIES.map((a, i) => ({ ...a, name: actNames[i], desc: actDescs[i] }));
+  const tAccomTiers = ACCOM_TIERS.map((t, i) => ({ ...t, label: tierLabels[i] }));
+  const recKeys = Object.keys(RECOMMENDED) as PkgId[];
+  const tRecommended = { ...RECOMMENDED };
+  recKeys.forEach((k, i) => {
+    tRecommended[k] = { ...RECOMMENDED[k]!, name: recNames[i] };
+  });
+  const recTipKeys = Object.keys(REC_TIPS) as PkgId[];
+  const tRecTips = { ...REC_TIPS };
+  recTipKeys.forEach((k, i) => {
+    tRecTips[k] = { label: recTipLabels[i], tip: recTipTexts[i] };
+  });
+  return { tActivities, tAccomTiers, tRecommended, tRecTips };
+}
 
 export const metadata: Metadata = {
   title: "Riviera Maya Vacation Packages — Private, Family & Halal-Friendly",
@@ -98,6 +134,8 @@ export default async function PackagesPage({
       )
     : dbAddons;
 
+  const catalogue = await translateCatalogue(locale);
+
   const faqTexts = await translateMany(
     [...faqs.map((f) => f.q), ...faqs.map((f) => f.a)],
     locale
@@ -145,7 +183,14 @@ export default async function PackagesPage({
           faqSchema(faqs),
         ]}
       />
-      <PackagesClient dbPackages={translatedPackages ?? undefined} dbAddons={translatedAddons ?? undefined} />
+      <PackagesClient
+        dbPackages={translatedPackages ?? undefined}
+        dbAddons={translatedAddons ?? undefined}
+        tActivities={catalogue.tActivities}
+        tAccomTiers={catalogue.tAccomTiers}
+        tRecommended={catalogue.tRecommended}
+        tRecTips={catalogue.tRecTips}
+      />
       <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </>
   );

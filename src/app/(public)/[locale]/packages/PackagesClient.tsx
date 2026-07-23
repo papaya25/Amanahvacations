@@ -11,6 +11,15 @@ import { useCurrency } from "@/lib/currency";
 import type { AdminAddon } from "@/lib/content/addons";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
+import {
+  ACCOM_TIERS as DEFAULT_ACCOM_TIERS,
+  ACTIVITIES as DEFAULT_ACTIVITIES,
+  RECOMMENDED as DEFAULT_RECOMMENDED,
+  REC_TIPS as DEFAULT_REC_TIPS,
+  PACKAGE_IDS,
+  type Activity,
+  type PkgId,
+} from "./data";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529844521184";
@@ -19,54 +28,6 @@ const CURRENCY = "MXN";
 const MIN_NIGHTS_PACKAGE = 3;
 const MIN_NIGHTS_BYO = 1;
 
-const ACCOM_TIERS = [
-  { id: "4-star", emoji: "🏨", label: "4-Star Hotel" },
-  { id: "5-star", emoji: "✨", label: "5-Star Hotel" },
-  { id: "all-inclusive", emoji: "🍽️", label: "All-Inclusive" },
-  { id: "airbnb", emoji: "🏡", label: "Airbnb / Villa" },
-];
-
-type Activity = {
-  id: string;
-  name: string;
-  emoji: string;
-  price: number | null;
-  unit: string;
-  inCart: boolean;
-  desc: string;
-};
-
-const ACTIVITIES: Activity[] = [
-  { id: "chichen", name: "Chichén + Valladolid", emoji: "🏛️", price: 6600, unit: "/person", inCart: true, desc: "Round-trip private transportation, entrance with a private guide to Chichén Itzá — a Wonder of the World — a stop in colonial Valladolid, plus swimming in nearby cenotes." },
-  { id: "tulumcenotes", name: "Tulum & Cenotes Tour", emoji: "🌊", price: 3700, unit: "/person", inCart: true, desc: "Private transportation, a guided walk through the clifftop Tulum ruins above the Caribbean, plus a refreshing cenote stop." },
-  { id: "cobacenotes", name: "Cobá & Cenotes Tour", emoji: "🏛️", price: 3900, unit: "/person", inCart: true, desc: "Round-trip private transportation to Cobá — an ancient Maya city in the jungle, crowned by Nohoch Mul, the tallest pyramid on the Peninsula — with a guide, entrance fees, refreshments and cenote stops." },
-  { id: "akumaltulum", name: "Tulum + Akumal", emoji: "🐢", price: 5850, unit: "/person", inCart: true, desc: "Two experiences in one day: the Tulum ruins and Akumal, snorkeling in the natural habitat of sea turtles. Includes private transportation." },
-  { id: "akumalcenotes", name: "Akumal & Cenotes Tour", emoji: "🐢", price: 2350, unit: "/person", inCart: true, desc: "Snorkel with sea turtles in Akumal and cool off in a cenote — private transportation, free drinks, and a boat to the turtle habitat included." },
-  { id: "cancun", name: "Cancún City Tour", emoji: "🏙️", price: 800, unit: "/person", inCart: true, desc: "Private transportation touring Cancún, including the Zona Hotelera and a stop at one of the best spots on the Caribbean Sea, with the option to swim." },
-  { id: "quinta", name: "Quinta Av Guided Tour", emoji: "🛍️", price: 500, unit: "/person", inCart: true, desc: "A private guided walk down the charming Quinta Avenida in Playa del Carmen, with stops at recommended shops and restaurants." },
-  { id: "aquarium", name: "Cancún Aquarium", emoji: "🐠", price: 950, unit: "/person", inCart: true, desc: "Private transportation and entrance to the Cancún Aquarium — explore an incredible underwater world without getting wet. Upgrades available for aquarium trek, dolphin shows, and private swims with dolphins. Free for children 0–4." },
-  { id: "cozumel", name: "Cozumel Private Tour", emoji: "⛵", price: 4600, unit: "/person", inCart: true, desc: "A private tour of Cozumel by private boat — reefs, beaches and the island at your own pace." },
-  { id: "rutacenotes", name: "Ruta de los Cenotes Tour", emoji: "💧", price: 2900, unit: "/person", inCart: true, desc: "A full cenote route — four different cenotes (two open-air, two underground) with a diving platform and water zip line. Includes hammock area, life jackets, lockers, parking and showers." },
-  { id: "cenotevisit", name: "Cenote Visit", emoji: "💦", price: 1000, unit: "/person", inCart: true, desc: "A visit to one beautiful cenote — perfect for a refreshing swim in crystal-clear water." },
-  { id: "aquariumcontoy", name: "Isla Contoy", emoji: "🦅", price: null, unit: "", inCart: false, desc: "A private excursion to the protected paradise of Isla Contoy — arranged personally with you, priced per group." },
-  { id: "whalesharks", name: "Whale Sharks Tour", emoji: "🐋", price: null, unit: "", inCart: false, desc: "A seasonal encounter swimming alongside the world's largest fish. Availability depends on the season — our team will confirm dates for you." },
-  { id: "yacht", name: "Private Yacht", emoji: "⛵", price: null, unit: "", inCart: false, desc: "A private yacht charter tailored to your group — pricing depends on the number of hours and type of tour you'd like." },
-  { id: "siankaan", name: "Sian Ka'an", emoji: "🌿", price: null, unit: "", inCart: false, desc: "A boat journey through the ancient Maya canals of the Sian Ka'an Biosphere Reserve — availability depends on the day, our team will confirm." },
-  { id: "zipline", name: "Zipline & ATV", emoji: "⚡", price: null, unit: "", inCart: false, desc: "A jungle adventure combining zipline and ATV riding — availability depends on the day, our team will confirm." },
-  { id: "photoshoot", name: "Photoshoot", emoji: "📸", price: null, unit: "", inCart: false, desc: "A professional photoshoot at one of the region's most beautiful locations — fully tailored to your occasion." },
-  { id: "dinner", name: "Romantic Dinner", emoji: "🌅", price: null, unit: "", inCart: false, desc: "A private romantic dinner set up in a stunning location, arranged around your preferences and special occasion." },
-  { id: "bacalar", name: "Bacalar Lagoon", emoji: "💙", price: null, unit: "", inCart: false, desc: "A day trip to the \"Lagoon of Seven Colors\" — Mexico's breathtaking turquoise lake. Our team will tailor the details with you." },
-  { id: "xcaret", name: "Xcaret Park", emoji: "🌺", price: 3500, unit: "/person", inCart: true, desc: "A full day at Xcaret, an eco-archaeological park blending underground rivers, wildlife encounters, cultural shows and Maya history." },
-  { id: "xelha", name: "Xel-Há Park", emoji: "🎢", price: 2850, unit: "/person", inCart: true, desc: "An all-inclusive natural aquatic park — snorkel a lagoon fed by underground rivers, cliff-jump, and relax on the beach, all included." },
-  { id: "xplor", name: "Xplor Park", emoji: "🌴", price: 3350, unit: "/person", inCart: true, desc: "An adrenaline-packed adventure park through the jungle — zipline circuits, amphibious vehicles, rafts on underground rivers, and stalactite caves." },
-  { id: "xplorfuego", name: "Xplor Fuego", emoji: "🔥", price: 2850, unit: "/person", inCart: true, desc: "The nighttime edition of Xplor — the same jungle adventure circuits illuminated after dark for a completely different thrill. Open 5:30 PM – 11:00 PM." },
-  { id: "xsenses", name: "Xenses Park", emoji: "✨", price: 1850, unit: "/person", inCart: true, desc: "A sensory adventure park challenging your five senses through jungle trails, ziplines, and unique perception experiences." },
-  { id: "monkey", name: "Monkey Sanctuary", emoji: "🐒", price: 1900, unit: "/person", inCart: true, desc: "A visit to a monkey sanctuary — get close to rescued wildlife in a natural, protected setting." },
-  { id: "tennis", name: "Tennis Lessons", emoji: "🎾", price: 800, unit: "/hour/person", inCart: false, desc: "Private tennis lessons with a local instructor, billed per hour, per person. Our team will confirm hours and charge separately." },
-];
-
-const PACKAGE_IDS = ["basic", "family", "water", "explorer", "honeymoon"] as const;
-type PkgId = (typeof PACKAGE_IDS)[number];
 
 const DEFAULT_PRICES: Record<PkgId, number> = {
   basic: 4600,
@@ -81,13 +42,6 @@ const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3 };
    its normal price. The admin's "Offer price" field drives these once the
    backend is wired. (Demo: Water Lovers is on offer so you can see the styling.) */
 const DEFAULT_OFFERS: Partial<Record<PkgId, number>> = { water: 6650 };
-
-const RECOMMENDED: Partial<Record<PkgId, { id: string; name: string; price: number }>> = {
-  basic: { id: "xcaret", name: "Xcaret Park", price: 3500 },
-  water: { id: "xelha", name: "Xel-Há Park", price: 2850 },
-  explorer: { id: "xplorfuego", name: "Xplor Fuego", price: 2850 },
-  honeymoon: { id: "holbox", name: "Holbox Overnight", price: 7800 },
-};
 
 type PkgMeta = { name: string; tagline: string; badge: string; icon: string; photo: string; includes: string[] };
 const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
@@ -169,13 +123,6 @@ const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
   },
 };
 
-const REC_TIPS: Partial<Record<PkgId, { label: string; tip: string }>> = {
-  basic: { label: "🌺 Xcaret Park", tip: "Round out your trip with a full day at Xcaret — an eco-archaeological park blending underground rivers, wildlife encounters and Maya history." },
-  water: { label: "🎢 Xel-Há Park", tip: "An all-inclusive natural aquatic park — snorkel a lagoon fed by underground rivers, cliff-jump, and relax on the beach, all included." },
-  explorer: { label: "🔥 Xplor Fuego Park", tip: "The nighttime edition of Xplor — the same jungle adventure circuits illuminated after dark for a completely different thrill. Open 5:30 PM – 11:00 PM." },
-  honeymoon: { label: "🦩 Holbox Romantic Night", tip: "A night away on magical Holbox Island — hotel stay and a romantic dinner on the beach included." },
-};
-
 const WA_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden>
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
@@ -205,11 +152,25 @@ export type DbPackage = {
 export default function PackagesClient({
   dbPackages,
   dbAddons,
+  tActivities,
+  tAccomTiers,
+  tRecommended,
+  tRecTips,
 }: {
   dbPackages?: DbPackage[];
   dbAddons?: AdminAddon[];
+  /* Locale-translated copies of the built-in catalogue (add-ons, accommodation
+     tiers, recommended add-ons). Fall back to the English defaults. */
+  tActivities?: Activity[];
+  tAccomTiers?: typeof DEFAULT_ACCOM_TIERS;
+  tRecommended?: typeof DEFAULT_RECOMMENDED;
+  tRecTips?: typeof DEFAULT_REC_TIPS;
 }) {
   const router = useRouter();
+  const ACTIVITIES = tActivities ?? DEFAULT_ACTIVITIES;
+  const ACCOM_TIERS = tAccomTiers ?? DEFAULT_ACCOM_TIERS;
+  const RECOMMENDED = tRecommended ?? DEFAULT_RECOMMENDED;
+  const REC_TIPS = tRecTips ?? DEFAULT_REC_TIPS;
 
   /* Admin-managed add-on list overrides the built-in one; emoji + description
      carry over from the defaults by id. An offer below the price becomes the
@@ -232,7 +193,7 @@ export default function PackagesClient({
         desc: base?.desc ?? "",
       };
     });
-  }, [dbAddons]);
+  }, [dbAddons, ACTIVITIES]);
 
   const actsByName = useMemo(() => {
     const m: Record<string, Activity> = {};

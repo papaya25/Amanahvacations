@@ -63,7 +63,10 @@ async function translateBatch(texts: string[], locale: Locale): Promise<string[]
       system:
         `Translate each numbered English string to ${LOCALE_NAMES[locale]} for a travel/tourism website. ` +
         `Keep the tone warm and professional. Preserve any {{placeholders}}, HTML tags, and punctuation style. ` +
-        `Keep names of places (Cancún, Tulum, Riviera Maya, etc.) unchanged. ` +
+        `Keep proper place and brand names in their original form (e.g. Cancún, Tulum, Chichén Itzá, Xcaret, Cozumel, Holbox, Sian Ka'an, Riviera Maya, Rosewood Mayakoba, PayPal), ` +
+        `but ALWAYS translate the ordinary descriptive words around them — words like Tour, Park, Visit, Sanctuary, Aquarium, Lagoon, Guided, Private, City, Beach, Reserve, Overnight, Lessons, Snorkeling. ` +
+        `For example "Cenote Visit", "Cancún City Tour", "Monkey Sanctuary", "Xcaret Park" must become natural ${LOCALE_NAMES[locale]}. ` +
+        `Never leave a phrase entirely in English unless it is purely a proper name or brand. ` +
         `Reply with ONLY a JSON array of translated strings, same order, same length as the input — no other text.`,
       messages: [
         {
