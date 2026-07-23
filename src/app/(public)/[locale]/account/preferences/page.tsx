@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const KEY = "amanah_prefs";
 const LANGS = ["English", "Français", "Español", "العربية"];
 const CURRENCIES = ["USD", "MXN", "EUR"];
+/* Interests are stored by a stable id so a saved selection keeps matching even
+   when the visitor switches the site language (the label is display-only). */
 const INTERESTS = [
-  "Cenotes & Water",
-  "Mayan Ruins & Culture",
-  "Beaches & Islands",
-  "Adventure & Adrenaline",
-  "Honeymoon & Romance",
-  "Family Trips",
-  "Luxury / VIP",
-  "Halal-Friendly",
-];
+  { id: "cenotes", key: "pref_int_cenotes" },
+  { id: "ruins", key: "pref_int_ruins" },
+  { id: "beaches", key: "pref_int_beaches" },
+  { id: "adventure", key: "pref_int_adventure" },
+  { id: "honeymoon", key: "pref_int_honeymoon" },
+  { id: "family", key: "pref_int_family" },
+  { id: "luxury", key: "pref_int_luxury" },
+  { id: "halal", key: "pref_int_halal" },
+] as const;
 
 type Prefs = { language: string; currency: string; newsletter: boolean; interests: string[] };
 const DEFAULTS: Prefs = { language: "English", currency: "USD", newsletter: true, interests: [] };
@@ -22,6 +25,7 @@ const DEFAULTS: Prefs = { language: "English", currency: "USD", newsletter: true
 export default function PreferencesPage() {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
   const [saved, setSaved] = useState(false);
+  const { dict } = useI18n();
 
   useEffect(() => {
     try {
@@ -52,12 +56,12 @@ export default function PreferencesPage() {
   return (
     <div className="space-y-5">
       <section className="rounded-[20px] border border-sand bg-white p-[clamp(20px,2.5vw,32px)]">
-        <h2 className="mb-1 font-serif text-[24px] font-semibold text-ink">Preferences</h2>
-        <p className="mb-6 text-[13px] text-sage">Tailor the site and our recommendations to you.</p>
+        <h2 className="mb-1 font-serif text-[24px] font-semibold text-ink">{dict.pref_title}</h2>
+        <p className="mb-6 text-[13px] text-sage">{dict.pref_sub}</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">Language</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">{dict.pref_language}</label>
             <select value={prefs.language} onChange={(e) => setPrefs({ ...prefs, language: e.target.value })} className={selectCls}>
               {LANGS.map((l) => (
                 <option key={l}>{l}</option>
@@ -65,7 +69,7 @@ export default function PreferencesPage() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">Currency</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">{dict.pref_currency}</label>
             <select value={prefs.currency} onChange={(e) => setPrefs({ ...prefs, currency: e.target.value })} className={selectCls}>
               {CURRENCIES.map((c) => (
                 <option key={c}>{c}</option>
@@ -76,20 +80,20 @@ export default function PreferencesPage() {
 
         <div className="mt-6">
           <label className="mb-2.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
-            Travel interests
+            {dict.pref_interests}
           </label>
           <div className="flex flex-wrap gap-2">
             {INTERESTS.map((i) => {
-              const on = prefs.interests.includes(i);
+              const on = prefs.interests.includes(i.id);
               return (
                 <button
-                  key={i}
-                  onClick={() => toggleInterest(i)}
+                  key={i.id}
+                  onClick={() => toggleInterest(i.id)}
                   className={`rounded-full border-[1.5px] px-3.5 py-1.5 text-[12.5px] font-medium transition ${
                     on ? "border-forest bg-forest text-white" : "border-sand bg-white text-sage hover:border-forest"
                   }`}
                 >
-                  {i}
+                  {dict[i.key]}
                 </button>
               );
             })}
@@ -104,7 +108,7 @@ export default function PreferencesPage() {
             className="h-4 w-4 accent-forest"
           />
           <span className="text-[13.5px] text-ink">
-            Email me trip ideas, seasonal experiences and special offers
+            {dict.pref_newsletter}
           </span>
         </label>
 
@@ -113,9 +117,9 @@ export default function PreferencesPage() {
             onClick={save}
             className="rounded-full bg-gradient-to-br from-terracotta to-gold px-7 py-3 text-[14px] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
           >
-            Save Preferences
+            {dict.pref_save}
           </button>
-          {saved && <span className="text-[13px] font-medium text-forest">✓ Saved</span>}
+          {saved && <span className="text-[13px] font-medium text-forest">✓ {dict.pref_saved}</span>}
         </div>
       </section>
     </div>

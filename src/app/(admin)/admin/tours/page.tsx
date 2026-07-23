@@ -1,7 +1,7 @@
 "use client";
 
 import { useDbState } from "@/lib/useDbState";
-import { TOURS } from "@/app/(public)/[locale]/tours/ToursClient";
+import { TOURS } from "@/app/(public)/[locale]/tours/data";
 import { Card, Field, ImagePicker, PageHead, SaveBar } from "../AdminUI";
 
 type Stop = { time: string; place: string; desc: string };

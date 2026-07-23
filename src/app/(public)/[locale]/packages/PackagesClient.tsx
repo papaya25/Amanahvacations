@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
 import type { AdminAddon } from "@/lib/content/addons";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529844521184";
@@ -239,6 +241,7 @@ export default function PackagesClient({
   }, [activities]);
   const { add } = useCart();
   const { format } = useCurrency();
+  const { locale, dict } = useI18n();
 
   const [adults, setAdults] = useState(2);
   const [kids, setKids] = useState(0);
@@ -493,7 +496,7 @@ export default function PackagesClient({
         addons_human: humanAddons.join(", ") || "None",
       },
     });
-    router.push("/checkout");
+    router.push(localizeHref("/checkout", locale));
   };
 
   /* ── Contact links (built live so they include the latest comment) ── */
@@ -584,7 +587,7 @@ export default function PackagesClient({
   /* ── render helpers ── */
   const kidsAgesBlock = (
     <div className={`kids-ages${kids > 0 ? " show" : ""}`}>
-      <label>Children Ages</label>
+      <label>{dict.pkgc_children_ages}</label>
       <div className="ages-row">
         {Array.from({ length: kids }, (_, i) => (
           <select
@@ -599,7 +602,7 @@ export default function PackagesClient({
               })
             }
           >
-            <option value="">{`Child ${i + 1} age`}</option>
+            <option value="">{`${dict.pkgc_child_age} ${i + 1}`}</option>
             {Array.from({ length: 18 }, (_, a) => (
               <option key={a} value={a}>
                 {a} year{a !== 1 ? "s" : ""}
@@ -613,13 +616,13 @@ export default function PackagesClient({
 
   const accomToggleBlock = (
     <div className="accom-toggle">
-      <label>Accommodation</label>
+      <label>{dict.pkgc_accommodation}</label>
       <div className="toggle-row">
         <button className={`toggle-btn${accom ? " active" : ""}`} onClick={() => setAccom(true)}>
-          Yes, include it
+          {dict.pkgc_yes_include}
         </button>
         <button className={`toggle-btn${!accom ? " active" : ""}`} onClick={() => setAccom(false)}>
-          No thanks
+          {dict.pkgc_no_thanks}
         </button>
       </div>
     </div>
@@ -642,7 +645,7 @@ export default function PackagesClient({
   const counters = (
     <>
       <div className="counter-group">
-        <label>Adults</label>
+        <label>{dict.pkgc_adults}</label>
         <div className="counter-row">
           <button className="cnt-btn" onClick={() => adjust("adults", -1)}>−</button>
           <span className="cnt-num">{adults}</span>
@@ -650,7 +653,7 @@ export default function PackagesClient({
         </div>
       </div>
       <div className="counter-group">
-        <label>Children</label>
+        <label>{dict.pkgc_children}</label>
         <div className="counter-row">
           <button className="cnt-btn" onClick={() => adjust("kids", -1)}>−</button>
           <span className="cnt-num">{kids}</span>
@@ -663,8 +666,7 @@ export default function PackagesClient({
   const addonPanel = (pkgId: PkgId) => (
     <div className={`addons-panel${openAddonPanels[pkgId] ? " open" : ""}`}>
       <div className="addon-note">
-        Hand-picked experiences to round out your trip. Tap the ⓘ next to any activity for details.
-        Items marked &quot;On Request&quot; are arranged personally with you — no payment needed now.
+        {dict.pkgc_addon_note}
       </div>
       {activities.map((act) => {
         const selected = selectedAddons[pkgId].includes(act.name);
@@ -682,13 +684,13 @@ export default function PackagesClient({
               </span>
             </span>
             {act.price === null ? (
-              <span className="addon-onreq">On Request</span>
+              <span className="addon-onreq">{dict.pkgc_on_request}</span>
             ) : !act.inCart ? (
               <>
                 <span className="addon-item-price">
                   {format(act.price)}{act.unit}
                 </span>{" "}
-                <span className="addon-onreq">Booked via Contact Us</span>
+                <span className="addon-onreq">{dict.pkgc_booked_via_contact}</span>
               </>
             ) : (
               <span className="addon-item-price">
@@ -731,13 +733,13 @@ export default function PackagesClient({
           <div className="pkg-icon-wrap">{meta.icon}</div>
           <div className="pkg-name">{meta.name}</div>
           <div className="pkg-tagline">{meta.tagline}</div>
-          <div className="pkg-min-stay">📅 Minimum suggested stay: 5 days</div>
+          <div className="pkg-min-stay">{dict.pkgc_min_stay}</div>
           {pkgId === "family" && (
-            <div className="pkg-min-people">👥 Available for groups of 3 travelers and up</div>
+            <div className="pkg-min-people">{dict.pkgc_min_people}</div>
           )}
         </div>
         <div className="pkg-body">
-          <div className="pkg-includes-title">What&apos;s Included</div>
+          <div className="pkg-includes-title">{dict.pkgc_whats_included}</div>
           <ul className="pkg-includes">
             {meta.includes.map((inc) => (
               <li key={inc.slice(0, 30)} className="pkg-include-item">
@@ -749,7 +751,7 @@ export default function PackagesClient({
         </div>
         {pkgId === "family" ? (
           <div className="choice-box">
-            <div className="choice-label">Choose one</div>
+            <div className="choice-label">{dict.pkgc_choose_one}</div>
             <div className="choice-pills">
               <button
                 className={`choice-pill${familyChoice === "Xenses Park" ? " active" : ""}`}
@@ -769,7 +771,7 @@ export default function PackagesClient({
           rec &&
           recTip && (
             <div className="choice-box">
-              <div className="choice-label">✨ Recommended Add-On</div>
+              <div className="choice-label">{dict.pkgc_recommended_addon}</div>
               <div className="choice-pills">
                 <button
                   className={`choice-pill${recommendedActive[pkgId] ? " active" : ""}`}
@@ -780,7 +782,7 @@ export default function PackagesClient({
                     i
                   </span>
                   <span className="rec-price">
-                    {recommendedActive[pkgId] ? "✓ Added" : `+${format(rec.price)}/person`}
+                    {recommendedActive[pkgId] ? dict.pkgc_added : `+${format(rec.price)}${dict.pkgc_per_person}`}
                   </span>
                 </button>
               </div>
@@ -789,17 +791,17 @@ export default function PackagesClient({
         )}
         <div className="pkg-price-area">
           <div>
-            <div className="pkg-price-label">From</div>
+            <div className="pkg-price-label">{dict.pkgc_from}</div>
             {offerFor(pkgId, mxn) !== null ? (
               <div className="pkg-price">
                 <span className="pkg-price-was">{format(mxn)}</span>
                 <span className="pkg-price-offer">{format(offerFor(pkgId, mxn)!)}</span>{" "}
-                <small>/person</small>
+                <small>{dict.pkgc_per_person}</small>
                 <span className="offer-badge">−{offerPct(pkgId)}%</span>
               </div>
             ) : (
               <div className="pkg-price">
-                {format(mxn)} <small>/person</small>
+                {format(mxn)} <small>{dict.pkgc_per_person}</small>
               </div>
             )}
           </div>
@@ -810,8 +812,8 @@ export default function PackagesClient({
           onClick={() => setOpenAddonPanels((p) => ({ ...p, [pkgId]: !p[pkgId] }))}
         >
           <span className="addons-toggle-label">
-            <span className="addons-toggle-line1">✨ Make It Unforgettable</span>
-            <span className="addons-toggle-line2">Add Experiences</span>
+            <span className="addons-toggle-line1">{dict.pkgc_make_unforgettable}</span>
+            <span className="addons-toggle-line2">{dict.pkgc_add_experiences}</span>
           </span>
           <span className="addons-toggle-icon">+</span>
         </button>
@@ -823,7 +825,7 @@ export default function PackagesClient({
               disabled={!valid}
               onClick={() => buyNow(pkgId, meta.name)}
             >
-              Buy Now
+              {dict.pkgc_buy_now}
             </button>
             <button
               className="cta-btn-sm cta-contact"
@@ -832,10 +834,10 @@ export default function PackagesClient({
                 setModal({ kind: "quote", pkgId, pkgName: meta.name });
               }}
             >
-              Contact Us
+              {dict.pkgc_contact_us}
             </button>
           </div>
-          <div className="private-badge">🔒 Just your group — never combined with other travelers</div>
+          <div className="private-badge">{dict.pkgc_private_badge}</div>
         </div>
       </div>
     );
@@ -848,23 +850,23 @@ export default function PackagesClient({
       const rec = RECOMMENDED[modal.pkgId];
       if (rec && recommendedActive[modal.pkgId])
         addons.push(`${rec.name} (+${format(rec.price)}/person)`);
-      const addonStr = addons.length > 0 ? addons.join(", ") : "None";
+      const addonStr = addons.length > 0 ? addons.join(", ") : dict.pkgc_none;
       const mxn = priceMXN(modal.pkgId);
       return (
         <>
-          <div className="modal-summary-title">Booking Summary</div>
-          <Row lbl="Package" val={modal.pkgName} />
-          <Row lbl="Check-in" val={fmtDate(checkin)} />
-          <Row lbl="Check-out" val={fmtDate(checkout)} />
-          <Row lbl="Duration" val={`${nights === null ? "—" : nights} nights`} />
-          <Row lbl="Adults" val={String(adults)} />
-          <Row lbl="Children" val={kids > 0 ? `${kids} (${getKidsAgesText()})` : "None"} />
-          <Row lbl="Accommodation" val={accom ? `✅ ${accomText()}` : "❌ Not needed"} />
-          <Row lbl="Add-ons selected" val={addonStr} />
+          <div className="modal-summary-title">{dict.pkgc_booking_summary}</div>
+          <Row lbl={dict.pkgc_package} val={modal.pkgName} />
+          <Row lbl={dict.pkgc_checkin} val={fmtDate(checkin)} />
+          <Row lbl={dict.pkgc_checkout} val={fmtDate(checkout)} />
+          <Row lbl={dict.pkgc_duration} val={`${nights === null ? "—" : nights} ${dict.pkgc_nights}`} />
+          <Row lbl={dict.pkgc_adults} val={String(adults)} />
+          <Row lbl={dict.pkgc_children} val={kids > 0 ? `${kids} (${getKidsAgesText()})` : dict.pkgc_none} />
+          <Row lbl={dict.pkgc_accommodation} val={accom ? `✅ ${accomText()}` : `❌ ${dict.pkgc_not_needed}`} />
+          <Row lbl={dict.pkgc_addons_selected} val={addonStr} />
           <div className="modal-price-row">
-            <span className="lbl">Estimated base</span>
+            <span className="lbl">{dict.pkgc_estimated_base}</span>
             <span className="modal-price-total">
-              {format(mxn)}/person
+              {format(mxn)}{dict.pkgc_per_person}
             </span>
           </div>
         </>
@@ -873,26 +875,26 @@ export default function PackagesClient({
     if (modal.kind === "vip") {
       return (
         <>
-          <div className="modal-summary-title">Your Details</div>
-          <Row lbl="Plan" val={modal.pkgName} />
-          <Row lbl="Check-in" val={fmtDate(checkin)} />
-          <Row lbl="Check-out" val={fmtDate(checkout)} />
-          <Row lbl="Adults" val={String(adults)} />
-          <Row lbl="Children" val={kids > 0 ? `${kids} (${getKidsAgesText()})` : "None"} />
+          <div className="modal-summary-title">{dict.pkgc_your_details}</div>
+          <Row lbl={dict.pkgc_plan} val={modal.pkgName} />
+          <Row lbl={dict.pkgc_checkin} val={fmtDate(checkin)} />
+          <Row lbl={dict.pkgc_checkout} val={fmtDate(checkout)} />
+          <Row lbl={dict.pkgc_adults} val={String(adults)} />
+          <Row lbl={dict.pkgc_children} val={kids > 0 ? `${kids} (${getKidsAgesText()})` : dict.pkgc_none} />
         </>
       );
     }
     const s = byoSubmitted;
     return (
       <>
-        <div className="modal-summary-title">Your Trip Details</div>
-        <Row lbl="Check-in" val={fmtDate(checkin)} />
-        <Row lbl="Check-out" val={fmtDate(checkout)} />
-        <Row lbl="Adults" val={String(adults)} />
-        <Row lbl="Children" val={kids > 0 ? `${kids} (${getKidsAgesText()})` : "None"} />
-        <Row lbl="Accommodation" val={accom ? `✅ ${accomText()}` : "❌ Not needed"} />
-        <Row lbl="Activities of interest" val={s?.addonStr ?? "None yet"} />
-        {s?.comment ? <Row lbl="Notes" val={s.comment} /> : null}
+        <div className="modal-summary-title">{dict.pkgc_your_trip_details}</div>
+        <Row lbl={dict.pkgc_checkin} val={fmtDate(checkin)} />
+        <Row lbl={dict.pkgc_checkout} val={fmtDate(checkout)} />
+        <Row lbl={dict.pkgc_adults} val={String(adults)} />
+        <Row lbl={dict.pkgc_children} val={kids > 0 ? `${kids} (${getKidsAgesText()})` : dict.pkgc_none} />
+        <Row lbl={dict.pkgc_accommodation} val={accom ? `✅ ${accomText()}` : `❌ ${dict.pkgc_not_needed}`} />
+        <Row lbl={dict.pkgc_activities_interest} val={s?.addonStr ?? dict.pkgc_none} />
+        {s?.comment ? <Row lbl={dict.pkgc_notes} val={s.comment} /> : null}
       </>
     );
   };
@@ -903,26 +905,26 @@ export default function PackagesClient({
       <div className="section-header">
         <div className="s-label">
           <div className="s-label-line" />
-          Our Packages
+          {dict.pkgc_section_label}
           <div className="s-label-line" />
         </div>
         <h1 className="s-title">
-          Choose Your <em>Perfect Plan</em>
+          {dict.pkgc_title_1} <em>{dict.pkgc_title_em}</em>
         </h1>
         <p className="s-sub">
-          Select your travel dates, group size, accommodation and add-ons —<br />
-          then pick the plan that fits you best.
+          {dict.pkgc_sub_1}<br />
+          {dict.pkgc_sub_2}
         </p>
       </div>
 
       {/* INPUT BAR */}
       <div className="input-bar">
         <div className="input-group">
-          <label>Check-in</label>
+          <label>{dict.pkgc_checkin}</label>
           <input type="date" value={checkin} onChange={(e) => setCheckin(e.target.value)} />
         </div>
         <div className="input-group">
-          <label>Check-out</label>
+          <label>{dict.pkgc_checkout}</label>
           <input type="date" value={checkout} onChange={(e) => setCheckout(e.target.value)} />
         </div>
         {counters}
@@ -932,12 +934,12 @@ export default function PackagesClient({
 
       {/* MIN NIGHTS HINT */}
       <div className={`dates-hint${!nightsOK ? " show" : ""}`}>
-        📅 Select your check-in and check-out dates (minimum 3 nights) to unlock Buy Now on our packages.
+        {dict.pkgc_dates_hint}
       </div>
 
       {/* ACCOMMODATION OPTIONS */}
       <div className={`accom-options-bar${accom ? " show" : ""}`}>
-        <span className="accom-options-label">Preferred stay:</span>
+        <span className="accom-options-label">{dict.pkgc_preferred_stay}</span>
         {accomPills}
       </div>
 
@@ -955,21 +957,21 @@ export default function PackagesClient({
             </div>
             <div className="pkg-header">
               <div className="pkg-icon-wrap">✦</div>
-              <div className="pkg-name">VIP Plan</div>
-              <div className="pkg-tagline">Luxury &amp; Total Freedom</div>
-              <div className="pkg-min-stay">📅 Minimum suggested stay: 5 days</div>
+              <div className="pkg-name">{dict.pkgc_vip_name}</div>
+              <div className="pkg-tagline">{dict.pkgc_vip_tagline}</div>
+              <div className="pkg-min-stay">{dict.pkgc_min_stay}</div>
             </div>
             <div className="pkg-body">
-              <div className="pkg-includes-title">What&apos;s Included</div>
+              <div className="pkg-includes-title">{dict.pkgc_whats_included}</div>
               <ul className="pkg-includes">
                 {[
-                  "Luxury hotels or private villas",
-                  "Private transport with dedicated driver",
-                  "Fully private tours & flexible itinerary",
-                  "Private boat or yacht experiences",
-                  "Private chef options",
-                  "Access to exclusive beach locations",
-                  "Concierge service 24/7",
+                  dict.pkgc_vip_inc1,
+                  dict.pkgc_vip_inc2,
+                  dict.pkgc_vip_inc3,
+                  dict.pkgc_vip_inc4,
+                  dict.pkgc_vip_inc5,
+                  dict.pkgc_vip_inc6,
+                  dict.pkgc_vip_inc7,
                 ].map((inc) => (
                   <li key={inc} className="pkg-include-item">
                     <span className="pkg-check">✓</span>
@@ -977,26 +979,26 @@ export default function PackagesClient({
                   </li>
                 ))}
               </ul>
-              <p className="pkg-customize">👉 This plan is fully customizable based on your preferences.</p>
+              <p className="pkg-customize">{dict.pkgc_vip_customize}</p>
             </div>
             <div className="pkg-price-area">
               <div>
-                <div className="pkg-price-label">Starting from</div>
+                <div className="pkg-price-label">{dict.pkgc_starting_from}</div>
                 <div className="pkg-price" style={{ color: "#B87A20" }}>
-                  On Request
+                  {dict.pkgc_on_request_price}
                 </div>
               </div>
-              <div className="pkg-nights">Tailored for you</div>
+              <div className="pkg-nights">{dict.pkgc_tailored}</div>
             </div>
             <div className="pkg-cta" style={{ paddingTop: 16 }}>
               <button
                 className="cta-btn gold"
                 onClick={() => {
                   setModalComment("");
-                  setModal({ kind: "vip", pkgName: "VIP Plan" });
+                  setModal({ kind: "vip", pkgName: dict.pkgc_vip_name });
                 }}
               >
-                ✦ Get a Custom Quote
+                {dict.pkgc_get_custom_quote}
               </button>
             </div>
           </div>
@@ -1008,21 +1010,20 @@ export default function PackagesClient({
         <div className="byo-left">
           <div className="byo-eyebrow">
             <div className="byo-eyebrow-line" />
-            Total Flexibility
+            {dict.pkgc_byo_eyebrow}
           </div>
           <div className="byo-title">
-            Don&apos;t see your perfect fit? <em>Build Your Own.</em>
+            {dict.pkgc_byo_title_1} <em>{dict.pkgc_byo_title_em}</em>
           </div>
           <div className="byo-sub">
-            Tell us your dates, group size and accommodation preference — our team will design a fully
-            custom itinerary just for you.
+            {dict.pkgc_byo_sub}
           </div>
         </div>
         <div className="byo-right">
           <button className="byo-btn" onClick={() => setByoOpen(true)}>
-            ✏️ Build Your Own Plan →
+            {dict.pkgc_byo_btn}
           </button>
-          <div className="byo-count">Talk to a real person, no forms</div>
+          <div className="byo-count">{dict.pkgc_byo_count}</div>
         </div>
       </div>
 
@@ -1038,10 +1039,10 @@ export default function PackagesClient({
             <div className="modal-head">
               <div className="modal-title">
                 {modal.kind === "quote"
-                  ? `${modal.pkgName} — Contact Us`
+                  ? `${modal.pkgName} — ${dict.pkgc_contact_suffix}`
                   : modal.kind === "vip"
-                    ? `${modal.pkgName} — Custom Quote`
-                    : "Build Your Own Plan — Quote Request"}
+                    ? `${modal.pkgName} — ${dict.pkgc_custom_quote}`
+                    : dict.pkgc_byo_quote_request}
               </div>
               <button className="modal-close" onClick={() => setModal(null)}>
                 ×
@@ -1051,45 +1052,40 @@ export default function PackagesClient({
               <div className="modal-summary">{modalSummaryRows()}</div>
               {modal.kind === "quote" && accom && (
                 <div className="modal-note">
-                  🏨 <strong>Note on accommodation:</strong> Hotel availability and pricing will be
-                  confirmed within 24 hours. Your final quote will include the hotel cost once we check
-                  with our partners.
+                  {dict.pkgc_note_accom}
                 </div>
               )}
               {modal.kind === "vip" && (
                 <div className="modal-note">
-                  ✨ This is a <strong>fully customized</strong> experience. Our team will reach out
-                  within a few hours to discuss your preferences, itinerary, and provide a tailored
-                  quote just for you.
+                  {dict.pkgc_note_vip}
                 </div>
               )}
               {modal.kind === "byo-result" && (
                 <div className="modal-note">
-                  ✨ This is a <strong>fully customized</strong> plan. Our team will reach out shortly
-                  to confirm details, logistics, and provide your tailored quote.
+                  {dict.pkgc_note_byo}
                 </div>
               )}
               {modal.kind !== "byo-result" && (
                 <>
-                  <label className="modal-comment-label">Anything else we should know?</label>
+                  <label className="modal-comment-label">{dict.pkgc_anything_else}</label>
                   <textarea
                     className="modal-comment"
                     value={modalComment}
                     onChange={(e) => setModalComment(e.target.value)}
-                    placeholder="Ask a question, tell us about a special occasion, dietary needs, etc. (optional)"
+                    placeholder={dict.pkgc_anything_else_ph}
                   />
                 </>
               )}
               <div className="modal-buttons">
                 <a className="modal-wa-btn" href={links.wa} target="_blank" rel="noopener noreferrer">
-                  {WA_ICON} Send via WhatsApp
+                  {WA_ICON} {dict.pkgc_send_wa}
                 </a>
                 <a className="modal-email-btn" href={links.email}>
-                  ✉️ Send via Email
+                  {dict.pkgc_send_email}
                 </a>
               </div>
               <div className="modal-cancel" onClick={() => setModal(null)}>
-                ← Go back
+                {dict.pkgc_go_back}
               </div>
             </div>
           </div>
@@ -1107,10 +1103,9 @@ export default function PackagesClient({
           <div className="byo-modal">
             <div className="byo-modal-head">
               <div className="byo-modal-title-wrap">
-                <div className="byo-modal-title">Build Your Own Plan</div>
+                <div className="byo-modal-title">{dict.pkgc_byo_modal_title}</div>
                 <div className="byo-modal-sub">
-                  Share your trip details and we&apos;ll design a fully custom itinerary and quote —
-                  just for you.
+                  {dict.pkgc_byo_modal_sub}
                 </div>
               </div>
               <button className="modal-close" onClick={() => setByoOpen(false)}>
@@ -1119,34 +1114,34 @@ export default function PackagesClient({
             </div>
             <div className="byo-modal-body">
               <div className="byo-controls">
-                <div className="byo-controls-title">Your Trip Details</div>
+                <div className="byo-controls-title">{dict.pkgc_your_trip_details}</div>
                 <div className="byo-ctrl-row">
                   <div className="input-group">
-                    <label>Check-in</label>
+                    <label>{dict.pkgc_checkin}</label>
                     <input type="date" value={checkin} onChange={(e) => setCheckin(e.target.value)} />
                   </div>
                   <div className="input-group">
-                    <label>Check-out</label>
+                    <label>{dict.pkgc_checkout}</label>
                     <input type="date" value={checkout} onChange={(e) => setCheckout(e.target.value)} />
                   </div>
                 </div>
                 <div className="byo-ctrl-row">
                   {counters}
                   <div className="accom-toggle" style={{ flex: 1 }}>
-                    <label>Accommodation</label>
+                    <label>{dict.pkgc_accommodation}</label>
                     <div className="toggle-row">
                       <button className={`toggle-btn${accom ? " active" : ""}`} onClick={() => setAccom(true)}>
-                        Yes
+                        {dict.pkgc_yes}
                       </button>
                       <button className={`toggle-btn${!accom ? " active" : ""}`} onClick={() => setAccom(false)}>
-                        No
+                        {dict.pkgc_no}
                       </button>
                     </div>
                   </div>
                 </div>
                 {kidsAgesBlock}
                 <div className={`accom-options-bar accom-options-inline${accom ? " show" : ""}`}>
-                  <span className="accom-options-label">Preferred stay:</span>
+                  <span className="accom-options-label">{dict.pkgc_preferred_stay}</span>
                   {accomPills}
                 </div>
                 <button
@@ -1154,13 +1149,12 @@ export default function PackagesClient({
                   onClick={() => setByoAddonsOpen((v) => !v)}
                   style={{ margin: 0, width: "100%" }}
                 >
-                  <span className="addons-toggle-label">➕ Interested in any activities? Tap to browse</span>
+                  <span className="addons-toggle-label">{dict.pkgc_byo_browse}</span>
                   <span className="addons-toggle-icon">+</span>
                 </button>
                 <div className={`addons-panel${byoAddonsOpen ? " open" : ""}`} style={{ padding: byoAddonsOpen ? "12px 0 0" : 0, borderTop: "none", background: "transparent" }}>
                   <div className="addon-note">
-                    Select anything that catches your eye — we&apos;ll include exact pricing in your
-                    custom quote.
+                    {dict.pkgc_byo_addon_note}
                   </div>
                   {activities.map((act) => {
                     const selected = byoAddons.includes(act.name);
@@ -1184,7 +1178,7 @@ export default function PackagesClient({
                           </span>
                         </span>
                         {act.price === null ? (
-                          <span className="addon-onreq">On Request</span>
+                          <span className="addon-onreq">{dict.pkgc_on_request}</span>
                         ) : (
                           <span className="addon-item-price">
                             {format(act.price)}{act.unit}
@@ -1195,15 +1189,15 @@ export default function PackagesClient({
                   })}
                 </div>
               </div>
-              <label className="modal-comment-label">What are you dreaming of?</label>
+              <label className="modal-comment-label">{dict.pkgc_dreaming_label}</label>
               <textarea
                 className="modal-comment"
                 value={byoComment}
                 onChange={(e) => setByoComment(e.target.value)}
-                placeholder="Tell us what you'd love to do — ruins, beaches, adventure, relaxation, a special celebration..."
+                placeholder={dict.pkgc_dreaming_ph}
               />
               <button className="byo-continue-btn" onClick={submitByo}>
-                Get in Touch to Build My Plan →
+                {dict.pkgc_byo_continue}
               </button>
             </div>
           </div>

@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+// Order-specific and noindex — render on demand (never statically prebuilt).
+export const dynamic = "force-dynamic";
+
 async function markPaid(orderId: string) {
   const supabase = createAdminClient();
   const { data } = await supabase

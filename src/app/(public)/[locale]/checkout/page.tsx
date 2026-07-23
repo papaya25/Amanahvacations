@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import CheckoutClient from "./CheckoutClient";
 import { getSavedTransfers } from "@/lib/content/addons";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -9,9 +11,22 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function CheckoutPage() {
+// Session- and cart-specific and noindex — render on demand.
+export const dynamic = "force-dynamic";
+
+export default async function CheckoutPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   // Admin can switch the airport-transfer add-on off; default is on.
-  const [transfers, user] = await Promise.all([getSavedTransfers(), getSessionUser()]);
+  const [transfers, user, dict] = await Promise.all([
+    getSavedTransfers(),
+    getSessionUser(),
+    getDictionary(locale),
+  ]);
   const transferEnabled = transfers?.enabled !== false;
   return (
     <main className="min-h-[70vh] bg-cream">
@@ -19,10 +34,10 @@ export default async function CheckoutPage() {
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
             <span aria-hidden className="h-[1.5px] w-[26px] bg-terracotta" />
-            Checkout
+            {dict.co_page_eyebrow}
           </div>
           <h1 className="font-serif text-[clamp(30px,4vw,48px)] font-semibold leading-[1.02] tracking-[-1px] text-ink">
-            Almost <em className="italic text-forest">there</em>
+            {dict.co_page_title_1} <em className="italic text-forest">{dict.co_page_title_em}</em>
           </h1>
         </div>
         <CheckoutClient

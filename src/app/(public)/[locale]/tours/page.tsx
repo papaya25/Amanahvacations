@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat } from "next/font/google";
 import ToursClient from "./ToursClient";
+import { TOURS, type Tour } from "./data";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
@@ -124,6 +125,28 @@ export default async function ToursPage({
     locale
   );
 
+  // Translate the built-in tour list for display (names, subtitles, durations,
+  // descriptions and itinerary stop labels). The `key` is preserved so
+  // server-side price verification still matches by tour_key.
+  const defaultTours: Tour[] | undefined =
+    locale === "en"
+      ? undefined
+      : await Promise.all(
+          TOURS.map(async (t) => {
+            const flat = await translateMany(
+              [t.name, t.sub, t.dur, t.desc, ...t.stops.flatMap((s) => [s[0], s[1], s[2]])],
+              locale
+            );
+            let i = 0;
+            const name = flat[i++];
+            const sub = flat[i++];
+            const dur = flat[i++];
+            const desc = flat[i++];
+            const stops = t.stops.map((): [string, string, string] => [flat[i++], flat[i++], flat[i++]]);
+            return { ...t, name, sub, dur, desc, stops };
+          })
+        );
+
   return (
     <main className={caveat.variable}>
       <JsonLd
@@ -145,7 +168,7 @@ export default async function ToursPage({
           faqSchema(faqs),
         ]}
       />
-      <ToursClient dbTours={translatedTours ?? undefined} />
+      <ToursClient dbTours={translatedTours ?? undefined} defaultTours={defaultTours} />
       <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </main>
   );

@@ -10,125 +10,12 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
 import type { AdminTour as AdminTourInput } from "@/lib/content/tours";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
+import { TOURS, type Tour, type Stop } from "./data";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
-
-type Stop = [string, string, string];
-type Tour = {
-  key: string | null;
-  name: string;
-  sub: string;
-  dur: string;
-  price: number | null;
-  /** Optional per-person sale price (MXN). If set below `price`, the card shows
-      the original struck through and this offer price highlighted. */
-  offer?: number;
-  img: string;
-  desc: string;
-  stops: Stop[];
-  onreq?: boolean;
-};
-
-export const TOURS: Tour[] = [
-  {
-    key: "akumalcenotes", name: "Cenotes, Coral & Sea Turtles", sub: "Dos Ojos Cenote + Akumal Snorkeling",
-    dur: "6 hours", price: 2350, img: "/images/tours/akumalcenotes.jpg",
-    desc: "Swim through the sacred chambers of Cenote Dos Ojos, then snorkel alongside sea turtles in Akumal Bay.",
-    stops: [
-      ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup from your hotel or villa. Cold water and refreshments on board."],
-      ["1–2 Hours", "Cenote Dos Ojos", "Swim through crystal-clear water beneath ancient limestone formations."],
-      ["Midday · Boat Snorkel", "Akumal Bay", "A small boat out to snorkel among sea turtles, tropical fish, and living coral."],
-      ["Afternoon · At Leisure", "Akumal Beach", "Free time on the sand to rinse off and relax before the drive back."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: "tulumcenotes", name: "Cenotes & the Ruins of Tulum", sub: "Dos Ojos Cenote + Tulum Archaeological Site",
-    dur: "6–8 hours", price: 3700, img: "/images/tours/tulumcenotes.jpg",
-    desc: "A private guided tour of the only Maya city built on the coast, plus a swim in Cenote Dos Ojos.",
-    stops: [
-      ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup from your hotel or villa."],
-      ["1–2 Hours", "Cenote Dos Ojos", "A refreshing swim in one of the region's most beautiful cenotes."],
-      ["Guided Tour", "Tulum Archaeological Site", "Explore the clifftop Maya ruins above the Caribbean with your private guide."],
-      ["Afternoon · Your Choice", "City Tour or Playa Ruinas", "Relax on the beach below the ruins, or a short city tour."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: "cobacenotes", name: "Coba Ruins & Jungle Cenotes", sub: "Coba Zone + Choo-Ha & Tankach-Ha",
-    dur: "Full day", price: 3900, img: "/images/tours/cobacenotes.jpg",
-    desc: "Climb into the jungle to Nohoch Mul, the tallest pyramid on the Yucatán Peninsula, then cool off in two hidden cenotes.",
-    stops: [
-      ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup from your hotel or villa."],
-      ["Guided Tour", "Coba Archaeological Zone", "Explore the jungle-wrapped ruins and the towering Nohoch Mul pyramid."],
-      ["Swim & Explore", "Cenote Choo-Ha", "Cool off in a stunning underground cenote."],
-      ["Swim & Explore", "Cenote Tankach-Ha", "A second hidden cenote, deep in the jungle."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: "cozumel", name: "Cozumel Private Boat Snorkeling", sub: "El Cielo, El Cielito, Colombia & Lever Reefs",
-    dur: "Approx. 4 hours", price: 4600, img: "/images/tours/cozumel.jpg",
-    desc: "A private boat to four of Cozumel's best reefs, with fresh ceviche and drinks on board.",
-    stops: [
-      ["Morning · Private Pickup", "Playa del Carmen to Cozumel", "Pickup and ferry crossing to the island."],
-      ["Snorkel Stop", "El Cielo & El Cielito Reefs", "Crystal-clear shallow reefs famous for starfish."],
-      ["Snorkel Stop", "Colombia & Lever Reefs", "Vibrant coral gardens teeming with life."],
-      ["Onboard", "Snacks & Drinks", "Fresh ceviche, snacks and drinks on your private boat."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: "akumaltulum", name: "Tulum & Akumal", sub: "Dos Ojos + Tulum Ruins + Akumal Snorkeling",
-    dur: "Full day", price: 5850, img: "/images/tours/akumaltulum.jpg",
-    desc: "The best of both worlds — ancient ruins, a sacred cenote, and sea turtles in one action-packed day.",
-    stops: [
-      ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup."],
-      ["Swim & Explore", "Cenote Dos Ojos", "A refreshing swim beneath limestone formations."],
-      ["Guided Tour", "Tulum Archaeological Site", "The clifftop Maya ruins above the Caribbean."],
-      ["Boat Snorkel", "Akumal Bay", "Snorkel among sea turtles and living coral."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: "chichen", name: "Chichen Itza & Valladolid", sub: "New 7 Wonders + Suytun & Samulá Cenotes",
-    dur: "Full day", price: 6600, offer: 5500, img: "/images/tours/chichen.jpg",
-    desc: "A wonder of the world, a colonial pueblo mágico, and two of the Yucatán's most beautiful cenotes.",
-    stops: [
-      ["Early Morning · Pickup", "Playa del Carmen", "An early start for a full day of wonders."],
-      ["Quick Stop", "Valladolid", "A charming colonial pueblo mágico."],
-      ["Swim & Explore", "Cenote Suytun", "The famous cenote with its iconic light beam."],
-      ["Guided Tour", "Chichen Itza", "A private guided tour of the Wonder of the World."],
-      ["Swim & Explore", "Cenote Samulá", "A beautiful cave cenote to end the day."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: "rutacenotes", name: "Ruta de Cenotes", sub: "4 Cenotes + Diving Platform + Zip Line",
-    dur: "Half day", price: 2900, img: "/images/tours/rutacenotes.jpg",
-    desc: "Two open-air and two underground cenotes, a diving platform, and a water zip line in one jungle park.",
-    stops: [
-      ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup."],
-      ["Swim & Explore", "Two Open-Air Cenotes", "Sunlit cenotes surrounded by jungle."],
-      ["Swim & Explore", "Two Underground Cenotes", "Mysterious cave cenotes."],
-      ["Adventure", "Diving Platform & Zip Line", "A diving platform and a water zip line over a cenote."],
-      ["Return", "Back to Playa del Carmen", ""],
-    ],
-  },
-  {
-    key: null, name: "Holbox Island Overnight Escape", sub: "2 Days, 1 Night",
-    dur: "Overnight", price: null, onreq: true, img: "/images/tours/holbox.jpg",
-    desc: "A car-free island of flamingos, bioluminescent water, and untouched beaches. Arranged personally with you.",
-    stops: [],
-  },
-  {
-    key: null, name: "Isla Contoy National Park", sub: "Ixlaché Reef + Isla Contoy + Isla Mujeres",
-    dur: "Full day", price: null, onreq: true, img: "/images/tours/contoy.jpg",
-    desc: "A protected bird sanctuary limited to 200 visitors a day — the wildest corner of the Mexican Caribbean. Arranged personally with you.",
-    stops: [],
-  },
-];
 
 const WA_ICON = (
   <svg width="19" height="19" viewBox="0 0 24 24" fill="white" aria-hidden>
@@ -139,13 +26,22 @@ const WA_ICON = (
 const fmtDate = (v: string) =>
   v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Not selected";
 
-export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] }) {
+export default function ToursClient({
+  dbTours,
+  defaultTours,
+}: {
+  dbTours?: AdminTourInput[];
+  /** Locale-translated copy of the built-in TOURS list, used for display when
+      the admin hasn't saved custom tours. Falls back to English TOURS. */
+  defaultTours?: Tour[];
+}) {
+  const BUILTIN = defaultTours ?? TOURS;
   /* Admin-managed content from the DB overrides the built-in list; card
      descriptions (not editable in admin yet) carry over from defaults by key. */
   const TOURS_EFFECTIVE: Tour[] = useMemo(() => {
-    if (!dbTours?.length) return TOURS;
+    if (!dbTours?.length) return BUILTIN;
     const descByKey: Record<string, string> = {};
-    TOURS.forEach((t) => {
+    BUILTIN.forEach((t) => {
       if (t.key) descByKey[t.key] = t.desc;
     });
     return dbTours.map((t) => ({
@@ -160,10 +56,11 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
       stops: t.stops.map((s): Stop => [s.time, s.place, s.desc]),
       onreq: t.onreq,
     }));
-  }, [dbTours]);
+  }, [dbTours, BUILTIN]);
   const router = useRouter();
   const { add } = useCart();
   const { format } = useCurrency();
+  const { locale, dict } = useI18n();
   const [people, setPeople] = useState<Record<number, number>>({});
   const [dates, setDates] = useState<Record<number, string>>({});
   const [openItin, setOpenItin] = useState<Record<number, boolean>>({});
@@ -191,7 +88,7 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
     const t = TOURS_EFFECTIVE[idx];
     const date = dates[idx];
     if (!date) {
-      showToast("Please choose a tour date first.");
+      showToast(dict.tourc_toast_date);
       return;
     }
     const ppl = people[idx] || 1;
@@ -220,7 +117,7 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
         date: fmtDate(date),
       },
     });
-    router.push("/checkout");
+    router.push(localizeHref("/checkout", locale));
   };
 
   const contactLinks = useMemo(() => {
@@ -240,14 +137,10 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
   return (
     <div id="amanah-tours">
       <div className="at-header">
-        <div className="at-eyebrow">Trust in Adventure.</div>
-        <h1>Our Tours</h1>
+        <div className="at-eyebrow">{dict.footer_tagline}.</div>
+        <h1>{dict.tourc_title}</h1>
         <div className="at-rule" />
-        <p>
-          Private, guided day adventures across the Riviera Maya and Yucatán — pick your date and
-          group size, then choose the tour that calls to you. Every tour is fully private, just for
-          your group.
-        </p>
+        <p>{dict.tourc_intro}</p>
       </div>
 
       <div className="at-wrap">
@@ -264,7 +157,7 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={t.img} alt={t.name} loading="lazy" />
                   <div className="at-badge-duration">{t.dur}</div>
-                  {t.onreq && <div className="at-badge-onreq">On Request</div>}
+                  {t.onreq && <div className="at-badge-onreq">{dict.tourc_on_request}</div>}
                 </div>
                 <div className="at-card-body">
                   <div className="at-card-name">{t.name}</div>
@@ -278,7 +171,7 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                         className={`at-itin-toggle${openItin[idx] ? " open" : ""}`}
                         onClick={() => setOpenItin((p) => ({ ...p, [idx]: !p[idx] }))}
                       >
-                        See itinerary <span className="at-chev">▾</span>
+                        {dict.tourc_see_itinerary} <span className="at-chev">▾</span>
                       </button>
                       <div className={`at-itin${openItin[idx] ? " open" : ""}`}>
                         <div className="at-itin-inner">
@@ -305,10 +198,10 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                     {t.onreq ? (
                       <>
                         <div className="at-price-row">
-                          <div className="at-label">Pricing</div>
+                          <div className="at-label">{dict.tourc_pricing}</div>
                           <div className="at-amount">
                             <span className="at-total" style={{ color: "var(--at-clay)" }}>
-                              On Request
+                              {dict.tourc_on_request}
                             </span>
                           </div>
                         </div>
@@ -320,17 +213,17 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                             setModalTour(t);
                           }}
                         >
-                          Request This Tour
+                          {dict.tourc_request_tour}
                         </button>
                         <div className="at-private-note">
-                          🔒 Private for your group · arranged personally with you
+                          🔒 {dict.tourc_private_onreq}
                         </div>
                       </>
                     ) : (
                       <>
                         <div className="at-field-row">
                           <div className="at-field">
-                            <label htmlFor={`at-date-${idx}`}>Date</label>
+                            <label htmlFor={`at-date-${idx}`}>{dict.tourc_date}</label>
                             <input
                               id={`at-date-${idx}`}
                               type="date"
@@ -341,10 +234,10 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                           </div>
                           <div className="at-field">
                             <label>
-                              People{" "}
+                              {dict.tourc_people}{" "}
                               <span
                                 className="at-info"
-                                data-tip="For groups of more than 6, contact us to arrange your private tour."
+                                data-tip={dict.tourc_people_tip}
                               >
                                 i
                               </span>
@@ -357,7 +250,7 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                           </div>
                         </div>
                         <div className="at-price-row">
-                          <div className="at-label">Total</div>
+                          <div className="at-label">{dict.tourc_total}</div>
                           <div className="at-amount">
                             {hasOffer ? (
                               <span className="at-total">
@@ -371,10 +264,10 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
                           </div>
                         </div>
                         <button type="button" className="at-buy-btn" onClick={() => buy(idx)}>
-                          Buy Now
+                          {dict.tourc_buy_now}
                         </button>
                         <div className="at-private-note">
-                          🔒 Just your group — never combined with other people
+                          🔒 {dict.tourc_private_note}
                         </div>
                       </>
                     )}
@@ -396,7 +289,7 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
         {modalTour && (
           <div className="at-modal">
             <div className="at-modal-head">
-              <div className="at-modal-title">{modalTour.name} — Request</div>
+              <div className="at-modal-title">{modalTour.name} — {dict.tourc_request_suffix}</div>
               <button className="at-modal-x" onClick={() => setModalTour(null)}>
                 ×
               </button>
@@ -404,30 +297,29 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
             <div className="at-modal-body">
               <div className="at-sum">
                 <div className="at-sum-row">
-                  <span className="l">Tour</span>
+                  <span className="l">{dict.tourc_modal_tour}</span>
                   <span className="v">{modalTour.name}</span>
                 </div>
                 <div className="at-sum-row">
-                  <span className="l">Pricing</span>
-                  <span className="v">On Request</span>
+                  <span className="l">{dict.tourc_pricing}</span>
+                  <span className="v">{dict.tourc_on_request}</span>
                 </div>
               </div>
               <div className="at-modal-note">
-                ✨ This tour is arranged personally. Our team will reach out shortly to confirm
-                availability, dates, and details.
+                {dict.tourc_modal_note}
               </div>
               <textarea
                 className="at-modal-comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Any questions or special requests? (optional)"
+                placeholder={dict.tourc_comment_ph}
               />
               <div className="at-modal-btns">
                 <a className="at-wa" href={contactLinks.wa} target="_blank" rel="noopener noreferrer">
-                  {WA_ICON} Send via WhatsApp
+                  {WA_ICON} {dict.tourc_send_wa}
                 </a>
                 <a className="at-email" href={contactLinks.email}>
-                  ✉️ Send via Email
+                  ✉️ {dict.tourc_send_email}
                 </a>
               </div>
             </div>
