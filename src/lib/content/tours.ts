@@ -25,3 +25,29 @@ export async function getSavedTours(): Promise<AdminTour[] | null> {
   if (!saved?.tours?.length) return null;
   return saved.tours.filter((t) => !t.hidden);
 }
+
+/* Built-in per-person prices (MXN), mirroring the public tour list — used to
+   verify checkout amounts server-side when the admin hasn't saved tours yet. */
+const DEFAULT_TOUR_PRICING: Record<string, { price: number; offer?: number }> = {
+  akumalcenotes: { price: 2350 },
+  tulumcenotes: { price: 3700 },
+  cobacenotes: { price: 3900 },
+  cozumel: { price: 4600 },
+  akumaltulum: { price: 5850 },
+  chichen: { price: 6600, offer: 5500 },
+  rutacenotes: { price: 2900 },
+};
+
+/** Authoritative per-person price for a tour (offer wins when valid), or null
+    for on-request/unknown tours (those aren't charged online). */
+export async function getTourUnitPrice(key: string): Promise<number | null> {
+  const saved = await getSavedTours();
+  if (saved) {
+    const t = saved.find((x) => x.key === key);
+    if (!t || t.onreq || t.price <= 0) return null;
+    return t.offer > 0 && t.offer < t.price ? t.offer : t.price;
+  }
+  const d = DEFAULT_TOUR_PRICING[key];
+  if (!d) return null;
+  return d.offer && d.offer < d.price ? d.offer : d.price;
+}

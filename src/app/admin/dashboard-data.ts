@@ -82,6 +82,52 @@ export function extractBookingEvents(orders: OrderRow[]): BookingEvent[] {
   return events;
 }
 
+export type VisitStats = {
+  today: number;
+  last7: number;
+  total: number;
+  countries: { code: string; count: number }[]; // last 30 days, top first
+};
+
+export async function getVisitStats(): Promise<VisitStats> {
+  const supabase = createAdminClient();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const since7 = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+
+  const [todayRes, weekRes, totalRes, countryRes] = await Promise.all([
+    supabase.from("visits").select("id", { count: "exact", head: true }).eq("day", todayKey),
+    supabase.from("visits").select("id", { count: "exact", head: true }).gte("day", since7),
+    supabase.from("visits").select("id", { count: "exact", head: true }),
+    supabase.from("visits").select("country").gte("day", since30).limit(5000),
+  ]);
+
+  const tally = new Map<string, number>();
+  for (const row of (countryRes.data as { country: string | null }[] | null) ?? []) {
+    const code = row.country ?? "??";
+    tally.set(code, (tally.get(code) ?? 0) + 1);
+  }
+  const countries = [...tally.entries()]
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  return {
+    today: todayRes.count ?? 0,
+    last7: weekRes.count ?? 0,
+    total: totalRes.count ?? 0,
+    countries,
+  };
+}
+
+/** ISO-2 country code → flag emoji ("MX" → 🇲🇽). */
+export function flagEmoji(code: string): string {
+  if (!/^[A-Z]{2}$/i.test(code)) return "🌐";
+  return String.fromCodePoint(
+    ...code.toUpperCase().split("").map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+  );
+}
+
 export const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
 
 /** True for orders that count as sales (everything except cancelled). */

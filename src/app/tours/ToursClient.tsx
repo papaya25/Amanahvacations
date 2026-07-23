@@ -195,7 +195,10 @@ export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] })
       return;
     }
     const ppl = people[idx] || 1;
-    const total = (t.price as number) * ppl;
+    // Charge the offer price when a valid sale is on (matches what the card shows).
+    const unit =
+      t.price != null && t.offer != null && t.offer < t.price ? t.offer : (t.price as number);
+    const total = unit * ppl;
     add({
       kind: "tour",
       title: t.name,

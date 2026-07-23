@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { PageHead } from "./AdminUI";
-import { extractBookingEvents, fmtMXN, getAllOrders, getCustomers, isSale } from "./dashboard-data";
+import {
+  extractBookingEvents,
+  flagEmoji,
+  fmtMXN,
+  getAllOrders,
+  getCustomers,
+  getVisitStats,
+  isSale,
+} from "./dashboard-data";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +50,11 @@ export default async function AdminDashboard({
   searchParams: Promise<{ m?: string }>;
 }) {
   const { m } = await searchParams;
-  const [orders, customers] = await Promise.all([getAllOrders(), getCustomers()]);
+  const [orders, customers, visits] = await Promise.all([
+    getAllOrders(),
+    getCustomers(),
+    getVisitStats(),
+  ]);
 
   const sales = orders.filter(isSale);
   const paid = orders.filter((o) => o.status.startsWith("Paid"));
@@ -88,8 +100,30 @@ export default async function AdminDashboard({
         <StatCard label="Paid orders" value={String(paid.length)} />
         <StatCard label="Avg order" value={sales.length ? fmtMXN(avg) : "—"} />
         <StatCard label="Customers" value={String(customers.length)} sub="registered accounts" />
-        <StatCard label="Visitors" value="—" sub="activates at deploy (analytics)" />
+        <StatCard
+          label="Visitors today"
+          value={String(visits.today)}
+          sub={`${visits.last7} this week · ${visits.total} total`}
+        />
       </div>
+
+      {/* Where visitors come from */}
+      {visits.countries.length > 0 && (
+        <div className="mt-4 rounded-[16px] border border-sand bg-white px-5 py-4">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[1.5px] text-sage">
+            Visitors by country — last 30 days
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13.5px] text-ink">
+            {visits.countries.map((c) => (
+              <span key={c.code} className="inline-flex items-center gap-1.5">
+                <span className="text-[17px]">{flagEmoji(c.code)}</span>
+                <span className="font-semibold">{c.count.toLocaleString("en-US")}</span>
+                <span className="text-sage">{c.code === "??" ? "unknown" : c.code}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Calendar */}
       <div className="mt-6 rounded-[18px] border border-sand bg-white p-5">

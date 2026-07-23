@@ -1,11 +1,10 @@
 "use server";
 
-/* Places an order: validates the payload, re-validates the promo code and
-   recomputes the discount on the server (the client's numbers are display
-   only), and stores the order in the private `orders` table. Guest checkout —
-   no login required. Full price enforcement per item happens when payments
-   land (the charge amount will be computed server-side); until then items are
-   quotes confirmed manually by the team. */
+/* Places an order: validates the payload, recomputes tour prices and the promo
+   discount on the server (the client's numbers are display only), and stores
+   the order in the private `orders` table. Guest checkout — no login required.
+   Remaining before LIVE payments: server-side recomputation of the package
+   configurator's totals. */
 
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -15,6 +14,7 @@ import { createPayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { createMercadoPagoPreference, mercadoPagoConfigured } from "@/lib/mercadopago";
 import { notifyNewOrder } from "@/lib/orderEmails";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
+import { getTourUnitPrice } from "@/lib/content/tours";
 import type { CartItem } from "@/lib/cart";
 
 export type PlaceOrderInput = {
@@ -53,9 +53,22 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     if (!input.consent)
       return { ok: false, error: "Please accept the terms to place your booking." };
 
-    // Server-side totals: subtotal from line totals, discount recomputed from
-    // the promo table (never trusted from the client).
-    const subtotal = input.items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+    // Server-side pricing: tour line totals are recomputed from OUR price list
+    // (client numbers are display-only). Package-configurator totals are still
+    // client-sent for now and are re-verified before live payments go on.
+    const items = await Promise.all(
+      input.items.map(async (it) => {
+        if (it.kind === "tour" && it.meta?.tour_key) {
+          const unit = await getTourUnitPrice(it.meta.tour_key);
+          if (unit !== null) return { ...it, total: unit * Math.max(1, it.people || 1) };
+        }
+        return it;
+      })
+    );
+
+    // Server-side totals: subtotal from (verified) line totals, discount
+    // recomputed from the promo table (never trusted from the client).
+    const subtotal = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
     let discount = 0;
     let discountLabel: string | undefined;
     let promoCode: string | undefined;
@@ -90,7 +103,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         id,
         user_id: sessionUser?.id ?? null,
         status: onlinePayment ? "Pending payment" : "Pending confirmation",
-        items: input.items,
+        items,
         subtotal,
         discount,
         discount_label: discountLabel ?? null,
@@ -115,7 +128,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     // Notify customer + Amanah (best-effort; never blocks the booking).
     await notifyNewOrder({
       id: orderId,
-      items: input.items,
+      items,
       subtotal,
       discount,
       total,
@@ -146,7 +159,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         checkoutUrl = await createMercadoPagoPreference(orderId, total, origin, input.email.trim());
       } else {
         const stripe = getStripe();
-        const itemSummary = input.items
+        const itemSummary = items
           .map((it) => `${it.title}${it.people ? ` (${it.people}p)` : ""}`)
           .join(" · ")
           .slice(0, 480);

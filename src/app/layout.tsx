@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import SiteFrame from "@/components/SiteFrame";
+import VisitTracker from "@/components/VisitTracker";
 import JsonLd from "@/components/JsonLd";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { CartProvider } from "@/lib/cart";
@@ -70,6 +71,7 @@ export default async function RootLayout({
         className={`${cormorant.variable} ${outfit.variable} antialiased`}
       >
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
+        <VisitTracker />
         <CurrencyProvider settings={currencySettings}>
           <CartProvider>
             <SiteFrame contact={contact}>{children}</SiteFrame>
