@@ -51,6 +51,40 @@ async function storeCached(
   }
 }
 
+/** Extract the first complete, balanced JSON array from a model response,
+    ignoring any prose or extra characters before/after it (or a second array).
+    Bracket depth is tracked with string/escape awareness so brackets inside
+    translated strings don't confuse it. Returns null if no array is found. */
+function extractJsonArray(text: string): string | null {
+  const start = text.indexOf("[");
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (esc) {
+      esc = false;
+      continue;
+    }
+    if (c === "\\") {
+      esc = true;
+      continue;
+    }
+    if (c === '"') {
+      inStr = !inStr;
+      continue;
+    }
+    if (inStr) continue;
+    if (c === "[") depth++;
+    else if (c === "]") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
 /** Ask Claude to translate a batch of strings in one call (cheap + fast:
     Haiku 4.5 is plenty for short UI/content strings). Returns null on any
     failure so the caller can fall back to English. */
@@ -80,9 +114,9 @@ async function translateBatch(texts: string[], locale: Locale): Promise<string[]
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)
       .join("");
-    const match = text.match(/\[[\s\S]*\]/);
-    if (!match) return null;
-    const parsed = JSON.parse(match[0]);
+    const jsonArray = extractJsonArray(text);
+    if (!jsonArray) return null;
+    const parsed = JSON.parse(jsonArray);
     if (!Array.isArray(parsed) || parsed.length !== texts.length) return null;
     return parsed.map((s) => String(s));
   } catch (e) {
