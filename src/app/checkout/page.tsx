@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import CheckoutClient from "./CheckoutClient";
+import { getSavedTransfers } from "@/lib/content/addons";
+import { getSessionUser } from "@/lib/supabase/serverAuth";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -7,7 +9,10 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+  // Admin can switch the airport-transfer add-on off; default is on.
+  const [transfers, user] = await Promise.all([getSavedTransfers(), getSessionUser()]);
+  const transferEnabled = transfers?.enabled !== false;
   return (
     <main className="min-h-[70vh] bg-cream">
       <div className="mx-auto max-w-[1100px] px-5 py-[clamp(32px,4vw,64px)] lg:px-8">
@@ -20,7 +25,11 @@ export default function CheckoutPage() {
             Almost <em className="italic text-forest">there</em>
           </h1>
         </div>
-        <CheckoutClient />
+        <CheckoutClient
+          transferEnabled={transferEnabled}
+          initialName={(user?.user_metadata?.name as string) || ""}
+          initialEmail={user?.email ?? ""}
+        />
       </div>
     </main>
   );

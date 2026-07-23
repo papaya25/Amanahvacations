@@ -3,6 +3,9 @@ import PackagesClient from "./PackagesClient";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
+import { getPublicPackages } from "@/lib/content/packages";
+import { getFaqs } from "@/lib/content/faq";
+import { getSavedAddons } from "@/lib/content/addons";
 import "./packages.css";
 
 export const metadata: Metadata = {
@@ -29,7 +32,8 @@ export const metadata: Metadata = {
   },
 };
 
-const PKG_SUMMARY = [
+// Fallback summary for the structured data if the backend isn't reachable.
+const PKG_SUMMARY_FALLBACK = [
   { name: "The Basics — Essential Riviera Maya", price: 4600, img: "/images/pkg/basic.jpg" },
   { name: "Family Tour — Kid-Friendly Riviera Maya", price: 8200, img: "/images/pkg/family.jpg" },
   { name: "Water Lovers — Beaches, Reefs & Cenotes", price: 7600, img: "/images/pkg/water.jpg" },
@@ -60,7 +64,26 @@ const FAQS = [
   },
 ];
 
-export default function PackagesPage() {
+export default async function PackagesPage() {
+  const [dbPackages, faqs, dbAddons] = await Promise.all([
+    getPublicPackages(),
+    getFaqs("packages", FAQS),
+    getSavedAddons(),
+  ]);
+
+  // Build the structured-data summary from live content when available (exclude
+  // "on request" packages priced at 0, e.g. VIP), else fall back to the static list.
+  const summary =
+    dbPackages && dbPackages.length
+      ? dbPackages
+          .filter((p) => p.price > 0)
+          .map((p) => ({
+            name: `${p.name} — ${p.tagline}`,
+            price: p.offer > 0 ? p.offer : p.price,
+            img: p.photo || "/images/pkg/honeymoon.jpg",
+          }))
+      : PKG_SUMMARY_FALLBACK;
+
   return (
     <>
       <JsonLd
@@ -69,8 +92,8 @@ export default function PackagesPage() {
             { name: "Home", path: "/" },
             { name: "Packages", path: "/packages" },
           ]),
-          itemListSchema(PKG_SUMMARY.map((p) => ({ name: p.name, url: "/packages" }))),
-          ...PKG_SUMMARY.map((p) =>
+          itemListSchema(summary.map((p) => ({ name: p.name, url: "/packages" }))),
+          ...summary.map((p) =>
             productOfferSchema({
               name: p.name,
               description: `${p.name} — a private Riviera Maya vacation package from Amanah Vacations.`,
@@ -79,11 +102,11 @@ export default function PackagesPage() {
               priceMXN: p.price,
             })
           ),
-          faqSchema(FAQS),
+          faqSchema(faqs),
         ]}
       />
-      <PackagesClient />
-      <Faq items={FAQS} heading="Packages — frequently asked questions" />
+      <PackagesClient dbPackages={dbPackages ?? undefined} dbAddons={dbAddons ?? undefined} />
+      <Faq items={faqs} heading="Packages — frequently asked questions" />
     </>
   );
 }

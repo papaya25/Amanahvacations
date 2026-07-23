@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar } from "../AdminUI";
 
 type Promo = { code: string; type: "pct" | "flat"; value: number; label: string; active: boolean };
@@ -13,7 +13,7 @@ const DEFAULT: { promos: Promo[] } = {
 };
 
 export default function PromosAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState("admin_promos", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState("admin_promos", DEFAULT);
   const setPromo = (i: number, k: keyof Promo, v: string | number | boolean) =>
     setValue({ ...value, promos: value.promos.map((p, j) => (j === i ? { ...p, [k]: v } : p)) });
   const add = () =>
@@ -81,7 +81,7 @@ export default function PromosAdmin() {
         </button>
       </Card>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { DESTINATIONS } from "@/data/destinations";
 import { Card, Field, ImagePicker, PageHead, SaveBar, TextArea } from "../AdminUI";
 
@@ -25,7 +25,7 @@ const blankAct = (): Act => ({
 });
 
 export default function ActivitiesAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState("admin_activities", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState("admin_activities", DEFAULT);
   const acts = value.activities;
   const patch = (i: number, p: Partial<Act>) =>
     setValue({ ...value, activities: acts.map((a, j) => (j === i ? { ...a, ...p } : a)) });
@@ -78,7 +78,7 @@ export default function ActivitiesAdmin() {
         ))}
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

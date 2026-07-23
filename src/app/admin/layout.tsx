@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AdminNav from "./AdminNav";
+import { logoutAdmin } from "../admin-login/actions";
 
 export const metadata: Metadata = {
   title: "Amanah Admin",
@@ -44,9 +45,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Image src="/images/logo.png" alt="" width={26} height={26} />
               <span className="font-serif text-[15px] font-semibold text-ink">Admin</span>
             </div>
-            <div className="ml-auto flex items-center gap-2 rounded-full bg-gold/15 px-3 py-1.5 text-[11px] font-semibold text-[#8a6a1e]">
-              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              Preview mode — edits save locally
+            <div className="ml-auto flex items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full bg-forest/10 px-3 py-1.5 text-[11px] font-semibold text-forest">
+                <span className="h-1.5 w-1.5 rounded-full bg-forest" />
+                Live — saves update your website
+              </div>
+              <form action={logoutAdmin}>
+                <button
+                  type="submit"
+                  className="rounded-full border border-sand px-3.5 py-1.5 text-[11px] font-semibold text-sage transition hover:border-terracotta hover:text-terracotta"
+                >
+                  Log out
+                </button>
+              </form>
             </div>
           </div>
 

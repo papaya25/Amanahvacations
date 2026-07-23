@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { DESTINATIONS } from "@/data/destinations";
+import { getEffectiveDestinations } from "@/lib/content/activities";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema, itemListSchema } from "@/lib/seo";
 
@@ -30,7 +30,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ActivitiesPage() {
+export default async function ActivitiesPage() {
+  const DESTINATIONS = await getEffectiveDestinations();
   return (
     <main className="bg-cream">
       <JsonLd

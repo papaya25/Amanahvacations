@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { DEFAULT_CONTACT, type ContactInfo } from "@/lib/content/contact";
 
 const EXPLORE = [
   { label: "Home", href: "/" },
@@ -19,39 +20,39 @@ const SUPPORT = [
   { label: "Liability Waiver", href: "/liability-waiver" },
 ];
 
-const SOCIALS = [
-  {
-    label: "Instagram",
-    href: "https://www.instagram.com/amanahvacations/",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <rect x="3" y="3" width="18" height="18" rx="5" />
-        <circle cx="12" cy="12" r="4" />
-        <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    label: "Facebook",
-    href: "https://www.facebook.com/profile.php?id=61591849591722",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5h1.3V4.9c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.1-3.2 3.3V11H9v3h2.3v7h2.2Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "TikTok",
-    href: "#",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M16.6 3c.4 2 1.7 3.4 3.9 3.6v2.7c-1.5.1-2.8-.4-3.9-1.2v5.6a5.6 5.6 0 1 1-5.6-5.6c.3 0 .7 0 1 .1v2.9a2.7 2.7 0 1 0 1.9 2.6V3h2.7Z" />
-      </svg>
-    ),
-  },
-];
+const SOCIAL_ICONS: Record<string, React.ReactNode> = {
+  instagram: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  facebook: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5h1.3V4.9c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.1-3.2 3.3V11H9v3h2.3v7h2.2Z" />
+    </svg>
+  ),
+  tiktok: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16.6 3c.4 2 1.7 3.4 3.9 3.6v2.7c-1.5.1-2.8-.4-3.9-1.2v5.6a5.6 5.6 0 1 1-5.6-5.6c.3 0 .7 0 1 .1v2.9a2.7 2.7 0 1 0 1.9 2.6V3h2.7Z" />
+    </svg>
+  ),
+  youtube: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12ZM9.8 15.3V8.7l6.2 3.3-6.2 3.3Z" />
+    </svg>
+  ),
+};
 
-export default function Footer() {
+export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: ContactInfo }) {
+  const socials = ([
+    ["Instagram", contact.instagram, SOCIAL_ICONS.instagram],
+    ["Facebook", contact.facebook, SOCIAL_ICONS.facebook],
+    ["TikTok", contact.tiktok, SOCIAL_ICONS.tiktok],
+    ["YouTube", contact.youtube, SOCIAL_ICONS.youtube],
+  ] as const).filter(([, href]) => href && href !== "#");
+
   return (
     <footer className="bg-night text-white">
       <div className="mx-auto max-w-[1320px] px-5 py-8 md:py-[clamp(48px,5vw,72px)] lg:px-8">
@@ -77,16 +78,16 @@ export default function Footer() {
               halal-friendly on request.
             </p>
             <div className="mt-4 flex gap-2.5 md:mt-6">
-              {SOCIALS.map((s) => (
+              {socials.map(([label, href, icon]) => (
                 <a
-                  key={s.label}
-                  href={s.href}
-                  aria-label={s.label}
+                  key={label}
+                  href={href}
+                  aria-label={label}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-gold hover:text-gold md:h-10 md:w-10"
                 >
-                  {s.icon}
+                  {icon}
                 </a>
               ))}
             </div>

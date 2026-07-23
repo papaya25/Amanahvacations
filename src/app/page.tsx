@@ -7,6 +7,8 @@ import DreamAdventure from "@/components/DreamAdventure";
 import Faq from "@/components/Faq";
 import JsonLd from "@/components/JsonLd";
 import { faqSchema } from "@/lib/seo";
+import { getHero } from "@/lib/content/hero";
+import { getFaqs } from "@/lib/content/faq";
 
 const FAQS = [
   {
@@ -31,17 +33,18 @@ const FAQS = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const [hero, faqs] = await Promise.all([getHero(), getFaqs("home", FAQS)]);
   return (
     <main>
-      <JsonLd data={faqSchema(FAQS)} />
-      <Hero />
+      <JsonLd data={faqSchema(faqs)} />
+      <Hero content={hero} />
       <PostcardDivider />
       <TripPicker />
       <Activities />
       <HowItWorks />
-      <DreamAdventure />
-      <Faq items={FAQS} heading="Planning your Riviera Maya trip" eyebrow="Questions & answers" dark />
+      <DreamAdventure title={hero.dreamTitle} text={hero.dreamText} />
+      <Faq items={faqs} heading="Planning your Riviera Maya trip" eyebrow="Questions & answers" dark />
     </main>
   );
 }

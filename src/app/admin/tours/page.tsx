@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { TOURS } from "@/app/tours/ToursClient";
 import { Card, Field, ImagePicker, PageHead, SaveBar } from "../AdminUI";
 
@@ -47,7 +47,7 @@ const blankTour = (): AdminTour => ({
 });
 
 export default function ToursAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState("admin_tours", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState("admin_tours", DEFAULT);
   const tours = value.tours;
   const patch = (i: number, p: Partial<AdminTour>) =>
     setValue({ ...value, tours: tours.map((t, j) => (j === i ? { ...t, ...p } : t)) });
@@ -176,7 +176,7 @@ export default function ToursAdmin() {
         ))}
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

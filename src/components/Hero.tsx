@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { DEFAULT_HERO, type HeroContent } from "@/lib/content/hero";
 
-const SLIDES = [
+/* Default slides keep hand-written alt text for SEO; DB slides fall back to
+   the matching default's alt (by position) or the slide name. */
+const DEFAULT_SLIDES = [
   {
     src: "/images/hero-cenotes.jpg",
     name: "Hidden Cenotes",
@@ -143,7 +146,13 @@ function ParticleCurtain() {
   );
 }
 
-export default function Hero() {
+export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
+  const SLIDES = (content.slides.length ? content.slides : DEFAULT_HERO.slides).map((s, i) => ({
+    src: s.image,
+    name: s.name,
+    sub: s.sub,
+    alt: DEFAULT_SLIDES[i]?.alt ?? s.name,
+  }));
   const [current, setCurrent] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -257,9 +266,9 @@ export default function Hero() {
             Riviera Maya · Mexico
           </div>
           <h1 className="mb-4 font-serif text-[52px] font-semibold leading-[0.94] tracking-[-2px] text-white">
-            The Real
+            {content.headline}
             <br />
-            <em className="block italic text-gold">Riviera Maya.</em>
+            <em className="block italic text-gold">{content.headlineEm}</em>
           </h1>
           <p className="mb-5 max-w-[320px] text-[13.5px] font-light leading-[1.72] text-white/68">
             Private tours, hidden cenotes and Caribbean beaches — for families
@@ -353,17 +362,15 @@ export default function Hero() {
               className="animate-fade-up mb-[clamp(12px,1.4vw,18px)] font-serif text-[clamp(38px,5vw,64px)] font-semibold leading-[0.93] tracking-[clamp(-2.5px,-0.2vw,-1px)] text-ink"
               style={{ animationDelay: "0.22s" }}
             >
-              The Real
+              {content.headline}
               <br />
-              <em className="italic text-forest">Riviera Maya.</em>
+              <em className="italic text-forest">{content.headlineEm}</em>
             </h1>
             <p
               className="animate-fade-up mb-[clamp(18px,2vw,28px)] max-w-[360px] text-[clamp(12px,1vw,14.5px)] leading-[1.78] text-sage"
               style={{ animationDelay: "0.36s" }}
             >
-              Skip the crowds and the noise. Private tours, hidden cenotes, and
-              Caribbean beaches — curated for families and couples who want
-              something more than an ordinary holiday.
+              {content.tagline}
             </p>
 
             <div

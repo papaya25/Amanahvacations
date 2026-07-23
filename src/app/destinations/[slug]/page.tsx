@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DESTINATIONS, getDestination } from "@/data/destinations";
+import { DESTINATIONS } from "@/data/destinations";
+import { getEffectiveDestination, getEffectiveDestinations } from "@/lib/content/activities";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, touristAttractionSchema } from "@/lib/seo";
@@ -15,7 +16,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const dest = getDestination(slug);
+  const dest = await getEffectiveDestination(slug);
   if (!dest) return {};
   const title = `${dest.title} — Private Tour from Playa del Carmen`;
   const description = `${dest.title} in the Riviera Maya with Amanah Vacations: a private, family-safe${
@@ -66,12 +67,13 @@ function faqsFor(title: string) {
 
 export default async function DestinationPage({ params }: Props) {
   const { slug } = await params;
-  const dest = getDestination(slug);
+  const all = await getEffectiveDestinations();
+  const dest = all.find((d) => d.slug === slug);
   if (!dest) notFound();
 
-  const others = DESTINATIONS.filter((d) => d.slug !== dest.slug).slice(0, 4);
-  const idx = DESTINATIONS.findIndex((d) => d.slug === dest.slug);
-  const next = DESTINATIONS[(idx + 1) % DESTINATIONS.length];
+  const others = all.filter((d) => d.slug !== dest.slug).slice(0, 4);
+  const idx = all.findIndex((d) => d.slug === dest.slug);
+  const next = all[(idx + 1) % all.length];
   const faqs = faqsFor(dest.title);
 
   return (

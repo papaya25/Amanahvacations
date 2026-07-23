@@ -4,10 +4,11 @@
    gating rules, checkout URL params, WhatsApp/email quote generation) is kept
    intact — only the rendering moved from DOM manipulation to React state. */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
+import type { AdminAddon } from "@/lib/content/addons";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529844521184";
@@ -62,13 +63,10 @@ const ACTIVITIES: Activity[] = [
   { id: "tennis", name: "Tennis Lessons", emoji: "🎾", price: 800, unit: "/hour/person", inCart: false, desc: "Private tennis lessons with a local instructor, billed per hour, per person. Our team will confirm hours and charge separately." },
 ];
 
-const ACTS_BY_NAME: Record<string, Activity> = {};
-ACTIVITIES.forEach((a) => (ACTS_BY_NAME[a.name] = a));
-
 const PACKAGE_IDS = ["basic", "family", "water", "explorer", "honeymoon"] as const;
 type PkgId = (typeof PACKAGE_IDS)[number];
 
-const PRICES: Record<PkgId, number> = {
+const DEFAULT_PRICES: Record<PkgId, number> = {
   basic: 4600,
   family: 8200,
   water: 7600,
@@ -80,7 +78,7 @@ const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3 };
 /* Optional sale prices per person (MXN). If a package isn't listed here it shows
    its normal price. The admin's "Offer price" field drives these once the
    backend is wired. (Demo: Water Lovers is on offer so you can see the styling.) */
-const OFFERS: Partial<Record<PkgId, number>> = { water: 6650 };
+const DEFAULT_OFFERS: Partial<Record<PkgId, number>> = { water: 6650 };
 
 const RECOMMENDED: Partial<Record<PkgId, { id: string; name: string; price: number }>> = {
   basic: { id: "xcaret", name: "Xcaret Park", price: 3500 },
@@ -89,10 +87,8 @@ const RECOMMENDED: Partial<Record<PkgId, { id: string; name: string; price: numb
   honeymoon: { id: "holbox", name: "Holbox Overnight", price: 7800 },
 };
 
-const PKG_META: Record<
-  PkgId,
-  { name: string; tagline: string; badge: string; icon: string; photo: string; includes: string[] }
-> = {
+type PkgMeta = { name: string; tagline: string; badge: string; icon: string; photo: string; includes: string[] };
+const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
   basic: {
     name: "The Basics",
     tagline: "Essential Riviera Maya",
@@ -190,8 +186,57 @@ type ModalState =
   | { kind: "byo-result" }
   | null;
 
-export default function PackagesClient() {
+/* Content fields the admin owns, delivered from the DB by the server page.
+   The configurator mechanics (icons, min group size, recommended add-ons,
+   activities) stay in code and are keyed to these same package ids. */
+export type DbPackage = {
+  id: string;
+  name: string;
+  tagline: string;
+  badge: string;
+  price: number;
+  offer: number;
+  photo: string;
+  includes: string; // one item per line
+};
+
+export default function PackagesClient({
+  dbPackages,
+  dbAddons,
+}: {
+  dbPackages?: DbPackage[];
+  dbAddons?: AdminAddon[];
+}) {
   const router = useRouter();
+
+  /* Admin-managed add-on list overrides the built-in one; emoji + description
+     carry over from the defaults by id. An offer below the price becomes the
+     effective per-person price. */
+  const activities = useMemo<Activity[]>(() => {
+    if (!dbAddons?.length) return ACTIVITIES;
+    const byId: Record<string, Activity> = {};
+    ACTIVITIES.forEach((a) => (byId[a.id] = a));
+    return dbAddons.map((a) => {
+      const base = byId[a.id];
+      let price = a.onRequest || a.price <= 0 ? null : a.price;
+      if (price !== null && a.offer && a.offer > 0 && a.offer < price) price = a.offer;
+      return {
+        id: a.id,
+        name: a.name,
+        emoji: base?.emoji ?? "✨",
+        price,
+        unit: a.unit,
+        inCart: price !== null,
+        desc: base?.desc ?? "",
+      };
+    });
+  }, [dbAddons]);
+
+  const actsByName = useMemo(() => {
+    const m: Record<string, Activity> = {};
+    activities.forEach((a) => (m[a.name] = a));
+    return m;
+  }, [activities]);
   const { add } = useCart();
   const { format } = useCurrency();
 
@@ -260,6 +305,50 @@ export default function PackagesClient() {
       ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
       : "Not selected";
 
+  /* Merge admin-managed content from the DB over the built-in defaults, keyed
+     by package id. Falls back to defaults when the backend has no matching row
+     (or isn't configured), so the page always renders. */
+  const byId = useMemo(() => {
+    const m: Record<string, DbPackage> = {};
+    (dbPackages ?? []).forEach((p) => (m[p.id] = p));
+    return m;
+  }, [dbPackages]);
+
+  const prices = useMemo(() => {
+    const out = { ...DEFAULT_PRICES };
+    PACKAGE_IDS.forEach((id) => {
+      const db = byId[id];
+      if (db && db.price > 0) out[id] = db.price;
+    });
+    return out;
+  }, [byId]);
+
+  const offers = useMemo(() => {
+    const out: Partial<Record<PkgId, number>> = { ...DEFAULT_OFFERS };
+    PACKAGE_IDS.forEach((id) => {
+      const db = byId[id];
+      if (db) out[id] = db.offer > 0 ? db.offer : undefined;
+    });
+    return out;
+  }, [byId]);
+
+  const pkgMeta = useMemo(() => {
+    const out = { ...DEFAULT_PKG_META };
+    PACKAGE_IDS.forEach((id) => {
+      const db = byId[id];
+      if (!db) return;
+      out[id] = {
+        ...DEFAULT_PKG_META[id],
+        name: db.name || DEFAULT_PKG_META[id].name,
+        tagline: db.tagline || DEFAULT_PKG_META[id].tagline,
+        badge: db.badge || DEFAULT_PKG_META[id].badge,
+        photo: db.photo || DEFAULT_PKG_META[id].photo,
+        includes: db.includes ? db.includes.split("\n").filter(Boolean) : DEFAULT_PKG_META[id].includes,
+      };
+    });
+    return out;
+  }, [byId]);
+
   const getKidsAgesText = () => {
     if (kids === 0) return "None";
     return kidsAges
@@ -268,7 +357,7 @@ export default function PackagesClient() {
   };
 
   const priceMXN = (id: PkgId) => {
-    let mxn = PRICES[id];
+    let mxn = prices[id];
     const rec = RECOMMENDED[id];
     if (rec && recommendedActive[id]) mxn += rec.price;
     return mxn;
@@ -277,14 +366,14 @@ export default function PackagesClient() {
   // Offer price for a package's currently-displayed total (offer base + any
   // selected recommended add-on), or null if the package has no active offer.
   const offerFor = (id: PkgId, displayedMxn: number) => {
-    const off = OFFERS[id];
-    if (off === undefined || off >= PRICES[id]) return null;
-    return off + (displayedMxn - PRICES[id]);
+    const off = offers[id];
+    if (off === undefined || off >= prices[id]) return null;
+    return off + (displayedMxn - prices[id]);
   };
   const offerPct = (id: PkgId) => {
-    const off = OFFERS[id];
+    const off = offers[id];
     if (off === undefined) return 0;
-    return Math.round((1 - off / PRICES[id]) * 100);
+    return Math.round((1 - off / prices[id]) * 100);
   };
 
   const adjust = (type: "adults" | "kids", delta: number) => {
@@ -320,7 +409,7 @@ export default function PackagesClient() {
   const packageTotalMXN = (pkgId: PkgId) => {
     const n = adults + kids;
     const mult = pkgId === "honeymoon" ? 2 : n;
-    return PRICES[pkgId] * mult;
+    return prices[pkgId] * mult;
   };
 
   /* ── BUY NOW — adds the configured booking to the cart, then goes to checkout ── */
@@ -338,10 +427,10 @@ export default function PackagesClient() {
     const n = adults + kids;
     const mult = pkgId === "honeymoon" ? 2 : n;
     let cartAddons = addonNames.filter(
-      (name) => ACTS_BY_NAME[name] && ACTS_BY_NAME[name].price !== null && ACTS_BY_NAME[name].inCart
+      (name) => actsByName[name] && actsByName[name].price !== null && actsByName[name].inCart
     );
     const humanAddons = addonNames.filter(
-      (name) => !ACTS_BY_NAME[name] || ACTS_BY_NAME[name].price === null || !ACTS_BY_NAME[name].inCart
+      (name) => !actsByName[name] || actsByName[name].price === null || !actsByName[name].inCart
     );
     const rec = RECOMMENDED[pkgId];
     const recSelected = !!(rec && recommendedActive[pkgId]);
@@ -355,8 +444,8 @@ export default function PackagesClient() {
       );
       if (!proceed) return;
     }
-    let addonsTotal = cartAddons.reduce((sum, name) => sum + (ACTS_BY_NAME[name].price as number) * n, 0);
-    const cartAddonIdList = cartAddons.map((name) => ACTS_BY_NAME[name].id);
+    let addonsTotal = cartAddons.reduce((sum, name) => sum + (actsByName[name].price as number) * n, 0);
+    const cartAddonIdList = cartAddons.map((name) => actsByName[name].id);
     if (recSelected && rec) {
       addonsTotal += rec.price * mult;
       cartAddonIdList.push(rec.id);
@@ -381,8 +470,8 @@ export default function PackagesClient() {
     add({
       kind: "package",
       title: pkgName,
-      subtitle: PKG_META[pkgId].tagline,
-      image: PKG_META[pkgId].photo,
+      subtitle: pkgMeta[pkgId].tagline,
+      image: pkgMeta[pkgId].photo,
       details,
       total,
       people: n,
@@ -477,7 +566,7 @@ export default function PackagesClient() {
       byoAddons.length > 0
         ? byoAddons
             .map((name) => {
-              const a = ACTS_BY_NAME[name];
+              const a = actsByName[name];
               return a && a.price !== null
                 ? `${name} ($${a.price.toLocaleString("en-US")} MXN${a.unit})`
                 : `${name} (On Request)`;
@@ -577,7 +666,7 @@ export default function PackagesClient() {
         Hand-picked experiences to round out your trip. Tap the ⓘ next to any activity for details.
         Items marked &quot;On Request&quot; are arranged personally with you — no payment needed now.
       </div>
-      {ACTIVITIES.map((act) => {
+      {activities.map((act) => {
         const selected = selectedAddons[pkgId].includes(act.name);
         return (
           <div
@@ -624,7 +713,7 @@ export default function PackagesClient() {
   );
 
   const renderPkgCard = (pkgId: PkgId) => {
-    const meta = PKG_META[pkgId];
+    const meta = pkgMeta[pkgId];
     const rec = RECOMMENDED[pkgId];
     const recTip = REC_TIPS[pkgId];
     const mxn = priceMXN(pkgId);
@@ -1073,7 +1162,7 @@ export default function PackagesClient() {
                     Select anything that catches your eye — we&apos;ll include exact pricing in your
                     custom quote.
                   </div>
-                  {ACTIVITIES.map((act) => {
+                  {activities.map((act) => {
                     const selected = byoAddons.includes(act.name);
                     return (
                       <div

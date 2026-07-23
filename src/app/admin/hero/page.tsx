@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, ImagePicker, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type Slide = { image: string; name: string; sub: string };
@@ -32,7 +32,7 @@ const DEFAULT: HeroContent = {
 };
 
 export default function HeroAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<HeroContent>("admin_hero", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<HeroContent>("admin_hero", DEFAULT);
   const set = (k: keyof HeroContent, v: string) => setValue({ ...value, [k]: v });
   const setSlide = (i: number, k: keyof Slide, v: string) =>
     setValue({ ...value, slides: value.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) });
@@ -83,7 +83,7 @@ export default function HeroAdmin() {
         </Card>
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

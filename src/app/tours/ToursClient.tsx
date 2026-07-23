@@ -9,6 +9,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
+import type { AdminTour as AdminTourInput } from "@/lib/content/tours";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
@@ -138,7 +139,28 @@ const WA_ICON = (
 const fmtDate = (v: string) =>
   v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Not selected";
 
-export default function ToursClient() {
+export default function ToursClient({ dbTours }: { dbTours?: AdminTourInput[] }) {
+  /* Admin-managed content from the DB overrides the built-in list; card
+     descriptions (not editable in admin yet) carry over from defaults by key. */
+  const TOURS_EFFECTIVE: Tour[] = useMemo(() => {
+    if (!dbTours?.length) return TOURS;
+    const descByKey: Record<string, string> = {};
+    TOURS.forEach((t) => {
+      if (t.key) descByKey[t.key] = t.desc;
+    });
+    return dbTours.map((t) => ({
+      key: t.key,
+      name: t.name,
+      sub: t.sub,
+      dur: t.dur,
+      price: t.onreq ? null : t.price > 0 ? t.price : null,
+      offer: !t.onreq && t.offer > 0 ? t.offer : undefined,
+      img: t.img,
+      desc: descByKey[t.key] ?? "",
+      stops: t.stops.map((s): Stop => [s.time, s.place, s.desc]),
+      onreq: t.onreq,
+    }));
+  }, [dbTours]);
   const router = useRouter();
   const { add } = useCart();
   const { format } = useCurrency();
@@ -166,7 +188,7 @@ export default function ToursClient() {
     setPeople((p) => ({ ...p, [idx]: Math.max(1, Math.min(6, (p[idx] || 1) + d)) }));
 
   const buy = (idx: number) => {
-    const t = TOURS[idx];
+    const t = TOURS_EFFECTIVE[idx];
     const date = dates[idx];
     if (!date) {
       showToast("Please choose a tour date first.");
@@ -227,7 +249,7 @@ export default function ToursClient() {
 
       <div className="at-wrap">
         <div className="at-grid">
-          {TOURS.map((t, idx) => {
+          {TOURS_EFFECTIVE.map((t, idx) => {
             const ppl = people[idx] || 1;
             const total = t.price ? t.price * ppl : 0;
             const hasOffer = t.price != null && t.offer != null && t.offer < t.price;

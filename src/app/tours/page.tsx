@@ -4,6 +4,8 @@ import ToursClient from "./ToursClient";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
+import { getFaqs } from "@/lib/content/faq";
+import { getSavedTours } from "@/lib/content/tours";
 import "./tours.css";
 
 const caveat = Caveat({
@@ -71,7 +73,16 @@ const FAQS = [
   },
 ];
 
-export default function ToursPage() {
+export default async function ToursPage() {
+  const [faqs, dbTours] = await Promise.all([getFaqs("tours", FAQS), getSavedTours()]);
+
+  // Structured data follows the live tour list once the admin has saved one.
+  const summary = dbTours
+    ? dbTours
+        .filter((t) => !t.onreq && t.price > 0)
+        .map((t) => ({ name: t.name, price: t.offer > 0 ? t.offer : t.price, img: t.img }))
+    : TOUR_SUMMARY;
+
   return (
     <main className={caveat.variable}>
       <JsonLd
@@ -80,8 +91,8 @@ export default function ToursPage() {
             { name: "Home", path: "/" },
             { name: "Tours", path: "/tours" },
           ]),
-          itemListSchema(TOUR_SUMMARY.map((t) => ({ name: t.name, url: "/tours" }))),
-          ...TOUR_SUMMARY.map((t) =>
+          itemListSchema(summary.map((t) => ({ name: t.name, url: "/tours" }))),
+          ...summary.map((t) =>
             productOfferSchema({
               name: t.name,
               description: `${t.name} — a private guided tour from Playa del Carmen with Amanah Vacations.`,
@@ -90,11 +101,11 @@ export default function ToursPage() {
               priceMXN: t.price,
             })
           ),
-          faqSchema(FAQS),
+          faqSchema(faqs),
         ]}
       />
-      <ToursClient />
-      <Faq items={FAQS} heading="Tours — frequently asked questions" />
+      <ToursClient dbTours={dbTours ?? undefined} />
+      <Faq items={faqs} heading="Tours — frequently asked questions" />
     </main>
   );
 }

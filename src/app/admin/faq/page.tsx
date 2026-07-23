@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type QA = { q: string; a: string };
@@ -29,7 +29,7 @@ const SECTIONS: { key: keyof FaqContent; title: string }[] = [
 ];
 
 export default function FaqAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<FaqContent>("admin_faq", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<FaqContent>("admin_faq", DEFAULT);
 
   const patch = (key: keyof FaqContent, i: number, p: Partial<QA>) =>
     setValue({ ...value, [key]: value[key].map((qa, j) => (j === i ? { ...qa, ...p } : qa)) });
@@ -79,7 +79,7 @@ export default function FaqAdmin() {
         ))}
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

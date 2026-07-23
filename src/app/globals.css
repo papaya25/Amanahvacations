@@ -20,6 +20,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Invalid form fields (set via aria-invalid) get a clear red state so
+   visitors see exactly which field is missing or mistyped. */
+input[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--color-terracotta) !important;
+  background-color: rgba(200, 105, 58, 0.05) !important;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-ink);

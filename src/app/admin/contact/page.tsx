@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar } from "../AdminUI";
 
 type ContactInfo = {
@@ -28,7 +28,7 @@ const DEFAULT: ContactInfo = {
 };
 
 export default function ContactAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<ContactInfo>("admin_contact", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<ContactInfo>("admin_contact", DEFAULT);
   const set = (k: keyof ContactInfo, v: string) => setValue({ ...value, [k]: v });
 
   return (
@@ -76,7 +76,7 @@ export default function ContactAdmin() {
         </Card>
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

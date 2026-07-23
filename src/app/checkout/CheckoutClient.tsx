@@ -6,14 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
-import { newOrderId, saveOrder } from "@/lib/orders";
+import { saveOrder } from "@/lib/orders";
+import { placeOrder as placeOrderAction } from "./actions";
 
-/* Demo promo codes for the flow-first build. Real validation moves to the
-   backend (Stripe coupons or a Supabase promo table) when payments are wired. */
-const PROMOS: Record<string, { type: "pct" | "flat"; value: number; label: string }> = {
-  AMANAH10: { type: "pct", value: 10, label: "10% off" },
-  WELCOME500: { type: "flat", value: 500, label: "$500 MXN off" },
-};
+import { validatePromo } from "@/lib/content/promo-actions";
 
 const PAYMENT_METHODS = [
   { id: "stripe", name: "Credit / Debit Card", note: "Visa, Mastercard, Amex · via Stripe (also OXXO & SPEI)", badge: "Secure" },
@@ -21,13 +17,21 @@ const PAYMENT_METHODS = [
   { id: "mercadopago", name: "Mercado Pago", note: "Cards, cash & transfers popular in Mexico", badge: "" },
 ];
 
-export default function CheckoutClient() {
+export default function CheckoutClient({
+  transferEnabled = true,
+  initialName = "",
+  initialEmail = "",
+}: {
+  transferEnabled?: boolean;
+  initialName?: string;
+  initialEmail?: string;
+}) {
   const { items, subtotal, clear, ready } = useCart();
   const { format } = useCurrency();
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
   const [whatsapp, setWhatsapp] = useState("");
   const [notes, setNotes] = useState("");
   const [payment, setPayment] = useState("stripe");
@@ -39,20 +43,38 @@ export default function CheckoutClient() {
   const [flightInfo, setFlightInfo] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
 
   const discount = promo?.amount ?? 0;
   const total = Math.max(0, subtotal - discount);
-  const validContact = name.trim() && /.+@.+\..+/.test(email);
+  const emailValid = /.+@.+\..+/.test(email);
+  const validContact = name.trim() && emailValid;
   const canPlace = Boolean(validContact) && agreed && items.length > 0;
 
-  const applyPromo = () => {
+  // Field-level warnings appear once the visitor has interacted with a field,
+  // so they see exactly what's missing or incomplete.
+  const [touched, setTouched] = useState<{ name?: boolean; email?: boolean }>({});
+  const touch = (k: "name" | "email") => setTouched((t) => ({ ...t, [k]: true }));
+  const nameError = touched.name && !name.trim() ? "Please enter your name." : null;
+  const emailError =
+    touched.email && !emailValid
+      ? email.trim()
+        ? "This email looks incomplete — it should be like name@email.com"
+        : "Please enter your email."
+      : null;
+
+  const [checkingPromo, setCheckingPromo] = useState(false);
+
+  const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
     setPromoError("");
-    if (!code) return;
-    const def = PROMOS[code];
+    if (!code || checkingPromo) return;
+    setCheckingPromo(true);
+    const def = await validatePromo(code); // validated on the server
+    setCheckingPromo(false);
     if (!def) {
       setPromo(null);
-      setPromoError("That code isn't valid. Try AMANAH10 or WELCOME500.");
+      setPromoError("That code isn't valid.");
       return;
     }
     const amount =
@@ -60,10 +82,10 @@ export default function CheckoutClient() {
     setPromo({ code, label: def.label, amount });
   };
 
-  const placeOrder = () => {
-    if (!canPlace) return;
+  const placeOrder = async () => {
+    if (!canPlace || placing) return;
     setPlacing(true);
-    const id = newOrderId();
+    setPlaceError(null);
     const orderItems = transfer
       ? [
           ...items,
@@ -81,21 +103,46 @@ export default function CheckoutClient() {
           },
         ]
       : items;
+
+    const paymentName = PAYMENT_METHODS.find((m) => m.id === payment)?.name ?? payment;
+    // The server stores the order (and recomputes the discount); the local copy
+    // keeps the thank-you and account pages working for guests.
+    const res = await placeOrderAction({
+      items: orderItems,
+      promoCode: promo?.code,
+      paymentMethodId: payment,
+      paymentMethod: paymentName,
+      name: name.trim(),
+      email: email.trim(),
+      whatsapp: whatsapp.trim() || undefined,
+      notes: notes.trim() || undefined,
+      consent: agreed,
+    });
+    if (!res.ok) {
+      setPlacing(false);
+      setPlaceError(res.error);
+      return;
+    }
     saveOrder({
-      id,
+      id: res.id,
       date: new Date().toISOString(),
       items: orderItems,
-      subtotal,
-      discount,
-      discountLabel: promo?.label,
+      subtotal: res.subtotal,
+      discount: res.discount,
+      discountLabel: res.discountLabel,
       promo: promo?.code,
-      total,
-      paymentMethod: PAYMENT_METHODS.find((m) => m.id === payment)?.name ?? payment,
+      total: res.total,
+      paymentMethod: paymentName,
       contact: { name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim() },
-      status: "Pending confirmation",
+      status: res.checkoutUrl ? "Pending payment" : "Pending confirmation",
     });
     clear();
-    router.push(`/thank-you?id=${id}`);
+    if (res.checkoutUrl) {
+      // Off to Stripe's secure page; it returns to /thank-you after payment.
+      window.location.href = res.checkoutUrl;
+      return;
+    }
+    router.push(`/thank-you?id=${res.id}`);
   };
 
   const inputCls =
@@ -135,11 +182,28 @@ export default function CheckoutClient() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="co-name" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">Full name *</label>
-              <input id="co-name" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+              <input
+                id="co-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => touch("name")}
+                aria-invalid={Boolean(nameError)}
+                className={inputCls}
+              />
+              {nameError && <p className="mt-1.5 text-[12px] font-medium text-terracotta">{nameError}</p>}
             </div>
             <div>
               <label htmlFor="co-email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">Email *</label>
-              <input id="co-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+              <input
+                id="co-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => touch("email")}
+                aria-invalid={Boolean(emailError)}
+                className={inputCls}
+              />
+              {emailError && <p className="mt-1.5 text-[12px] font-medium text-terracotta">{emailError}</p>}
             </div>
             <div className="sm:col-span-2">
               <label htmlFor="co-wa" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">WhatsApp</label>
@@ -152,7 +216,8 @@ export default function CheckoutClient() {
           </div>
         </section>
 
-        {/* Airport transfer add-on */}
+        {/* Airport transfer add-on (admin can disable in /admin/transfers) */}
+        {transferEnabled && (
         <section className="rounded-[20px] border border-sand bg-white p-[clamp(20px,2.5vw,32px)]">
           <label className="flex cursor-pointer items-start gap-3">
             <input
@@ -189,6 +254,7 @@ export default function CheckoutClient() {
             </div>
           )}
         </section>
+        )}
 
         {/* Payment */}
         <section className="rounded-[20px] border border-sand bg-white p-[clamp(20px,2.5vw,32px)]">
@@ -344,6 +410,9 @@ export default function CheckoutClient() {
           >
             {placing ? "Placing order…" : "Place Order →"}
           </button>
+          {placeError && (
+            <p className="mt-2 text-center text-[12.5px] font-medium text-terracotta">{placeError}</p>
+          )}
           {!validContact ? (
             <p className="mt-2 text-center text-[11.5px] text-sage">
               Enter your name and email to continue.

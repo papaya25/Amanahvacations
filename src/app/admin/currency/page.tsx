@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar } from "../AdminUI";
 
 type CurrencySettings = {
@@ -12,7 +12,7 @@ type CurrencySettings = {
 const DEFAULT: CurrencySettings = { defaultCurrency: "USD", rateUSD: 17, rateEUR: 19.5 };
 
 export default function CurrencyAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<CurrencySettings>("admin_currency", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<CurrencySettings>("admin_currency", DEFAULT);
 
   return (
     <>
@@ -73,7 +73,7 @@ export default function CurrencyAdmin() {
         </Card>
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

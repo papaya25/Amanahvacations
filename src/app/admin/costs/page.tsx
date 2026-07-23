@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar } from "../AdminUI";
 
 type CostRow = { id: string; name: string; category: string; cost: number };
@@ -50,24 +50,34 @@ const DEFAULT: { rows: CostRow[]; taxRate: number } = {
       ],
       "Add-on"
     ),
-    ...seed([["transfer", "Airport Transfer (round trip)"]], "Transfer"),
+    // Transfer costs are per group size tier (round trip), matching how
+    // transfers are actually priced.
+    ...seed(
+      [
+        ["transfer-1-4", "Airport Transfer — 1–4 people (round trip)"],
+        ["transfer-5-8", "Airport Transfer — 5–8 people (round trip)"],
+        ["transfer-9plus", "Airport Transfer — 9+ people (round trip)"],
+      ],
+      "Transfer"
+    ),
   ],
 };
 
-const blankRow = (): CostRow => ({
+const blankRow = (category = "Other"): CostRow => ({
   id: `cost-${Date.now()}`,
   name: "",
-  category: "Other",
+  category,
   cost: 0,
 });
 
 const CATEGORIES = ["Package", "Tour", "Add-on", "Transfer", "Other"];
 
 export default function CostsAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState("admin_costs", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState("admin_costs", DEFAULT);
   const patch = (i: number, p: Partial<CostRow>) =>
     setValue({ ...value, rows: value.rows.map((r, j) => (j === i ? { ...r, ...p } : r)) });
-  const add = () => setValue({ ...value, rows: [...value.rows, blankRow()] });
+  const add = (category: string) =>
+    setValue({ ...value, rows: [...value.rows, blankRow(category)] });
   const remove = (i: number) => setValue({ ...value, rows: value.rows.filter((_, j) => j !== i) });
 
   return (
@@ -98,7 +108,6 @@ export default function CostsAdmin() {
           const rows = value.rows
             .map((r, i) => ({ r, i }))
             .filter(({ r }) => r.category === cat);
-          if (rows.length === 0 && cat !== "Other") return null;
           return (
             <Card key={cat} title={`${cat} costs`}>
               <div className="space-y-2.5">
@@ -109,7 +118,7 @@ export default function CostsAdmin() {
                   >
                     <Field label="Item" value={r.name} onChange={(v) => patch(i, { name: v })} />
                     <Field
-                      label="Cost / person"
+                      label={cat === "Transfer" ? "Cost / group" : "Cost / person"}
                       type="number"
                       prefix="$"
                       suffix="MXN"
@@ -128,20 +137,18 @@ export default function CostsAdmin() {
                   <p className="text-[12.5px] text-sage">No items yet — add one below.</p>
                 )}
               </div>
-              {cat === "Other" && (
-                <button
-                  onClick={add}
-                  className="mt-3 rounded-full border-[1.5px] border-forest px-4 py-1.5 text-[12.5px] font-semibold text-forest transition hover:bg-forest hover:text-white"
-                >
-                  + Add cost item
-                </button>
-              )}
+              <button
+                onClick={() => add(cat)}
+                className="mt-3 rounded-full border-[1.5px] border-forest px-4 py-1.5 text-[12.5px] font-semibold text-forest transition hover:bg-forest hover:text-white"
+              >
+                + Add {cat === "Other" ? "cost item" : `${cat.toLowerCase()} cost`}
+              </button>
             </Card>
           );
         })}
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

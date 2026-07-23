@@ -5,6 +5,9 @@ import JsonLd from "@/components/JsonLd";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { CartProvider } from "@/lib/cart";
 import { CurrencyProvider } from "@/lib/currency";
+import { getContact } from "@/lib/content/contact";
+import { getPublicContent } from "@/lib/content/site";
+import type { CurrencySettings } from "@/lib/currency";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -48,20 +51,28 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.png" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [contact, currencySettings] = await Promise.all([
+    getContact(),
+    getPublicContent<CurrencySettings>("currency", {
+      defaultCurrency: "USD",
+      rateUSD: 17,
+      rateEUR: 19.5,
+    }),
+  ]);
   return (
     <html lang="en">
       <body
         className={`${cormorant.variable} ${outfit.variable} antialiased`}
       >
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
-        <CurrencyProvider>
+        <CurrencyProvider settings={currencySettings}>
           <CartProvider>
-            <SiteFrame>{children}</SiteFrame>
+            <SiteFrame contact={contact}>{children}</SiteFrame>
           </CartProvider>
         </CurrencyProvider>
       </body>

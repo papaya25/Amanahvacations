@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type ValueCard = { title: string; desc: string };
@@ -33,7 +33,7 @@ const DEFAULT: About = {
 };
 
 export default function AboutAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<About>("admin_about", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<About>("admin_about", DEFAULT);
   const set = (k: keyof About, v: string) => setValue({ ...value, [k]: v });
   const setValueCard = (i: number, p: Partial<ValueCard>) =>
     setValue({ ...value, values: value.values.map((c, j) => (j === i ? { ...c, ...p } : c)) });
@@ -82,7 +82,7 @@ export default function AboutAdmin() {
         </Card>
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

@@ -91,8 +91,10 @@ export function TextArea({
   );
 }
 
-/* Shows the current image and lets the admin pick a replacement (previewed
-   locally via an object URL). Real upload wires in with the backend. */
+/* Shows the current image and lets the admin pick a replacement. The file is
+   uploaded to storage immediately (with a local preview while it uploads) and
+   onPick receives the permanent public URL — saving the editor then makes it
+   live everywhere. */
 export function ImagePicker({
   label,
   src,
@@ -101,11 +103,32 @@ export function ImagePicker({
 }: {
   label: string;
   src: string;
-  onPick?: (dataUrl: string) => void;
+  onPick?: (url: string) => void;
   ratio?: string;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [state, setState] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
   const shown = preview ?? src;
+
+  const pick = async (file: File) => {
+    setPreview(URL.createObjectURL(file));
+    setState("uploading");
+    setError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const { uploadImage } = await import("./upload-actions");
+    const res = await uploadImage(fd).catch(() => ({ ok: false as const, error: "Upload failed." }));
+    if (res.ok) {
+      setState("done");
+      onPick?.(res.url);
+    } else {
+      setState("error");
+      setError(res.error);
+      setPreview(null);
+    }
+  };
+
   return (
     <div>
       <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.2px] text-forest">
@@ -121,25 +144,30 @@ export function ImagePicker({
           </div>
         )}
         <label className="absolute bottom-2 right-2 cursor-pointer rounded-full bg-ink/80 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-sm transition hover:bg-ink">
-          Replace
+          {state === "uploading" ? "Uploading…" : "Replace"}
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             className="hidden"
+            disabled={state === "uploading"}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (!file) return;
-              const url = URL.createObjectURL(file);
-              setPreview(url);
-              onPick?.(url);
+              if (file) pick(file);
+              e.target.value = "";
             }}
           />
         </label>
       </div>
-      {preview && (
-        <p className="mt-1.5 text-[11px] text-terracotta">
-          New image selected (preview only until you connect the backend).
+      {state === "uploading" && (
+        <p className="mt-1.5 text-[11px] text-sage">Uploading your image…</p>
+      )}
+      {state === "done" && (
+        <p className="mt-1.5 text-[11px] font-medium text-forest">
+          ✓ Uploaded — click Save changes to make it live.
         </p>
+      )}
+      {state === "error" && error && (
+        <p className="mt-1.5 text-[11px] font-medium text-terracotta">{error}</p>
       )}
     </div>
   );
@@ -149,22 +177,31 @@ export function SaveBar({
   onSave,
   savedAt,
   label = "Save changes",
+  saving = false,
+  savedLabel = "✓ Saved — now live on your website",
+  idleLabel = "Changes save to your database and update the live site.",
+  error,
 }: {
   onSave: () => void;
   savedAt: number;
   label?: string;
+  saving?: boolean;
+  savedLabel?: string;
+  idleLabel?: string;
+  error?: string | null;
 }) {
-  const justSaved = savedAt > 0 && Date.now() - savedAt < 3000;
+  const justSaved = savedAt > 0 && Date.now() - savedAt < 4000;
   return (
     <div className="sticky bottom-4 z-10 mt-6 flex items-center gap-4 rounded-full border border-sand bg-white/95 px-4 py-2.5 shadow-[0_10px_30px_rgba(28,43,30,0.12)] backdrop-blur">
       <button
         onClick={onSave}
-        className="rounded-full bg-gradient-to-br from-terracotta to-gold px-6 py-2.5 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(200,105,58,0.42)]"
+        disabled={saving}
+        className="rounded-full bg-gradient-to-br from-terracotta to-gold px-6 py-2.5 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(200,105,58,0.42)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
-        {label}
+        {saving ? "Saving…" : label}
       </button>
-      <span className="text-[12px] text-sage">
-        {justSaved ? "✓ Saved locally" : "Changes save to this browser until the backend is connected."}
+      <span className={`text-[12px] ${error ? "text-terracotta" : "text-sage"}`}>
+        {error ? error : saving ? "Saving your changes…" : justSaved ? savedLabel : idleLabel}
       </span>
     </div>
   );

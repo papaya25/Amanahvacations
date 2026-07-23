@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { sendContactMessage } from "./actions";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
@@ -26,23 +27,74 @@ export default function ContactClient() {
     return l;
   };
 
-  const valid = name.trim() && email.trim() && message.trim();
+  const emailValid = /.+@.+\..+/.test(email);
+  const valid = name.trim() && emailValid && message.trim();
+  // WhatsApp sending needs the visitor's own number so we know where to answer.
+  const waValid = Boolean(valid && whatsapp.trim());
 
-  const sendEmail = (e: React.FormEvent) => {
+  // Field-level warnings once a field has been visited, so senders see exactly
+  // what's missing or mistyped.
+  const [touched, setTouched] = useState<{ [k: string]: boolean }>({});
+  const touch = (k: string) => setTouched((t) => ({ ...t, [k]: true }));
+  const nameError = touched.name && !name.trim() ? "Please enter your name." : null;
+  const emailError =
+    touched.email && !emailValid
+      ? email.trim()
+        ? "This email looks incomplete — it should be like name@email.com"
+        : "Please enter your email."
+      : null;
+  const messageError = touched.message && !message.trim() ? "Please write a short message." : null;
+
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valid) return;
+    if (!valid || sending) return;
+    setSending(true);
+    setSendError(null);
+    const res = await sendContactMessage({
+      name: name.trim(),
+      email: email.trim(),
+      whatsapp: whatsapp.trim() || undefined,
+      subject: subject.trim() || undefined,
+      message: message.trim(),
+    }).catch(() => ({ ok: false as const, error: "Something went wrong." }));
+    setSending(false);
+    if (res.ok) {
+      setSent(true);
+      return;
+    }
+    setSendError(res.error ?? "We couldn't send your message.");
+    // Fallback so no message is ever lost: open the visitor's mail app.
     const subj = encodeURIComponent(subject.trim() || `Website inquiry from ${name}`);
     window.location.href = `mailto:${EMAIL}?subject=${subj}&body=${encodeURIComponent(lines())}`;
   };
 
   const sendWhatsApp = () => {
-    if (!valid) return;
+    if (!waValid) return;
     const msg = encodeURIComponent(`Hello Amanah Vacations! 👋\n\n${lines()}`);
     window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, "_blank");
   };
 
   const inputCls =
     "w-full rounded-xl border-[1.5px] border-sand bg-white px-4 py-3 text-[14px] text-ink outline-none transition focus:border-forest";
+
+  if (sent) {
+    return (
+      <div className="rounded-[22px] border border-sand bg-cream p-[clamp(28px,3vw,44px)] text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-forest/10 text-[26px]">
+          ✓
+        </div>
+        <p className="font-serif text-[24px] font-semibold text-ink">Message sent!</p>
+        <p className="mx-auto mt-2 max-w-[380px] text-[14px] leading-[1.7] text-sage">
+          Thanks {name.split(" ")[0]} — we&apos;ve got your message and will reply within a few
+          hours, same day, every day.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={sendEmail} className="rounded-[22px] border border-sand bg-cream p-[clamp(22px,2.5vw,34px)]">
@@ -51,19 +103,44 @@ export default function ContactClient() {
           <label htmlFor="c-name" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
             Name *
           </label>
-          <input id="c-name" required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+          <input
+            id="c-name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => touch("name")}
+            aria-invalid={Boolean(nameError)}
+            className={`${inputCls}`}
+          />
+          {nameError && <p className="mt-1.5 text-[12px] font-medium text-terracotta">{nameError}</p>}
         </div>
         <div>
           <label htmlFor="c-email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
             Email *
           </label>
-          <input id="c-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+          <input
+            id="c-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => touch("email")}
+            aria-invalid={Boolean(emailError)}
+            className={`${inputCls}`}
+          />
+          {emailError && <p className="mt-1.5 text-[12px] font-medium text-terracotta">{emailError}</p>}
         </div>
         <div>
           <label htmlFor="c-wa" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
             WhatsApp
           </label>
-          <input id="c-wa" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inputCls} placeholder="+1 ..." />
+          <input
+            id="c-wa"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            className={inputCls}
+            placeholder="+1 ... — needed for a WhatsApp reply"
+          />
         </div>
         <div>
           <label htmlFor="c-subject" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
@@ -81,28 +158,40 @@ export default function ContactClient() {
           required
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onBlur={() => touch("message")}
+          aria-invalid={Boolean(messageError)}
           rows={5}
           className={`${inputCls} resize-y`}
           placeholder="Tell us about your trip — dates, group size, what you're dreaming of..."
         />
+        {messageError && <p className="mt-1.5 text-[12px] font-medium text-terracotta">{messageError}</p>}
       </div>
       <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
         <button
           type="submit"
-          disabled={!valid}
+          disabled={!valid || sending}
           className="flex-1 rounded-full bg-gradient-to-br from-terracotta to-gold px-6 py-3.5 text-[14px] font-semibold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Send via Email →
+          {sending ? "Sending…" : "Send via Email →"}
         </button>
         <button
           type="button"
           onClick={sendWhatsApp}
-          disabled={!valid}
+          disabled={!waValid}
+          title={waValid ? undefined : "Add your WhatsApp number above so we know where to answer you"}
           className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3.5 text-[14px] font-semibold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {WA_ICON} Send via WhatsApp
         </button>
       </div>
+      {valid && !waValid && (
+        <p className="mt-3 text-center text-[12.5px] text-sage">
+          💬 Want a WhatsApp reply? Add your WhatsApp number above to unlock the green button.
+        </p>
+      )}
+      {sendError && (
+        <p className="mt-3 text-center text-[12.5px] font-medium text-terracotta">{sendError}</p>
+      )}
       <p className="mt-4 text-center text-[12px] text-sage">
         We usually reply within a few hours — same day, every day.
       </p>

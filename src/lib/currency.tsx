@@ -51,8 +51,31 @@ type CurrencyContextValue = {
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
-export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>(DEFAULT);
+export type CurrencySettings = {
+  defaultCurrency: Currency;
+  rateUSD: number; // MXN per 1 USD
+  rateEUR: number; // MXN per 1 EUR
+};
+
+export function CurrencyProvider({
+  children,
+  settings,
+}: {
+  children: React.ReactNode;
+  settings?: CurrencySettings;
+}) {
+  const initial =
+    settings && CURRENCIES.includes(settings.defaultCurrency) ? settings.defaultCurrency : DEFAULT;
+  const [currency, setCurrencyState] = useState<Currency>(initial);
+
+  const rates = useMemo<Record<Currency, number>>(
+    () => ({
+      MXN: 1,
+      USD: settings?.rateUSD && settings.rateUSD > 0 ? settings.rateUSD : RATES.USD,
+      EUR: settings?.rateEUR && settings.rateEUR > 0 ? settings.rateEUR : RATES.EUR,
+    }),
+    [settings?.rateUSD, settings?.rateEUR]
+  );
 
   useEffect(() => {
     try {
@@ -73,8 +96,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<CurrencyContextValue>(
-    () => ({ currency, setCurrency, format: (mxn: number) => formatIn(mxn, currency) }),
-    [currency, setCurrency]
+    () => ({
+      currency,
+      setCurrency,
+      format: (mxn: number) =>
+        `${SYMBOLS[currency]}${Math.round(mxn / rates[currency]).toLocaleString("en-US")} ${currency}`,
+    }),
+    [currency, setCurrency, rates]
   );
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type Template = { subject: string; body: string };
@@ -53,7 +53,7 @@ const TEMPLATES: { key: keyof Emails; title: string; desc: string }[] = [
 ];
 
 export default function EmailsAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<Emails>("admin_emails", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<Emails>("admin_emails", DEFAULT);
   const setTpl = (key: keyof Emails, field: keyof Template, v: string) =>
     setValue({ ...value, [key]: { ...(value[key] as Template), [field]: v } });
   const custom = value.custom ?? [];
@@ -143,7 +143,7 @@ export default function EmailsAdmin() {
         </Card>
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

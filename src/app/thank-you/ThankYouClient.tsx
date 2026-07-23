@@ -6,15 +6,29 @@ import { useSearchParams } from "next/navigation";
 import { useCurrency } from "@/lib/currency";
 import { getOrder, type Order } from "@/lib/orders";
 
-export default function ThankYouClient() {
+export default function ThankYouClient({ paid = false }: { paid?: boolean }) {
   const params = useSearchParams();
   const { format } = useCurrency();
   const id = params.get("id");
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
 
   useEffect(() => {
-    setOrder(id ? getOrder(id) ?? null : null);
-  }, [id]);
+    const found = id ? getOrder(id) : undefined;
+    // Reflect a verified payment in the guest's local copy too.
+    if (found && paid && found.status !== "Paid (test mode)") {
+      found.status = "Paid (test mode)";
+      try {
+        const all = JSON.parse(localStorage.getItem("amanah_orders_v1") ?? "[]") as Order[];
+        localStorage.setItem(
+          "amanah_orders_v1",
+          JSON.stringify(all.map((o) => (o.id === found.id ? { ...o, status: found.status } : o)))
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+    setOrder(found ?? null);
+  }, [id, paid]);
 
   return (
     <main className="min-h-[70vh] bg-cream">
@@ -31,9 +45,15 @@ export default function ThankYouClient() {
           <h1 className="font-serif text-[clamp(30px,4vw,46px)] font-semibold leading-[1.05] tracking-[-1px] text-ink">
             Thank you{order?.contact.name ? `, ${order.contact.name.split(" ")[0]}` : ""}!
           </h1>
+          {paid && (
+            <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full bg-forest/10 px-4 py-2 text-[13px] font-semibold text-forest">
+              ✓ Payment received — you&apos;re all set
+            </div>
+          )}
           <p className="mx-auto mt-4 max-w-[460px] text-[14px] leading-[1.75] text-sage">
-            Your request is in. Our team will confirm availability and the final details with you
-            shortly — usually within a few hours — via WhatsApp or email.
+            {paid
+              ? "Your booking is paid and confirmed on our side. Our team will reach out shortly — usually within a few hours — with your final itinerary details via WhatsApp or email."
+              : "Your request is in. Our team will confirm availability and the final details with you shortly — usually within a few hours — via WhatsApp or email."}
           </p>
 
           {order && (

@@ -1,7 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { DEFAULT_HERO } from "@/lib/content/hero";
 
-export default function DreamAdventure() {
+export default function DreamAdventure({
+  title = DEFAULT_HERO.dreamTitle,
+  text = DEFAULT_HERO.dreamText,
+}: {
+  title?: string;
+  text?: string;
+}) {
   return (
     <section className="bg-cream py-[clamp(56px,7vw,96px)]" aria-labelledby="dream-heading">
       <div className="mx-auto grid max-w-[1320px] items-center gap-[clamp(32px,4vw,72px)] px-5 md:grid-cols-2 lg:px-8">
@@ -35,16 +42,17 @@ export default function DreamAdventure() {
             id="dream-heading"
             className="mb-5 font-serif text-[clamp(30px,3.4vw,46px)] font-semibold leading-[1.05] tracking-[-1px] text-ink"
           >
-            Your dream adventure is{" "}
-            <em className="italic text-forest">just around the corner</em>
+            {title === DEFAULT_HERO.dreamTitle ? (
+              <>
+                Your dream adventure is{" "}
+                <em className="italic text-forest">just around the corner</em>
+              </>
+            ) : (
+              title
+            )}
           </h2>
           <div className="space-y-4 text-[clamp(13.5px,1.05vw,15.5px)] leading-[1.8] text-sage">
-            <p>
-              Your dream adventure in the Riviera Maya is just around the
-              corner, where lush jungle paths lead to hidden cenotes, turquoise
-              waters stretch endlessly, and every moment is filled with
-              excitement.
-            </p>
+            <p>{text}</p>
             <p>
               From soaring above the treetops on ziplines to exploring rugged
               trails on ATVs, and unwinding on some of the Caribbean&rsquo;s

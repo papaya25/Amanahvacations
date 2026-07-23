@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type Tier = { label: string; price: number };
@@ -24,7 +24,7 @@ const DEFAULT: Transfers = {
 };
 
 export default function TransfersAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<Transfers>("admin_transfers", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<Transfers>("admin_transfers", DEFAULT);
   const setTier = (i: number, p: Partial<Tier>) =>
     setValue({ ...value, tiers: value.tiers.map((t, j) => (j === i ? { ...t, ...p } : t)) });
   const addTier = () => setValue({ ...value, tiers: [...value.tiers, { label: "", price: 0 }] });
@@ -95,7 +95,7 @@ export default function TransfersAdmin() {
         </Card>
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar } from "../AdminUI";
 
 type Addon = {
@@ -55,7 +55,7 @@ const blankAddon = (): Addon => ({
 });
 
 export default function AddonsAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState("admin_addons", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState("admin_addons", DEFAULT);
   const addons = value.addons;
   const setAddon = (i: number, k: keyof Addon, v: string | number | boolean) =>
     setValue({ ...value, addons: addons.map((a, j) => (j === i ? { ...a, [k]: v } : a)) });
@@ -121,7 +121,7 @@ export default function AddonsAdmin() {
         </div>
       </Card>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }

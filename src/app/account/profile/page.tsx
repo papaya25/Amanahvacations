@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/browser";
 
 const KEY = "amanah_profile";
 type Profile = { name: string; email: string; whatsapp: string; country: string };
@@ -11,17 +12,33 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    // Local extras (whatsapp/country), then the real account identity on top.
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) setP({ ...EMPTY, ...JSON.parse(raw) });
     } catch {
       /* ignore */
     }
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (data.user) {
+          setP((prev) => ({
+            ...prev,
+            email: data.user.email ?? prev.email,
+            name: (data.user.user_metadata?.name as string) || prev.name,
+          }));
+        }
+      });
   }, []);
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem(KEY, JSON.stringify(p));
+    // Persist the name on the account itself.
+    await createClient()
+      .auth.updateUser({ data: { name: p.name } })
+      .catch(() => {});
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

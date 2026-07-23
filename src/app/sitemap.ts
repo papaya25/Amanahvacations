@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { DESTINATIONS } from "@/data/destinations";
+import { getEffectiveDestinations } from "@/lib/content/activities";
 import { SITE_URL } from "@/lib/seo";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const DESTINATIONS = await getEffectiveDestinations();
 
   const core: { path: string; priority: number; freq: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
     { path: "/", priority: 1.0, freq: "weekly" },

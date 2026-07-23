@@ -1,17 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DESTINATIONS } from "@/data/destinations";
+import { getEffectiveDestinations } from "@/lib/content/activities";
 
-// Featured on the homepage — sourced from the real destinations data so the
-// links always resolve to existing pages (no drift / 404s).
+// Featured on the homepage — sourced from the live destinations list so the
+// links always resolve to existing, visible pages (no drift / 404s). Hidden
+// featured slugs are replaced by the next visible destinations.
 const FEATURED = ["whaleshark", "coba", "cenotes", "siankaan", "holbox", "zipline", "xcaret", "chichenitza"];
 
-const ACTIVITIES = FEATURED.map((slug) => {
-  const d = DESTINATIONS.find((x) => x.slug === slug)!;
-  return { title: d.title, href: `/destinations/${d.slug}`, img: d.card, alt: d.alt };
-});
-
-export default function Activities() {
+export default async function Activities() {
+  const all = await getEffectiveDestinations();
+  const featured = FEATURED.map((slug) => all.find((x) => x.slug === slug)).filter(
+    (d): d is NonNullable<typeof d> => Boolean(d)
+  );
+  const fillers = all.filter((d) => !FEATURED.includes(d.slug));
+  const ACTIVITIES = [...featured, ...fillers]
+    .slice(0, 8)
+    .map((d) => ({ title: d.title, href: `/destinations/${d.slug}`, img: d.card, alt: d.alt }));
   return (
     <section className="bg-cream py-[clamp(56px,7vw,96px)]" aria-labelledby="activities-heading">
       <div className="mx-auto max-w-[1320px] px-5 lg:px-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocalState } from "@/lib/useLocalState";
+import { useDbState } from "@/lib/useDbState";
 import { Card, Field, PageHead, SaveBar, TextArea } from "../AdminUI";
 
 type Doc = { updated: string; body: string };
@@ -24,7 +24,7 @@ const DOCS: { key: keyof Legal; title: string; desc: string }[] = [
 ];
 
 export default function LegalAdmin() {
-  const { value, setValue, save, savedAt } = useLocalState<Legal>("admin_legal", DEFAULT);
+  const { value, setValue, save, savedAt, saving, error } = useDbState<Legal>("admin_legal", DEFAULT);
   const patch = (key: keyof Legal, p: Partial<Doc>) =>
     setValue({ ...value, [key]: { ...value[key], ...p } });
 
@@ -53,7 +53,7 @@ export default function LegalAdmin() {
         ))}
       </div>
 
-      <SaveBar onSave={save} savedAt={savedAt} />
+      <SaveBar onSave={save} savedAt={savedAt} saving={saving} error={error} />
     </>
   );
 }
