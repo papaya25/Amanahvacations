@@ -9,6 +9,8 @@ import JsonLd from "@/components/JsonLd";
 import { faqSchema } from "@/lib/seo";
 import { getHero } from "@/lib/content/hero";
 import { getFaqs } from "@/lib/content/faq";
+import { translateMany } from "@/lib/i18n/translate";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 
 const FAQS = [
   {
@@ -33,18 +35,66 @@ const FAQS = [
   },
 ];
 
-export default async function Home() {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   const [hero, faqs] = await Promise.all([getHero(), getFaqs("home", FAQS)]);
+
+  const heroTexts = await translateMany(
+    [
+      hero.headline,
+      hero.headlineEm,
+      hero.tagline,
+      hero.dreamTitle,
+      hero.dreamText,
+      ...hero.slides.map((s) => s.name),
+      ...hero.slides.map((s) => s.sub),
+    ],
+    locale
+  );
+  const n = hero.slides.length;
+  const translatedHero = {
+    ...hero,
+    headline: heroTexts[0],
+    headlineEm: heroTexts[1],
+    tagline: heroTexts[2],
+    dreamTitle: heroTexts[3],
+    dreamText: heroTexts[4],
+    slides: hero.slides.map((s, i) => ({
+      ...s,
+      name: heroTexts[5 + i],
+      sub: heroTexts[5 + n + i],
+    })),
+  };
+
+  const faqTexts = await translateMany(
+    [...faqs.map((f) => f.q), ...faqs.map((f) => f.a)],
+    locale
+  );
+  const translatedFaqs = faqs.map((f, i) => ({
+    q: faqTexts[i],
+    a: faqTexts[faqs.length + i],
+  }));
+
+  const headingTexts = await translateMany(
+    ["Planning your Riviera Maya trip", "Questions & answers"],
+    locale
+  );
+
   return (
     <main>
       <JsonLd data={faqSchema(faqs)} />
-      <Hero content={hero} />
+      <Hero content={translatedHero} />
       <PostcardDivider />
       <TripPicker />
       <Activities />
       <HowItWorks />
-      <DreamAdventure title={hero.dreamTitle} text={hero.dreamText} />
-      <Faq items={faqs} heading="Planning your Riviera Maya trip" eyebrow="Questions & answers" dark />
+      <DreamAdventure title={translatedHero.dreamTitle} text={translatedHero.dreamText} />
+      <Faq items={translatedFaqs} heading={headingTexts[0]} eyebrow={headingTexts[1]} dark />
     </main>
   );
 }

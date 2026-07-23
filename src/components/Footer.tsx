@@ -1,24 +1,28 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { DEFAULT_CONTACT, type ContactInfo } from "@/lib/content/contact";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
 
-const EXPLORE = [
-  { label: "Home", href: "/" },
-  { label: "Activities", href: "/activities" },
-  { label: "Packages", href: "/packages" },
-  { label: "Tours", href: "/tours" },
-  { label: "VIP", href: "/vip" },
-  { label: "About", href: "/aboutus" },
-];
+const EXPLORE_KEYS = [
+  { key: "nav_home", href: "/" },
+  { key: "nav_activities", href: "/activities" },
+  { key: "nav_packages", href: "/packages" },
+  { key: "nav_tours", href: "/tours" },
+  { key: "nav_vip", href: "/vip" },
+  { key: "nav_about", href: "/aboutus" },
+] as const;
 
-const SUPPORT = [
-  { label: "Contact", href: "/contact" },
-  { label: "Airport Transfers", href: "/airport-transfers" },
-  { label: "Halal Friendly Options", href: "/halal" },
-  { label: "Terms & Conditions", href: "/terms-and-conditions" },
-  { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Liability Waiver", href: "/liability-waiver" },
-];
+const SUPPORT_KEYS = [
+  { key: "nav_contact", href: "/contact" },
+  { key: "footer_airport_transfers", href: "/airport-transfers" },
+  { key: "footer_halal", href: "/halal" },
+  { key: "footer_terms", href: "/terms-and-conditions" },
+  { key: "footer_privacy", href: "/privacy-policy" },
+  { key: "footer_waiver", href: "/liability-waiver" },
+] as const;
 
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   instagram: (
@@ -46,6 +50,9 @@ const SOCIAL_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: ContactInfo }) {
+  const { locale, dict } = useI18n();
+  const EXPLORE = EXPLORE_KEYS.map((item) => ({ label: dict[item.key], href: localizeHref(item.href, locale) }));
+  const SUPPORT = SUPPORT_KEYS.map((item) => ({ label: dict[item.key], href: localizeHref(item.href, locale) }));
   const socials = ([
     ["Instagram", contact.instagram, SOCIAL_ICONS.instagram],
     ["Facebook", contact.facebook, SOCIAL_ICONS.facebook],
@@ -59,7 +66,7 @@ export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: Contac
         <div className="grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-[1.4fr_1fr_1fr] md:gap-10 lg:gap-16">
           {/* Brand */}
           <div className="col-span-2 flex flex-col items-center text-center md:col-span-1 md:items-start md:text-left">
-            <Link href="/" className="flex items-center gap-3" aria-label="Amanah Vacations — Home">
+            <Link href={localizeHref("/", locale)} className="flex items-center gap-3" aria-label="Amanah Vacations — Home">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-cream p-1 md:h-14 md:w-14 md:rounded-2xl md:p-1.5">
                 <Image src="/images/logo.png" alt="" width={44} height={46} />
               </span>
@@ -73,9 +80,7 @@ export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: Contac
               </span>
             </Link>
             <p className="mt-4 hidden max-w-[320px] text-[13.5px] leading-[1.75] text-white/55 md:block">
-              Trust in Adventure. Private tours, hidden cenotes and Caribbean
-              beaches in the Riviera Maya — curated for families and couples,
-              halal-friendly on request.
+              {dict.footer_brand_desc}
             </p>
             <div className="mt-4 flex gap-2.5 md:mt-6">
               {socials.map(([label, href, icon]) => (
@@ -96,7 +101,7 @@ export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: Contac
           {/* Explore */}
           <nav aria-label="Explore">
             <h3 className="mb-3 text-[10.5px] font-semibold uppercase tracking-[2.5px] text-gold md:mb-4 md:text-[11px]">
-              Explore
+              {dict.footer_explore}
             </h3>
             <ul className="space-y-2 md:space-y-2.5">
               {EXPLORE.map((l) => (
@@ -115,7 +120,7 @@ export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: Contac
           {/* Support */}
           <nav aria-label="Support & legal">
             <h3 className="mb-3 text-[10.5px] font-semibold uppercase tracking-[2.5px] text-gold md:mb-4 md:text-[11px]">
-              Support
+              {dict.footer_support}
             </h3>
             <ul className="space-y-2 md:space-y-2.5">
               {SUPPORT.map((l) => (
@@ -133,9 +138,9 @@ export default function Footer({ contact = DEFAULT_CONTACT }: { contact?: Contac
         </div>
 
         <div className="mt-7 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-5 text-[11.5px] text-white/45 sm:flex-row md:mt-[clamp(36px,4vw,56px)] md:pt-6 md:text-[12.5px]">
-          <span>Amanah Vacations © {new Date().getFullYear()} All Rights Reserved</span>
+          <span>Amanah Vacations © {new Date().getFullYear()} {dict.footer_rights}</span>
           <span className="font-serif text-[14px] italic text-white/35 md:text-[15px]">
-            Trust in Adventure · أمانة
+            {dict.footer_tagline} · أمانة
           </span>
         </div>
       </div>

@@ -3,25 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { CURRENCIES, SYMBOLS, useCurrency } from "@/lib/currency";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { LOCALES, LOCALE_LABELS, localizeHref, stripLocale, type Locale } from "@/lib/i18n/config";
 
-const NAV = [
-  { label: "Home", href: "/" },
-  { label: "Activities", href: "/activities" },
-  { label: "Packages", href: "/packages" },
-  { label: "Tours", href: "/tours" },
-  { label: "VIP", href: "/vip" },
-  { label: "About", href: "/aboutus" },
-  { label: "Contact", href: "/contact" },
-];
+const NAV_KEYS = [
+  { key: "nav_home", href: "/" },
+  { key: "nav_activities", href: "/activities" },
+  { key: "nav_packages", href: "/packages" },
+  { key: "nav_tours", href: "/tours" },
+  { key: "nav_vip", href: "/vip" },
+  { key: "nav_about", href: "/aboutus" },
+  { key: "nav_contact", href: "/contact" },
+] as const;
 
-const LANGUAGES = [
-  { code: "en", flag: "🇬🇧", label: "English" },
-  { code: "fr", flag: "🇫🇷", label: "Français" },
-  { code: "es", flag: "🇲🇽", label: "Español" },
-  { code: "ar", flag: "🇸🇦", label: "العربية" },
-];
+const LANGUAGES = LOCALES.map((code) => ({ code, ...LOCALE_LABELS[code] }));
 
 function useOutsideClose(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -36,7 +34,14 @@ function useOutsideClose(onClose: () => void) {
 }
 
 export default function Header() {
-  const [lang, setLang] = useState(LANGUAGES[0]);
+  const { locale, dict } = useI18n();
+  const pathname = usePathname();
+  const router = useRouter();
+  const lang = LANGUAGES.find((l) => l.code === locale) ?? LANGUAGES[0];
+  const switchLocale = (next: Locale) => router.push(localizeHref(stripLocale(pathname), next));
+  const NAV = NAV_KEYS.map((item) => ({ label: dict[item.key], href: localizeHref(item.href, locale) }));
+  const withLocale = (href: string) => localizeHref(href, locale);
+
   const { currency, setCurrency } = useCurrency();
   const [openMenu, setOpenMenu] = useState<"lang" | "currency" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,7 +66,7 @@ export default function Header() {
     >
       <div className="mx-auto flex h-[84px] max-w-[1320px] items-center gap-6 px-5 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="Amanah Vacations — Home">
+        <Link href={withLocale("/")} className="flex shrink-0 items-center gap-3" aria-label="Amanah Vacations — Home">
           <Image
             src="/images/logo.png"
             alt="Amanah Vacations logo"
@@ -115,7 +120,7 @@ export default function Header() {
                   <li key={l.code}>
                     <button
                       onClick={() => {
-                        setLang(l);
+                        switchLocale(l.code);
                         setOpenMenu(null);
                       }}
                       className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-[13px] transition hover:bg-cream ${
@@ -167,15 +172,15 @@ export default function Header() {
 
           {/* Log in */}
           <Link
-            href="/login"
+            href={withLocale("/login")}
             className="hidden items-center gap-1.5 rounded-full border-[1.5px] border-forest px-4 py-[7px] text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white md:flex"
           >
-            Log In
+            {dict.login}
           </Link>
 
           {/* Cart */}
           <Link
-            href="/cart"
+            href={withLocale("/cart")}
             aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
             className="relative flex h-10 w-10 items-center justify-center rounded-full bg-forest text-white transition hover:bg-ink"
           >
@@ -214,7 +219,7 @@ export default function Header() {
           />
           <div className="absolute right-0 top-0 flex h-full w-[300px] flex-col bg-cream shadow-2xl">
             <div className="flex items-center justify-between border-b border-sand px-5 py-4">
-              <span className="font-serif text-lg font-semibold">Menu</span>
+              <span className="font-serif text-lg font-semibold">{dict.menu}</span>
               <button
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
@@ -242,7 +247,7 @@ export default function Header() {
                 {LANGUAGES.map((l) => (
                   <button
                     key={l.code}
-                    onClick={() => setLang(l)}
+                    onClick={() => switchLocale(l.code)}
                     aria-label={l.label}
                     className={`flex h-9 w-9 items-center justify-center rounded-full border bg-white text-[15px] transition ${
                       l.code === lang.code ? "border-forest shadow-[0_2px_10px_rgba(58,90,60,0.2)]" : "border-sand"
@@ -268,11 +273,11 @@ export default function Header() {
                 ))}
               </div>
               <Link
-                href="/login"
+                href={withLocale("/login")}
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-full border-[1.5px] border-forest py-2.5 text-center text-[14px] font-semibold text-forest"
               >
-                Log In
+                {dict.login}
               </Link>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import SiteFrame from "@/components/SiteFrame";
 import VisitTracker from "@/components/VisitTracker";
@@ -9,7 +10,10 @@ import { CurrencyProvider } from "@/lib/currency";
 import { getContact } from "@/lib/content/contact";
 import { getPublicContent } from "@/lib/content/site";
 import type { CurrencySettings } from "@/lib/currency";
-import "./globals.css";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { LOCALES, RTL_LOCALES, isLocale, type Locale } from "@/lib/i18n/config";
+import "../../globals.css";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -23,6 +27,10 @@ const outfit = Outfit({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }));
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.amanahvacations.com"),
@@ -52,31 +60,42 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.png" },
 };
 
-export default async function RootLayout({
+export default async function LocaleRootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }>) {
-  const [contact, currencySettings] = await Promise.all([
+  const { locale: rawLocale } = await params;
+  if (!isLocale(rawLocale)) notFound();
+  const locale: Locale = rawLocale;
+  const dir = RTL_LOCALES.includes(locale) ? "rtl" : "ltr";
+
+  const [contact, currencySettings, dict] = await Promise.all([
     getContact(),
     getPublicContent<CurrencySettings>("currency", {
       defaultCurrency: "USD",
       rateUSD: 17,
       rateEUR: 19.5,
     }),
+    getDictionary(locale),
   ]);
+
   return (
-    <html lang="en">
+    <html lang={locale} dir={dir}>
       <body
         className={`${cormorant.variable} ${outfit.variable} antialiased`}
       >
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <VisitTracker />
-        <CurrencyProvider settings={currencySettings}>
-          <CartProvider>
-            <SiteFrame contact={contact}>{children}</SiteFrame>
-          </CartProvider>
-        </CurrencyProvider>
+        <I18nProvider locale={locale} dict={dict}>
+          <CurrencyProvider settings={currencySettings}>
+            <CartProvider>
+              <SiteFrame contact={contact}>{children}</SiteFrame>
+            </CartProvider>
+          </CurrencyProvider>
+        </I18nProvider>
       </body>
     </html>
   );
