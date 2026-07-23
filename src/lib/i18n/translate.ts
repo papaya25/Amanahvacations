@@ -19,18 +19,30 @@ const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 
 async function getCached(locale: string, hashes: string[]): Promise<Map<string, string>> {
   if (hashes.length === 0) return new Map();
+  const out = new Map<string, string>();
   try {
     const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("translations")
-      .select("source_hash,translated")
-      .eq("locale", locale)
-      .in("source_hash", hashes);
-    if (error) return new Map();
-    return new Map((data ?? []).map((r) => [r.source_hash, r.translated]));
-  } catch {
-    return new Map();
+    // Chunk the lookup: hundreds of 64-char hashes in one `.in()` filter build
+    // a URL past common length limits and the whole query silently fails
+    // (which is how the ~280-entry dictionary lookup broke). Dedupe first —
+    // the same text often appears under several dictionary keys.
+    const unique = [...new Set(hashes)];
+    for (let i = 0; i < unique.length; i += 100) {
+      const { data, error } = await supabase
+        .from("translations")
+        .select("source_hash,translated")
+        .eq("locale", locale)
+        .in("source_hash", unique.slice(i, i + 100));
+      if (error) {
+        console.error("getCached:", error.message);
+        continue;
+      }
+      (data ?? []).forEach((r) => out.set(r.source_hash, r.translated));
+    }
+  } catch (e) {
+    console.error("getCached:", e instanceof Error ? e.message : e);
   }
+  return out;
 }
 
 async function storeCached(
