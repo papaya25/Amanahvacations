@@ -59,7 +59,7 @@ async function translateBatch(texts: string[], locale: Locale): Promise<string[]
     const client = new Anthropic();
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 4096,
+      max_tokens: 8192,
       system:
         `Translate each numbered English string to ${LOCALE_NAMES[locale]} for a travel/tourism website. ` +
         `Keep the tone warm and professional. Preserve any {{placeholders}}, HTML tags, and punctuation style. ` +
@@ -102,14 +102,18 @@ export async function translateMany(texts: string[], locale: Locale): Promise<st
   });
 
   if (missing.length > 0) {
-    const translated = await translateBatch(
-      missing.map((m) => m.text),
-      locale
-    );
-    if (translated) {
+    // Chunk the outstanding strings so a large page (e.g. a full legal
+    // document) never exceeds the model's output limit in one call — each
+    // chunk stays under a conservative character budget and item count.
+    for (const chunk of chunkByBudget(missing)) {
+      const translated = await translateBatch(
+        chunk.map((m) => m.text),
+        locale
+      );
+      if (!translated) continue; // this chunk falls back to English
       // Claude occasionally returns a blank string for a very short entry in a
       // batch — never cache or serve that as a "translation" over real text.
-      const rows = missing.map((m, i) => ({
+      const rows = chunk.map((m, i) => ({
         source_hash: m.hash,
         source_text: m.text,
         translated: translated[i]?.trim() ? translated[i] : m.text,
@@ -120,6 +124,27 @@ export async function translateMany(texts: string[], locale: Locale): Promise<st
   }
 
   return texts.map((text, index) => cached.get(hashes[index]) || text);
+}
+
+/** Split items into chunks small enough to translate in one model call. */
+function chunkByBudget<T extends { text: string }>(items: T[]): T[][] {
+  const MAX_CHARS = 4000;
+  const MAX_ITEMS = 40;
+  const chunks: T[][] = [];
+  let cur: T[] = [];
+  let chars = 0;
+  for (const item of items) {
+    const len = item.text.length;
+    if (cur.length > 0 && (chars + len > MAX_CHARS || cur.length >= MAX_ITEMS)) {
+      chunks.push(cur);
+      cur = [];
+      chars = 0;
+    }
+    cur.push(item);
+    chars += len;
+  }
+  if (cur.length > 0) chunks.push(cur);
+  return chunks;
 }
 
 /** Translate a single string. Convenience wrapper over translateMany. */
@@ -144,4 +169,36 @@ export async function translateDict<T extends Record<string, string>>(
     out[k] = values[i] as T[keyof T];
   });
   return out;
+}
+
+/** Translate only the visible text of an HTML string, leaving every tag,
+    attribute, href and CSS class untouched. Text nodes are extracted, sent
+    through the batched/cached translator, and slotted back in place — so the
+    document structure is guaranteed identical to the source. Falls back to the
+    original HTML wholesale on any failure. */
+export async function translateHtml(html: string, locale: Locale): Promise<string> {
+  if (locale === "en" || !html) return html;
+  try {
+    // Split on tags: even indices are text between tags, odd indices are tags.
+    const parts = html.split(/(<[^>]+>)/g);
+    const jobs: { partIndex: number; text: string }[] = [];
+    parts.forEach((p, i) => {
+      if (i % 2 === 0 && p.trim().length > 0) jobs.push({ partIndex: i, text: p });
+    });
+    if (jobs.length === 0) return html;
+
+    // Translate the trimmed core of each text node, preserving surrounding
+    // whitespace so inline spacing between tags is not lost.
+    const cores = jobs.map((j) => j.text.trim());
+    const translated = await translateMany(cores, locale);
+    jobs.forEach((j, i) => {
+      const original = parts[j.partIndex];
+      const leading = original.match(/^\s*/)?.[0] ?? "";
+      const trailing = original.match(/\s*$/)?.[0] ?? "";
+      parts[j.partIndex] = leading + translated[i] + trailing;
+    });
+    return parts.join("");
+  } catch {
+    return html;
+  }
 }

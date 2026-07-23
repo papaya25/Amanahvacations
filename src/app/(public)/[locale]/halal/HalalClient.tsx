@@ -10,6 +10,7 @@ import {
   IconMosque, IconNoAlcohol, IconPark, IconPool, IconTemple, IconVilla,
   IconWaves, IconYacht,
 } from "@/components/LuxeIcons";
+import type { HalalContent } from "./content";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
@@ -22,30 +23,11 @@ const EMAIL_BODY = encodeURIComponent(
   "Hello Amanah Vacations,\n\nI'm interested in the VIP Halal Experience.\n\nPlease help me plan a fully halal, VIP-tailored trip for my family.\n\nThank you!"
 );
 
-const PILLARS = [
-  { icon: IconDining, title: "Halal Food & Dining", desc: "Access to halal-certified restaurants and private chef services using only halal-sourced ingredients." },
-  { icon: IconMosque, title: "Prayer & Qibla", desc: "Prayer time schedules, Qibla direction, dedicated prayer space in your villa, and nearest mosque guidance." },
-  { icon: IconVilla, title: "Alcohol-Free Villas", desc: "Private luxury villas with no alcohol on the premises — a fully halal-friendly environment for you and your family." },
-  { icon: IconFamily, title: "Family-First", desc: "Activities, spaces, and itineraries designed with families in mind — comfortable, joyful, and respectful of your values." },
-  { icon: IconWaves, title: "Modest Beach & Pool", desc: "Private beach and pool setups that offer full privacy — enjoy the Caribbean in a space that's entirely yours." },
-];
-
-const PERKS = [
-  { icon: IconNoAlcohol, title: "Alcohol-free environment", desc: "No alcohol is brought into or stored on the property — guaranteed from the moment you arrive." },
-  { icon: IconPool, title: "Private pool & outdoor space", desc: "Your pool, your terrace, your garden — fully private with no shared facilities." },
-  { icon: IconBed, title: "Spacious family layouts", desc: "Multiple bedrooms, living areas, and communal spaces ideal for families and groups." },
-  { icon: IconMosque, title: "Prayer-ready setup", desc: "Prayer mats, Qibla direction marked, and daily prayer times provided in every villa." },
-  { icon: IconBell, title: "24/7 halal-aware concierge", desc: "A dedicated concierge who understands your needs and is available around the clock." },
-];
-
-const ACTIVITIES = [
-  { icon: IconCenote, title: "Private Cenotes", desc: "Explore the Yucatán's sacred underground rivers in complete privacy — no public crowds, fully secluded, and perfectly suited for families who value modesty." },
-  { icon: IconBeach, title: "Private Beach Setups", desc: "A dedicated stretch of Caribbean coastline reserved just for your group — premium loungers, full service, and the privacy your family deserves." },
-  { icon: IconTemple, title: "Mayan Ruins Discovery", desc: "A private guided journey through Chichén Itzá, Tulum, or Cobá — deeply educational, awe-inspiring, and a wonderful experience for children and adults alike." },
-  { icon: IconYacht, title: "Private Yacht Excursions", desc: "Sail the Caribbean on a private yacht with your family — snorkeling, island-hopping, and breathtaking views in a space that is entirely your own." },
-  { icon: IconLeaf, title: "Nature & Eco Experiences", desc: "From jungle walks to wildlife sanctuaries and eco-parks, we design nature-based adventures that kids love and parents appreciate — wholesome and memorable." },
-  { icon: IconPark, title: "Xcaret Parks Access", desc: "Fully arranged access to Xcaret, Xel-Há, Xplor, and more — some of Mexico's most spectacular family-friendly parks, seamlessly coordinated for you." },
-];
+/* Icons stay in the client, matched by index to the translated text arrays
+   delivered from the server (content prop). */
+const PILLAR_ICONS = [IconDining, IconMosque, IconVilla, IconFamily, IconWaves];
+const PERK_ICONS = [IconNoAlcohol, IconPool, IconBed, IconMosque, IconBell];
+const ACTIVITY_ICONS = [IconCenote, IconBeach, IconTemple, IconYacht, IconLeaf, IconPark];
 
 const Ornament = () => (
   <div className="ornament-divider fade-in">
@@ -57,7 +39,7 @@ const Ornament = () => (
   </div>
 );
 
-export default function HalalClient() {
+export default function HalalClient({ content }: { content: HalalContent }) {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -82,11 +64,11 @@ export default function HalalClient() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/luxe/halal-hero.jpg" alt="Halal Travel – Amanah Vacations Riviera Maya" />
         <div className="hero-caption">
-          <div className="badge">Muslim-Friendly Travel</div>
+          <div className="badge">{content.heroBadge}</div>
           <h1>
-            Travel With <em>Peace of Mind</em>
+            {content.heroTitle1} <em>{content.heroTitleEm}</em>
           </h1>
-          <p className="hero-sub">Halal · Riviera Maya · Tailored for You</p>
+          <p className="hero-sub">{content.heroSub}</p>
         </div>
       </div>
 
@@ -102,24 +84,13 @@ export default function HalalClient() {
         {/* INTRO */}
         <div className="intro fade-in">
           <div>
-            <p className="intro-eyebrow">A Journey Rooted in Trust</p>
+            <p className="intro-eyebrow">{content.introEyebrow}</p>
             <h2 className="intro-title">
-              Luxury travel that <em>honors your faith</em> and your family.
+              {content.introTitle1} <em>{content.introTitleEm}</em> {content.introTitle2}
             </h2>
-            <p className="intro-text">
-              At Amanah Vacations, we understand that for Muslim travelers, a perfect trip is
-              about more than beautiful destinations — it&apos;s about feeling at ease, respected,
-              and at home wherever you are. We handle every detail so you can focus on what truly
-              matters: creating meaningful memories with the people you love, without compromise.
-            </p>
+            <p className="intro-text">{content.introText}</p>
             <div className="promise-strip">
-              {[
-                "Halal-certified dining & private chef options",
-                "Private villas — fully alcohol-free environments",
-                "Prayer space, Qibla direction & Friday Jumu'ah guidance",
-                "Family-first experiences, modest beach & pool setups",
-                "A concierge who understands your needs",
-              ].map((p) => (
+              {content.promiseStrip.map((p) => (
                 <div key={p} className="promise-item">
                   <div className="promise-dot" />
                   {p}
@@ -134,7 +105,7 @@ export default function HalalClient() {
                 <img src="/images/logo.png" alt="Amanah Vacations Logo" />
               </div>
             </div>
-            <p className="faith-tagline">Trust in Adventure.</p>
+            <p className="faith-tagline">{content.faithTagline}</p>
             <p className="arabic-text">أمانة</p>
           </div>
         </div>
@@ -143,19 +114,16 @@ export default function HalalClient() {
 
         {/* PILLARS */}
         <div className="section-heading fade-in">
-          <p className="eyebrow">Our Commitment</p>
+          <p className="eyebrow">{content.pillarsEyebrow}</p>
           <h2>
-            What We <em>Ensure for You</em>
+            {content.pillarsTitle1} <em>{content.pillarsTitleEm}</em>
           </h2>
-          <p className="sub-note">
-            Every element of your trip is thoughtfully arranged with halal principles and your
-            family&apos;s comfort in mind.
-          </p>
+          <p className="sub-note">{content.pillarsNote}</p>
         </div>
         <div className="pillars-grid fade-in">
-          {PILLARS.map((p) => (
+          {content.pillars.map((p, i) => (
             <div key={p.title} className="pillar-card">
-              <div className="pillar-icon">{p.icon}</div>
+              <div className="pillar-icon">{PILLAR_ICONS[i]}</div>
               <h3 className="pillar-title">{p.title}</h3>
               <p className="pillar-desc">{p.desc}</p>
             </div>
@@ -166,86 +134,54 @@ export default function HalalClient() {
 
         {/* DINING */}
         <div className="section-heading fade-in">
-          <p className="eyebrow">Halal Dining</p>
+          <p className="eyebrow">{content.diningEyebrow}</p>
           <h2>
-            Eat Well, <em>Eat Halal</em>
+            {content.diningTitle1} <em>{content.diningTitleEm}</em>
           </h2>
-          <p className="sub-note">
-            Great food is central to any great trip. We make sure every meal meets your standards
-            — without sacrificing flavor or experience.
-          </p>
+          <p className="sub-note">{content.diningNote}</p>
         </div>
         <div className="dining-section fade-in">
-          <div className="dining-card">
-            <div className="dining-tag">Halal Certified · Playa del Carmen</div>
-            <h3 className="dining-name">
-              Al Rayan <em>Restaurant</em>
-            </h3>
-            <p className="dining-desc">
-              One of the few halal-certified restaurants in the Riviera Maya, Al Rayan offers a
-              warm, welcoming atmosphere with a menu rooted in Middle Eastern flavors and freshly
-              prepared halal ingredients. A trusted choice for Muslim families in the heart of
-              Playa del Carmen.
-            </p>
-            <ul className="dining-features">
-              <li>Fully halal-certified kitchen</li>
-              <li>Middle Eastern &amp; international cuisine</li>
-              <li>Alcohol-free dining environment</li>
-              <li>Family-friendly atmosphere</li>
-              <li>Conveniently located in Playa del Carmen</li>
-            </ul>
-          </div>
-          <div className="dining-card">
-            <div className="dining-tag">Private Service · Any Location</div>
-            <h3 className="dining-name">
-              Private Chef with <em>Halal Meat</em>
-            </h3>
-            <p className="dining-desc">
-              Prefer to dine at your villa? We arrange a dedicated private chef who sources only
-              halal-certified meats and ingredients — cooking for you at home, beachside, or
-              wherever your day takes you. Fully customized menus, dietary preferences honored,
-              and no compromises on quality or faith.
-            </p>
-            <ul className="dining-features">
-              <li>Halal-sourced meat &amp; ingredients only</li>
-              <li>Custom menus tailored to your preferences</li>
-              <li>Breakfast, lunch, dinner &amp; special occasions</li>
-              <li>Served at your villa, beach, or yacht</li>
-              <li>Available throughout your stay</li>
-            </ul>
-          </div>
+          {content.dining.map((d) => (
+            <div key={d.name1} className="dining-card">
+              <div className="dining-tag">{d.tag}</div>
+              <h3 className="dining-name">
+                {d.name1} <em>{d.nameEm}</em>
+              </h3>
+              <p className="dining-desc">{d.desc}</p>
+              <ul className="dining-features">
+                {d.features.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         <Ornament />
 
         {/* VILLA */}
         <div className="section-heading fade-in">
-          <p className="eyebrow">Where You&apos;ll Stay</p>
+          <p className="eyebrow">{content.villaEyebrow}</p>
           <h2>
-            Private Villas — <em>Your Space, Your Rules</em>
+            {content.villaTitle1} <em>{content.villaTitleEm}</em>
           </h2>
         </div>
         <div className="villa-section fade-in">
           <div className="villa-image-wrap">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/luxe/villa.jpg" alt="Private Luxury Villa" />
-            <div className="villa-corner">Alcohol-Free</div>
+            <div className="villa-corner">{content.villaCorner}</div>
           </div>
           <div className="villa-content">
-            <p className="villa-eyebrow">Muslim-Friendly Accommodations</p>
+            <p className="villa-eyebrow">{content.villaContentEyebrow}</p>
             <h3 className="villa-title">
-              Luxury villas chosen for <em>comfort and privacy.</em>
+              {content.villaContentTitle1} <em>{content.villaContentTitleEm}</em>
             </h3>
-            <p className="villa-text">
-              Rather than recommending hotels where alcohol is present and shared spaces are
-              unavoidable, we exclusively place our halal clients in private luxury villas. These
-              are fully self-contained retreats where you control the environment — no alcohol on
-              the premises, no unwanted intrusions, and complete freedom to live as you wish.
-            </p>
+            <p className="villa-text">{content.villaText}</p>
             <ul className="villa-perks">
-              {PERKS.map((p) => (
+              {content.perks.map((p, i) => (
                 <li key={p.title}>
-                  <span className="perk-icon">{p.icon}</span>
+                  <span className="perk-icon">{PERK_ICONS[i]}</span>
                   <div>
                     <strong>{p.title}</strong>
                     {p.desc}
@@ -260,19 +196,16 @@ export default function HalalClient() {
 
         {/* ACTIVITIES */}
         <div className="section-heading fade-in">
-          <p className="eyebrow">Family Experiences</p>
+          <p className="eyebrow">{content.activitiesEyebrow}</p>
           <h2>
-            Activities for <em>Every Member</em>
+            {content.activitiesTitle1} <em>{content.activitiesTitleEm}</em>
           </h2>
-          <p className="sub-note">
-            From young children to grandparents, we curate experiences that bring families
-            together — always respectful, always memorable.
-          </p>
+          <p className="sub-note">{content.activitiesNote}</p>
         </div>
         <div className="activities-grid fade-in">
-          {ACTIVITIES.map((a) => (
+          {content.activities.map((a, i) => (
             <div key={a.title} className="activity-card">
-              <span className="activity-icon">{a.icon}</span>
+              <span className="activity-icon">{ACTIVITY_ICONS[i]}</span>
               <h4 className="activity-title">{a.title}</h4>
               <p className="activity-desc">{a.desc}</p>
             </div>
@@ -281,18 +214,13 @@ export default function HalalClient() {
 
         {/* TRUST STRIP */}
         <div className="trust-strip fade-in">
-          {[
-            ["100%", "Halal dining", "guaranteed"],
-            ["24/7", "Dedicated", "concierge"],
-            ["0", "Alcohol on", "your premises"],
-            ["∞", "Memories made", "with family"],
-          ].map(([n, l1, l2]) => (
-            <div key={n} className="trust-item">
-              <div className="trust-number">{n}</div>
+          {content.trust.map((t) => (
+            <div key={t.n} className="trust-item">
+              <div className="trust-number">{t.n}</div>
               <div className="trust-label">
-                {l1}
+                {t.l1}
                 <br />
-                {l2}
+                {t.l2}
               </div>
             </div>
           ))}
@@ -301,55 +229,37 @@ export default function HalalClient() {
         {/* BODY */}
         <div className="vip-body fade-in">
           <div className="body-aside">
-            <p className="aside-label">Our Promise</p>
+            <p className="aside-label">{content.promiseLabel}</p>
             <blockquote className="aside-quote">
-              &ldquo;Travel that honors your faith, your family, and your freedom.&rdquo;
+              &ldquo;{content.promiseQuote}&rdquo;
             </blockquote>
             <ul className="aside-list">
-              <li>Halal food &amp; private chef</li>
-              <li>Prayer facilities in every villa</li>
-              <li>Alcohol-free private accommodations</li>
-              <li>Modest private beach &amp; pool</li>
-              <li>Family-oriented activities</li>
-              <li>Muslim-aware concierge team</li>
-              <li>Full trip planning &amp; coordination</li>
+              {content.promiseList.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </div>
           <div className="body-content">
-            <p>
-              We believe that Muslim families deserve to travel with the same freedom, luxury, and
-              joy as anyone else — without having to compromise their values at every turn.
-              That&apos;s why Amanah Vacations was built with trust at its core.
-            </p>
-            <p>
-              From the moment you reach out to us, our team gets to know your family&apos;s
-              needs, preferences, and expectations. We handle everything — the villa, the meals,
-              the prayer arrangements, the activities — so that by the time you arrive, the only
-              thing left to do is enjoy.
-            </p>
-            <p>
-              The Riviera Maya is one of the most beautiful destinations in the world, and we want
-              every Muslim traveler to experience it fully, comfortably, and with complete peace
-              of mind. Whether it&apos;s your first time visiting Mexico or your fifth, we&apos;ll
-              make it the trip you remember forever.
-            </p>
+            {content.bodyParas.map((p) => (
+              <p key={p.slice(0, 40)}>{p}</p>
+            ))}
           </div>
         </div>
 
         {/* CTA */}
         <div className="cta-band fade-in">
           <div className="cta-text">
-            <p className="cta-eyebrow">Plan Your Halal Journey</p>
+            <p className="cta-eyebrow">{content.ctaEyebrow}</p>
             <h3 className="cta-headline">
-              Ready to travel <em>without compromise?</em>
+              {content.ctaHeadline1} <em>{content.ctaHeadlineEm}</em>
             </h3>
           </div>
           <div className="cta-buttons">
             <button className="btn-primary" onClick={() => setModalOpen(true)}>
-              Request VIP Experience
+              {content.ctaPrimary}
             </button>
             <Link href="/activities" className="btn-secondary">
-              Explore All Activities
+              {content.ctaSecondary}
             </Link>
           </div>
         </div>
@@ -365,13 +275,9 @@ export default function HalalClient() {
             <button className="vip-modal-close" onClick={() => setModalOpen(false)}>
               ×
             </button>
-            <p className="vip-modal-eyebrow">Plan Your Halal Journey</p>
-            <h3 className="vip-modal-title">Request Your VIP Experience</h3>
-            <p className="vip-modal-text">
-              Tell us a little about your trip — dates, group size, and what matters most to your
-              family — and our team will reach out to design a fully halal, VIP-tailored journey
-              just for you.
-            </p>
+            <p className="vip-modal-eyebrow">{content.modalEyebrow}</p>
+            <h3 className="vip-modal-title">{content.modalTitle}</h3>
+            <p className="vip-modal-text">{content.modalText}</p>
             <div className="vip-modal-btns">
               <a
                 className="vip-wa-btn"
@@ -379,10 +285,10 @@ export default function HalalClient() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Send via WhatsApp
+                {content.modalWhatsApp}
               </a>
               <a className="vip-email-btn" href={`mailto:${EMAIL}?subject=${EMAIL_SUBJECT}&body=${EMAIL_BODY}`}>
-                Send via Email
+                {content.modalEmail}
               </a>
             </div>
           </div>
@@ -391,7 +297,7 @@ export default function HalalClient() {
         {/* MANTRA */}
         <div className="mantra fade-in">
           <p className="mantra-text">
-            <span>Your faith.</span> Your family. <span>Your adventure.</span>
+            <span>{content.mantra1}</span> {content.mantra2} <span>{content.mantra3}</span>
           </p>
         </div>
       </div>
