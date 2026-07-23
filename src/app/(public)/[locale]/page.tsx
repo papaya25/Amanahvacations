@@ -1,5 +1,5 @@
 import Hero from "@/components/Hero";
-import PostcardDivider from "@/components/PostcardDivider";
+import PostcardDivider, { POSTCARD_PLACES } from "@/components/PostcardDivider";
 import TripPicker from "@/components/TripPicker";
 import Activities from "@/components/Activities";
 import HowItWorks from "@/components/HowItWorks";
@@ -10,7 +10,7 @@ import { faqSchema } from "@/lib/seo";
 import { getHero } from "@/lib/content/hero";
 import { getFaqs } from "@/lib/content/faq";
 import { translateMany } from "@/lib/i18n/translate";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { isLocale, localizeHref, type Locale } from "@/lib/i18n/config";
 
 const FAQS = [
   {
@@ -85,15 +85,33 @@ export default async function Home({
     locale
   );
 
+  // DreamAdventure's eyebrow, two hardcoded body paragraphs and CTA button.
+  const [dreamEyebrow, dreamPara1, dreamPara2, dreamCta] = await translateMany(
+    [
+      "Almost There",
+      "From soaring above the treetops on ziplines to exploring rugged trails on ATVs, and unwinding on some of the Caribbean's most breathtaking beaches, this is more than a destination — it's an experience waiting to be lived.",
+      "With Amanah Vacations, every detail is thoughtfully crafted to give you a seamless, authentic, and unforgettable journey, so you can focus on what truly matters: creating memories that last a lifetime.",
+      "Plan Your Trip →",
+    ],
+    locale
+  );
+
   return (
     <main>
       <JsonLd data={faqSchema(faqs)} />
       <Hero content={translatedHero} />
-      <PostcardDivider />
+      <PostcardDivider places={await translateMany(POSTCARD_PLACES, locale)} />
       <TripPicker />
       <Activities locale={locale} />
       <HowItWorks locale={locale} />
-      <DreamAdventure title={translatedHero.dreamTitle} text={translatedHero.dreamText} />
+      <DreamAdventure
+        title={translatedHero.dreamTitle}
+        text={translatedHero.dreamText}
+        eyebrow={dreamEyebrow}
+        extraParas={[dreamPara1, dreamPara2]}
+        cta={dreamCta}
+        packagesHref={localizeHref("/packages", locale)}
+      />
       <Faq items={translatedFaqs} heading={headingTexts[0]} eyebrow={headingTexts[1]} dark />
     </main>
   );

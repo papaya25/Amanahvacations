@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { DEFAULT_HERO, type HeroContent } from "@/lib/content/hero";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
 
 /* Default slides keep hand-written alt text for SEO; DB slides fall back to
    the matching default's alt (by position) or the slide name. */
@@ -46,13 +48,14 @@ const DEFAULT_SLIDES = [
   },
 ];
 
-const BADGES = [
-  { icon: "🔒", label: "Private Tours" },
-  { icon: "👨‍👩‍👧", label: "Family Safe" },
-  { icon: "✦", label: "Luxury Options" },
-  { icon: "🌴", label: "Trusted Guides" },
-  { icon: "🕌", label: "Halal Friendly" },
-];
+const BADGE_ICONS = ["🔒", "👨‍👩‍👧", "✦", "🌴", "🕌"] as const;
+const BADGE_KEYS = [
+  "hero_badge_private",
+  "hero_badge_family",
+  "hero_badge_luxury",
+  "hero_badge_guides",
+  "hero_badge_halal",
+] as const;
 
 const FLAGS = [
   { code: "en", flag: "🇬🇧", label: "English" },
@@ -147,6 +150,9 @@ function ParticleCurtain() {
 }
 
 export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
+  const { locale, dict } = useI18n();
+  const L = (href: string) => localizeHref(href, locale);
+  const BADGES = BADGE_ICONS.map((icon, i) => ({ icon, label: dict[BADGE_KEYS[i]] }));
   const SLIDES = (content.slides.length ? content.slides : DEFAULT_HERO.slides).map((s, i) => ({
     src: s.image,
     name: s.name,
@@ -271,8 +277,7 @@ export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent
             <em className="block italic text-gold">{content.headlineEm}</em>
           </h1>
           <p className="mb-5 max-w-[320px] text-[13.5px] font-light leading-[1.72] text-white/68">
-            Private tours, hidden cenotes and Caribbean beaches — for families
-            and couples who want something more than ordinary.
+            {dict.hero_mobile_tagline}
           </p>
           <div className="mb-5 flex flex-wrap gap-[7px]">
             {BADGES.map((b) => (
@@ -304,16 +309,16 @@ export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent
           </div>
           <div className="flex flex-col items-center gap-2.5">
             <Link
-              href="/activities"
+              href={L("/activities")}
               className="w-3/4 rounded-full bg-gradient-to-br from-terracotta to-gold px-6 py-3 text-center text-[13.5px] font-semibold text-white active:opacity-85"
             >
-              Explore Activities ↓
+              {dict.hero_explore} ↓
             </Link>
             <Link
-              href="/contact"
+              href={L("/contact")}
               className="w-3/4 rounded-full border-[1.5px] border-white/35 bg-white/10 px-6 py-3 text-center text-[13.5px] font-medium text-white backdrop-blur-md active:bg-white/20"
             >
-              Talk to Us →
+              {dict.hero_talk} →
             </Link>
           </div>
         </div>
@@ -410,16 +415,16 @@ export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent
               style={{ animationDelay: "0.64s" }}
             >
               <Link
-                href="/activities"
+                href={L("/activities")}
                 className="whitespace-nowrap rounded-full bg-gradient-to-br from-terracotta to-gold px-[clamp(20px,2vw,26px)] py-[clamp(10px,1vw,13px)] text-center text-[clamp(12px,1vw,14px)] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
               >
-                Explore Activities →
+                {dict.hero_explore} →
               </Link>
               <Link
-                href="/contact"
+                href={L("/contact")}
                 className="whitespace-nowrap rounded-full border-[1.5px] border-forest px-[clamp(18px,1.8vw,22px)] py-[clamp(10px,1vw,12px)] text-center text-[clamp(12px,1vw,14px)] font-medium text-forest transition hover:bg-forest hover:text-white"
               >
-                Talk to Us →
+                {dict.hero_talk} →
               </Link>
             </div>
           </div>

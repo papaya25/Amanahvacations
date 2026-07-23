@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
 
 type SceneId = "basic" | "family" | "water" | "explorer" | "honeymoon" | "luxury";
 
@@ -210,7 +212,29 @@ export default function TripPicker() {
     }, 900);
   };
 
-  const scene = picked ? SCENES[picked] : null;
+  const { locale, dict } = useI18n();
+  // Overlay translated copy (em/tag/name/desc) onto the scene by id; visual
+  // fields (colors, url) stay as-is.
+  const scene = picked
+    ? {
+        ...SCENES[picked],
+        em: dict[`tp_em_${picked}` as const],
+        tag: dict[`tp_tag_${picked}` as const],
+        name: dict[`tp_name_${picked}` as const],
+        desc: dict[`tp_desc_${picked}` as const],
+      }
+    : null;
+  const VIBE_LABELS: Record<SceneId, string> = {
+    basic: dict.tp_vibe_basic,
+    family: dict.tp_vibe_family,
+    water: dict.tp_vibe_water,
+    explorer: dict.tp_vibe_explorer,
+    honeymoon: dict.tp_vibe_honeymoon,
+    luxury: dict.tp_vibe_luxury,
+  };
+  const VIBE_EMOJI: Record<SceneId, string> = {
+    basic: "🌿", family: "👨‍👩‍👧", water: "🌊", explorer: "🏛️", honeymoon: "💞", luxury: "✦",
+  };
 
   return (
     <section
@@ -259,23 +283,23 @@ export default function TripPicker() {
       {/* Content */}
       <div className="relative z-10 flex min-h-[620px] flex-col items-center justify-center px-6 pb-[150px] pt-16 text-center md:min-h-[680px]">
         <div className="mb-3.5 text-[10px] font-semibold uppercase tracking-[3.5px] text-white/45">
-          Our Packages · Amanah Vacations
+          {dict.tp_eyebrow}
         </div>
         <h2
           id="packages-heading"
           className="mb-4 font-serif text-[clamp(38px,4.5vw,56px)] font-semibold leading-[1.02] tracking-[-1.5px] text-white"
         >
-          Your{" "}
+          {dict.tp_your}{" "}
           <em
             className="block italic transition-colors duration-700"
             style={{ color: scene?.accent ?? "#E8A84B" }}
           >
-            {scene?.em ?? "perfect trip"}
+            {scene?.em ?? dict.tp_default_em}
           </em>
-          starts here
+          {dict.tp_starts_here}
         </h2>
         <p className="mb-7 text-[13px] tracking-[0.8px] text-white/55">
-          Pick your travel style
+          {dict.tp_pick_style}
         </p>
 
         <div className="grid w-full max-w-[340px] grid-cols-2 gap-2.5 sm:max-w-[560px] sm:grid-cols-3">
@@ -295,7 +319,7 @@ export default function TripPicker() {
                   boxShadow: active ? "0 8px 22px rgba(0,0,0,0.45)" : "none",
                 }}
               >
-                {v.label}
+                {VIBE_EMOJI[v.id]} {VIBE_LABELS[v.id]}
               </button>
             );
           })}
@@ -327,10 +351,10 @@ export default function TripPicker() {
             </div>
           </div>
           <Link
-            href={scene?.url ?? "/packages"}
+            href={localizeHref(scene?.url ?? "/packages", locale)}
             className="shrink-0 rounded-full bg-white px-6 py-[11px] text-center text-[13px] font-bold text-ink transition active:scale-[0.97]"
           >
-            See full plan →
+            {dict.tp_see_plan}
           </Link>
         </div>
       </div>

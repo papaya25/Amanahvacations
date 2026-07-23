@@ -1,4 +1,4 @@
-const PLACES = [
+export const POSTCARD_PLACES = [
   "Hidden Cenotes",
   "Tulum Ruins",
   "Holbox Island",
@@ -11,8 +11,8 @@ const PLACES = [
   "Chichén Itzá",
 ];
 
-export default function PostcardDivider() {
-  const row = PLACES.map((p) => (
+export default function PostcardDivider({ places = POSTCARD_PLACES }: { places?: string[] }) {
+  const row = places.map((p) => (
     <span key={p} className="mx-6 inline-flex items-center gap-12 whitespace-nowrap">
       <span className="font-serif text-[clamp(20px,2vw,28px)] font-medium italic text-forest/80">
         {p}
