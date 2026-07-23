@@ -91,8 +91,8 @@ export default async function Home({
       <Hero content={translatedHero} />
       <PostcardDivider />
       <TripPicker />
-      <Activities />
-      <HowItWorks />
+      <Activities locale={locale} />
+      <HowItWorks locale={locale} />
       <DreamAdventure title={translatedHero.dreamTitle} text={translatedHero.dreamText} />
       <Faq items={translatedFaqs} heading={headingTexts[0]} eyebrow={headingTexts[1]} dark />
     </main>

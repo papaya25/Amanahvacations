@@ -107,17 +107,19 @@ export async function translateMany(texts: string[], locale: Locale): Promise<st
       locale
     );
     if (translated) {
+      // Claude occasionally returns a blank string for a very short entry in a
+      // batch — never cache or serve that as a "translation" over real text.
       const rows = missing.map((m, i) => ({
         source_hash: m.hash,
         source_text: m.text,
-        translated: translated[i] ?? m.text,
+        translated: translated[i]?.trim() ? translated[i] : m.text,
       }));
       rows.forEach((r) => cached.set(r.source_hash, r.translated));
       await storeCached(locale, rows);
     }
   }
 
-  return texts.map((text, index) => cached.get(hashes[index]) ?? text);
+  return texts.map((text, index) => cached.get(hashes[index]) || text);
 }
 
 /** Translate a single string. Convenience wrapper over translateMany. */

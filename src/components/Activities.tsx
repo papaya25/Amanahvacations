@@ -1,21 +1,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getEffectiveDestinations } from "@/lib/content/activities";
+import { translateMany } from "@/lib/i18n/translate";
+import type { Locale } from "@/lib/i18n/config";
 
 // Featured on the homepage — sourced from the live destinations list so the
 // links always resolve to existing, visible pages (no drift / 404s). Hidden
 // featured slugs are replaced by the next visible destinations.
 const FEATURED = ["whaleshark", "coba", "cenotes", "siankaan", "holbox", "zipline", "xcaret", "chichenitza"];
 
-export default async function Activities() {
+export default async function Activities({ locale }: { locale: Locale }) {
   const all = await getEffectiveDestinations();
   const featured = FEATURED.map((slug) => all.find((x) => x.slug === slug)).filter(
     (d): d is NonNullable<typeof d> => Boolean(d)
   );
   const fillers = all.filter((d) => !FEATURED.includes(d.slug));
-  const ACTIVITIES = [...featured, ...fillers]
-    .slice(0, 8)
-    .map((d) => ({ title: d.title, href: `/destinations/${d.slug}`, img: d.card, alt: d.alt }));
+  const picked = [...featured, ...fillers].slice(0, 8);
+  const titles = await translateMany(picked.map((d) => d.title), locale);
+  const ACTIVITIES = picked.map((d, i) => ({ title: titles[i], href: `/destinations/${d.slug}`, img: d.card, alt: d.alt }));
+  const [handpicked, exploreWord1, activitiesWord, exploreAllLabel, exploreLabel2] = await translateMany(
+    ["Handpicked Experiences", "Explore", "Activities", "Explore All Activities →", "Explore"],
+    locale
+  );
   return (
     <section className="bg-cream py-[clamp(56px,7vw,96px)]" aria-labelledby="activities-heading">
       <div className="mx-auto max-w-[1320px] px-5 lg:px-8">
@@ -23,20 +29,20 @@ export default async function Activities() {
           <div>
             <div className="mb-3 flex items-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
               <span aria-hidden className="h-[1.5px] w-[26px] bg-terracotta" />
-              Handpicked Experiences
+              {handpicked}
             </div>
             <h2
               id="activities-heading"
               className="font-serif text-[clamp(32px,3.6vw,48px)] font-semibold leading-[1.02] tracking-[-1px] text-ink"
             >
-              Explore <em className="italic text-forest">Activities</em>
+              {exploreWord1} <em className="italic text-forest">{activitiesWord}</em>
             </h2>
           </div>
           <Link
             href="/activities"
             className="whitespace-nowrap rounded-full border-[1.5px] border-forest px-5 py-2.5 text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white"
           >
-            Explore All Activities →
+            {exploreAllLabel}
           </Link>
         </div>
 
@@ -67,7 +73,7 @@ export default async function Activities() {
                   {a.title}
                 </h3>
                 <span className="mt-1.5 inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[2px] text-gold transition-all duration-300 group-hover:gap-2.5">
-                  Explore
+                  {exploreLabel2}
                   <span aria-hidden>→</span>
                 </span>
               </div>

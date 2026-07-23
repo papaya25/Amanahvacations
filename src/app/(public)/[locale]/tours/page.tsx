@@ -6,6 +6,8 @@ import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
 import { getFaqs } from "@/lib/content/faq";
 import { getSavedTours } from "@/lib/content/tours";
+import { translateMany } from "@/lib/i18n/translate";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import "./tours.css";
 
 const caveat = Caveat({
@@ -73,7 +75,14 @@ const FAQS = [
   },
 ];
 
-export default async function ToursPage() {
+export default async function ToursPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
+
   const [faqs, dbTours] = await Promise.all([getFaqs("tours", FAQS), getSavedTours()]);
 
   // Structured data follows the live tour list once the admin has saved one.
@@ -82,6 +91,38 @@ export default async function ToursPage() {
         .filter((t) => !t.onreq && t.price > 0)
         .map((t) => ({ name: t.name, price: t.offer > 0 ? t.offer : t.price, img: t.img }))
     : TOUR_SUMMARY;
+
+  const translatedTours = dbTours
+    ? await Promise.all(
+        dbTours.map(async (t) => {
+          const stopTexts = await translateMany(
+            [t.name, t.sub, t.dur, ...t.stops.map((s) => s.place), ...t.stops.map((s) => s.desc)],
+            locale
+          );
+          const n = t.stops.length;
+          return {
+            ...t,
+            name: stopTexts[0],
+            sub: stopTexts[1],
+            dur: stopTexts[2],
+            stops: t.stops.map((s, i) => ({ ...s, place: stopTexts[3 + i], desc: stopTexts[3 + n + i] })),
+          };
+        })
+      )
+    : dbTours;
+
+  const faqTexts = await translateMany(
+    [...faqs.map((f) => f.q), ...faqs.map((f) => f.a)],
+    locale
+  );
+  const translatedFaqs = faqs.map((f, i) => ({
+    q: faqTexts[i],
+    a: faqTexts[faqs.length + i],
+  }));
+  const [faqHeading, faqEyebrow] = await translateMany(
+    ["Tours — frequently asked questions", "Good to know"],
+    locale
+  );
 
   return (
     <main className={caveat.variable}>
@@ -104,8 +145,8 @@ export default async function ToursPage() {
           faqSchema(faqs),
         ]}
       />
-      <ToursClient dbTours={dbTours ?? undefined} />
-      <Faq items={faqs} heading="Tours — frequently asked questions" />
+      <ToursClient dbTours={translatedTours ?? undefined} />
+      <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </main>
   );
 }

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { getEffectiveDestinations } from "@/lib/content/activities";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema, itemListSchema } from "@/lib/seo";
+import { translateMany } from "@/lib/i18n/translate";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 
 export const metadata: Metadata = {
   title: "Things to Do in the Riviera Maya — Activities & Day Trips",
@@ -30,8 +32,45 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ActivitiesPage() {
+export default async function ActivitiesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
+
   const DESTINATIONS = await getEffectiveDestinations();
+  const titles = await translateMany(DESTINATIONS.map((d) => d.title), locale);
+  const translatedDestinations = DESTINATIONS.map((d, i) => ({ ...d, title: titles[i] }));
+
+  const [
+    heading1,
+    heading2,
+    handpickedExperiences,
+    intro,
+    ctaTitle1,
+    ctaTitle2,
+    ctaText,
+    ctaPackages,
+    ctaContact,
+    exploreLabel,
+  ] = await translateMany(
+    [
+      "Explore",
+      "Activities",
+      "Handpicked Experiences",
+      "From sacred cenotes and Mayan wonders to island escapes and pure relaxation — every experience is private, flexible and planned around you.",
+      "Not sure where to",
+      "start?",
+      "Tell us your travel style and we'll build the perfect combination of activities for your trip.",
+      "See Our Packages →",
+      "Talk to Us →",
+      "Explore",
+    ],
+    locale
+  );
+
   return (
     <main className="bg-cream">
       <JsonLd
@@ -50,15 +89,13 @@ export default async function ActivitiesPage() {
         <div className="mx-auto max-w-[1320px] px-5 py-[clamp(40px,5vw,72px)] lg:px-8">
           <div className="mb-3 flex items-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
             <span aria-hidden className="h-[1.5px] w-[26px] bg-terracotta" />
-            {DESTINATIONS.length} Handpicked Experiences
+            {DESTINATIONS.length} {handpickedExperiences}
           </div>
           <h1 className="font-serif text-[clamp(36px,4.5vw,58px)] font-semibold leading-[1.02] tracking-[-1px] text-ink">
-            Explore <em className="italic text-forest">Activities</em>
+            {heading1} <em className="italic text-forest">{heading2}</em>
           </h1>
           <p className="mt-4 max-w-[560px] text-[clamp(13.5px,1.05vw,15.5px)] leading-[1.75] text-sage">
-            From sacred cenotes and Mayan wonders to island escapes and pure
-            relaxation — every experience is private, flexible and planned
-            around you.
+            {intro}
           </p>
         </div>
       </section>
@@ -66,7 +103,7 @@ export default async function ActivitiesPage() {
       {/* Grid */}
       <section className="mx-auto max-w-[1320px] px-5 py-[clamp(40px,5vw,72px)] lg:px-8">
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 md:gap-5 xl:grid-cols-4">
-          {DESTINATIONS.map((d) => (
+          {translatedDestinations.map((d) => (
             <Link
               key={d.slug}
               href={`/destinations/${d.slug}`}
@@ -92,7 +129,7 @@ export default async function ActivitiesPage() {
                   {d.title}
                 </h2>
                 <span className="mt-1.5 inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[2px] text-gold transition-all duration-300 group-hover:gap-2.5">
-                  Explore <span aria-hidden>→</span>
+                  {exploreLabel} <span aria-hidden>→</span>
                 </span>
               </div>
             </Link>
@@ -102,24 +139,23 @@ export default async function ActivitiesPage() {
         {/* CTA */}
         <div className="mt-[clamp(40px,5vw,64px)] rounded-[24px] bg-night px-6 py-[clamp(32px,4vw,52px)] text-center">
           <h2 className="font-serif text-[clamp(24px,2.6vw,36px)] font-semibold text-white">
-            Not sure where to <em className="italic text-gold">start?</em>
+            {ctaTitle1} <em className="italic text-gold">{ctaTitle2}</em>
           </h2>
           <p className="mx-auto mt-3 max-w-[440px] text-[13.5px] leading-[1.7] text-white/60">
-            Tell us your travel style and we&rsquo;ll build the perfect
-            combination of activities for your trip.
+            {ctaText}
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/packages"
               className="rounded-full bg-gradient-to-br from-terracotta to-gold px-7 py-3 text-[14px] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
             >
-              See Our Packages →
+              {ctaPackages}
             </Link>
             <Link
               href="/contact"
               className="rounded-full border-[1.5px] border-white/40 px-6 py-3 text-[14px] font-medium text-white transition hover:border-white hover:bg-white hover:text-ink"
             >
-              Talk to Us →
+              {ctaContact}
             </Link>
           </div>
         </div>

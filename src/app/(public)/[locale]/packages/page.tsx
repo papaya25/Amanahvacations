@@ -6,6 +6,8 @@ import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from 
 import { getPublicPackages } from "@/lib/content/packages";
 import { getFaqs } from "@/lib/content/faq";
 import { getSavedAddons } from "@/lib/content/addons";
+import { translateMany } from "@/lib/i18n/translate";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import "./packages.css";
 
 export const metadata: Metadata = {
@@ -64,12 +66,50 @@ const FAQS = [
   },
 ];
 
-export default async function PackagesPage() {
+export default async function PackagesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
+
   const [dbPackages, faqs, dbAddons] = await Promise.all([
     getPublicPackages(),
     getFaqs("packages", FAQS),
     getSavedAddons(),
   ]);
+
+  const translatedPackages = dbPackages
+    ? await Promise.all(
+        dbPackages.map(async (p) => {
+          const [name, tagline, badge, includes] = await translateMany(
+            [p.name, p.tagline, p.badge, p.includes],
+            locale
+          );
+          return { ...p, name, tagline, badge, includes };
+        })
+      )
+    : dbPackages;
+
+  const translatedAddons = dbAddons
+    ? await Promise.all(
+        dbAddons.map(async (a) => ({ ...a, name: await translateMany([a.name], locale).then((r) => r[0]) }))
+      )
+    : dbAddons;
+
+  const faqTexts = await translateMany(
+    [...faqs.map((f) => f.q), ...faqs.map((f) => f.a)],
+    locale
+  );
+  const translatedFaqs = faqs.map((f, i) => ({
+    q: faqTexts[i],
+    a: faqTexts[faqs.length + i],
+  }));
+  const [faqHeading, faqEyebrow] = await translateMany(
+    ["Packages — frequently asked questions", "Good to know"],
+    locale
+  );
 
   // Build the structured-data summary from live content when available (exclude
   // "on request" packages priced at 0, e.g. VIP), else fall back to the static list.
@@ -105,8 +145,8 @@ export default async function PackagesPage() {
           faqSchema(faqs),
         ]}
       />
-      <PackagesClient dbPackages={dbPackages ?? undefined} dbAddons={dbAddons ?? undefined} />
-      <Faq items={faqs} heading="Packages — frequently asked questions" />
+      <PackagesClient dbPackages={translatedPackages ?? undefined} dbAddons={translatedAddons ?? undefined} />
+      <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </>
   );
 }

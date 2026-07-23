@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { sendContactMessage } from "./actions";
+import { DEFAULT_CONTACT_LABELS, type ContactLabels } from "./labels";
 
 const WA_NUMBER = "529844521184";
 const EMAIL = "booking@amanahvacations.com";
@@ -12,7 +13,7 @@ const WA_ICON = (
   </svg>
 );
 
-export default function ContactClient() {
+export default function ContactClient({ labels = DEFAULT_CONTACT_LABELS }: { labels?: ContactLabels }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -36,14 +37,14 @@ export default function ContactClient() {
   // what's missing or mistyped.
   const [touched, setTouched] = useState<{ [k: string]: boolean }>({});
   const touch = (k: string) => setTouched((t) => ({ ...t, [k]: true }));
-  const nameError = touched.name && !name.trim() ? "Please enter your name." : null;
+  const nameError = touched.name && !name.trim() ? labels.nameError : null;
   const emailError =
     touched.email && !emailValid
       ? email.trim()
-        ? "This email looks incomplete — it should be like name@email.com"
-        : "Please enter your email."
+        ? labels.emailErrorIncomplete
+        : labels.emailErrorMissing
       : null;
-  const messageError = touched.message && !message.trim() ? "Please write a short message." : null;
+  const messageError = touched.message && !message.trim() ? labels.messageError : null;
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -60,7 +61,7 @@ export default function ContactClient() {
       whatsapp: whatsapp.trim() || undefined,
       subject: subject.trim() || undefined,
       message: message.trim(),
-    }).catch(() => ({ ok: false as const, error: "Something went wrong." }));
+    }).catch(() => ({ ok: false as const, error: labels.genericError }));
     setSending(false);
     if (res.ok) {
       setSent(true);
@@ -87,10 +88,9 @@ export default function ContactClient() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-forest/10 text-[26px]">
           ✓
         </div>
-        <p className="font-serif text-[24px] font-semibold text-ink">Message sent!</p>
+        <p className="font-serif text-[24px] font-semibold text-ink">{labels.sentTitle}</p>
         <p className="mx-auto mt-2 max-w-[380px] text-[14px] leading-[1.7] text-sage">
-          Thanks {name.split(" ")[0]} — we&apos;ve got your message and will reply within a few
-          hours, same day, every day.
+          {labels.thanksPrefix} {name.split(" ")[0]} — {labels.sentBody}
         </p>
       </div>
     );
@@ -101,7 +101,7 @@ export default function ContactClient() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="c-name" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
-            Name *
+            {labels.name}
           </label>
           <input
             id="c-name"
@@ -116,7 +116,7 @@ export default function ContactClient() {
         </div>
         <div>
           <label htmlFor="c-email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
-            Email *
+            {labels.email}
           </label>
           <input
             id="c-email"
@@ -132,26 +132,26 @@ export default function ContactClient() {
         </div>
         <div>
           <label htmlFor="c-wa" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
-            WhatsApp
+            {labels.whatsapp}
           </label>
           <input
             id="c-wa"
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             className={inputCls}
-            placeholder="+1 ... — needed for a WhatsApp reply"
+            placeholder={labels.whatsappPlaceholder}
           />
         </div>
         <div>
           <label htmlFor="c-subject" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
-            Subject
+            {labels.subject}
           </label>
           <input id="c-subject" value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls} />
         </div>
       </div>
       <div className="mt-4">
         <label htmlFor="c-msg" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
-          Message *
+          {labels.message}
         </label>
         <textarea
           id="c-msg"
@@ -162,7 +162,7 @@ export default function ContactClient() {
           aria-invalid={Boolean(messageError)}
           rows={5}
           className={`${inputCls} resize-y`}
-          placeholder="Tell us about your trip — dates, group size, what you're dreaming of..."
+          placeholder={labels.messagePlaceholder}
         />
         {messageError && <p className="mt-1.5 text-[12px] font-medium text-terracotta">{messageError}</p>}
       </div>
@@ -172,29 +172,25 @@ export default function ContactClient() {
           disabled={!valid || sending}
           className="flex-1 rounded-full bg-gradient-to-br from-terracotta to-gold px-6 py-3.5 text-[14px] font-semibold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {sending ? "Sending…" : "Send via Email →"}
+          {sending ? labels.sending : labels.sendEmail}
         </button>
         <button
           type="button"
           onClick={sendWhatsApp}
           disabled={!waValid}
-          title={waValid ? undefined : "Add your WhatsApp number above so we know where to answer you"}
+          title={waValid ? undefined : labels.waHint}
           className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3.5 text-[14px] font-semibold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {WA_ICON} Send via WhatsApp
+          {WA_ICON} {labels.sendWhatsApp}
         </button>
       </div>
       {valid && !waValid && (
-        <p className="mt-3 text-center text-[12.5px] text-sage">
-          💬 Want a WhatsApp reply? Add your WhatsApp number above to unlock the green button.
-        </p>
+        <p className="mt-3 text-center text-[12.5px] text-sage">{labels.waNudge}</p>
       )}
       {sendError && (
         <p className="mt-3 text-center text-[12.5px] font-medium text-terracotta">{sendError}</p>
       )}
-      <p className="mt-4 text-center text-[12px] text-sage">
-        We usually reply within a few hours — same day, every day.
-      </p>
+      <p className="mt-4 text-center text-[12px] text-sage">{labels.replyNote}</p>
     </form>
   );
 }

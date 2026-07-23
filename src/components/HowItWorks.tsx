@@ -1,3 +1,6 @@
+import { translateMany } from "@/lib/i18n/translate";
+import type { Locale } from "@/lib/i18n/config";
+
 const STEPS = [
   {
     n: "01",
@@ -21,7 +24,30 @@ const STEPS = [
   },
 ];
 
-export default function HowItWorks() {
+export default async function HowItWorks({ locale }: { locale: Locale }) {
+  const texts = await translateMany(
+    [
+      "The Amanah Way",
+      "From dream to",
+      "departure",
+      "Amanah means",
+      "trust",
+      "in Arabic — and trust is how we plan every trip. Four steps, zero stress.",
+      ...STEPS.map((s) => s.title),
+      ...STEPS.map((s) => s.desc),
+    ],
+    locale
+  );
+  const n = STEPS.length;
+  const [
+    labelAmanahWay,
+    fromDreamTo,
+    departure,
+    amanahMeans,
+    trustWord,
+    trustSuffix,
+  ] = texts;
+  const steps = STEPS.map((s, i) => ({ ...s, title: texts[6 + i], desc: texts[6 + n + i] }));
   return (
     <section
       className="relative overflow-hidden bg-night py-[clamp(64px,8vw,120px)]"
@@ -50,19 +76,17 @@ export default function HowItWorks() {
         <div className="mb-[clamp(40px,5vw,72px)] text-center">
           <div className="mb-4 flex items-center justify-center gap-3 text-[10.5px] font-semibold uppercase tracking-[3.5px] text-gold">
             <span aria-hidden className="h-[1.5px] w-[30px] bg-gold/60" />
-            The Amanah Way
+            {labelAmanahWay}
             <span aria-hidden className="h-[1.5px] w-[30px] bg-gold/60" />
           </div>
           <h2
             id="how-heading"
             className="font-serif text-[clamp(34px,4vw,54px)] font-semibold leading-[1.02] tracking-[-1px] text-white"
           >
-            From dream to <em className="italic text-gold">departure</em>
+            {fromDreamTo} <em className="italic text-gold">{departure}</em>
           </h2>
           <p className="mx-auto mt-4 max-w-[520px] text-[clamp(13px,1vw,15px)] leading-[1.75] text-white/55">
-            Amanah means <em className="italic text-white/75">trust</em> in
-            Arabic — and trust is how we plan every trip. Four steps, zero
-            stress.
+            {amanahMeans} <em className="italic text-white/75">{trustWord}</em> {trustSuffix}
           </p>
         </div>
 
@@ -87,7 +111,7 @@ export default function HowItWorks() {
           </svg>
 
           <ol className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((s) => (
+            {steps.map((s) => (
               <li key={s.n} className="group relative text-center lg:px-2">
                 {/* Numeral medallion */}
                 <div className="relative z-10 mx-auto mb-6 flex h-[108px] w-[108px] items-center justify-center rounded-full border border-gold/30 bg-night transition-all duration-500 group-hover:border-gold group-hover:shadow-[0_0_44px_rgba(232,168,75,0.25)]">

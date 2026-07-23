@@ -4,6 +4,8 @@ import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema } from "@/lib/seo";
+import { translateMany } from "@/lib/i18n/translate";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 
 export const metadata: Metadata = {
   title: "Cancún Airport Transfers — Private to Playa del Carmen & Tulum",
@@ -55,7 +57,55 @@ const FAQS = [
   },
 ];
 
-export default function AirportTransfersPage() {
+export default async function AirportTransfersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
+
+  const texts = await translateMany(
+    [
+      "Door to Door · Just Your Group",
+      "Private Cancún airport transfers,",
+      "done right",
+      "Your vacation starts the moment you land — not after a chaotic taxi line. We collect you inside the terminal and drive you straight to your hotel or villa in Playa del Carmen, Tulum, or anywhere in the Riviera Maya, in a private air-conditioned van with cold water waiting. Every transfer is exclusively for your group.",
+      "Simple pricing,",
+      "per person or per group",
+      "Rates depend on your destination and group size. Send us your flight details and we'll confirm your exact price right away — or add a transfer to any booking at checkout. Transfers are already included in all our packages.",
+      "Get a Quote on WhatsApp →",
+      "Contact Us",
+      "Airport transfers — good to know",
+      "Good to know",
+      ...FEATURES.map((f) => f.title),
+      ...FEATURES.map((f) => f.desc),
+      ...FAQS.map((f) => f.q),
+      ...FAQS.map((f) => f.a),
+    ],
+    locale
+  );
+  const [
+    labelDoorToDoor,
+    heroTitle1,
+    heroTitle2,
+    intro,
+    priceTitle1,
+    priceTitle2,
+    priceText,
+    ctaWhatsapp,
+    ctaContact,
+    faqHeading,
+    faqEyebrow,
+  ] = texts;
+  let cursor = 11;
+  const featureTitles = texts.slice(cursor, (cursor += FEATURES.length));
+  const featureDescs = texts.slice(cursor, (cursor += FEATURES.length));
+  const translatedFeatures = FEATURES.map((f, i) => ({ title: featureTitles[i], desc: featureDescs[i] }));
+  const faqQs = texts.slice(cursor, (cursor += FAQS.length));
+  const faqAs = texts.slice(cursor, (cursor += FAQS.length));
+  const translatedFaqs = FAQS.map((f, i) => ({ q: faqQs[i], a: faqAs[i] }));
+
   return (
     <main className="bg-cream">
       <JsonLd
@@ -89,11 +139,11 @@ export default function AirportTransfersPage() {
         <div className="relative z-10 mx-auto w-full max-w-[1320px] px-5 pb-[clamp(28px,4vw,52px)] pt-24 lg:px-8">
           <div className="mb-3 flex items-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-gold">
             <span aria-hidden className="h-[1.5px] w-[26px] bg-gold" />
-            Door to Door · Just Your Group
+            {labelDoorToDoor}
           </div>
           <h1 className="max-w-[760px] font-serif text-[clamp(34px,4.6vw,58px)] font-semibold leading-[1.02] tracking-[-1px] text-white">
-            Private Cancún airport transfers,{" "}
-            <em className="italic text-gold">done right</em>
+            {heroTitle1}{" "}
+            <em className="italic text-gold">{heroTitle2}</em>
           </h1>
         </div>
       </section>
@@ -101,14 +151,11 @@ export default function AirportTransfersPage() {
       {/* Intro + features */}
       <section className="mx-auto max-w-[1320px] px-5 py-[clamp(44px,5.5vw,80px)] lg:px-8">
         <p className="max-w-[680px] text-[clamp(14px,1.1vw,16px)] leading-[1.85] text-ink/80">
-          Your vacation starts the moment you land — not after a chaotic taxi line. We collect you
-          inside the terminal and drive you straight to your hotel or villa in Playa del Carmen,
-          Tulum, or anywhere in the Riviera Maya, in a private air-conditioned van with cold water
-          waiting. Every transfer is exclusively for your group.
+          {intro}
         </p>
 
         <div className="mt-[clamp(28px,3.5vw,48px)] grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
+          {translatedFeatures.map((f, i) => (
             <div
               key={f.title}
               className="rounded-[18px] border border-sand bg-white p-6 transition duration-300 hover:-translate-y-1 hover:border-forest/40 hover:shadow-[0_16px_40px_rgba(28,43,30,0.10)]"
@@ -125,12 +172,10 @@ export default function AirportTransfersPage() {
         {/* Pricing / CTA band */}
         <div className="mt-[clamp(32px,4vw,56px)] rounded-[24px] bg-night px-6 py-[clamp(32px,4vw,52px)] text-center">
           <h2 className="font-serif text-[clamp(24px,2.6vw,36px)] font-semibold text-white">
-            Simple pricing, <em className="italic text-gold">per person or per group</em>
+            {priceTitle1} <em className="italic text-gold">{priceTitle2}</em>
           </h2>
           <p className="mx-auto mt-3 max-w-[520px] text-[13.5px] leading-[1.75] text-white/60">
-            Rates depend on your destination and group size. Send us your flight details and
-            we&apos;ll confirm your exact price right away — or add a transfer to any booking at
-            checkout. Transfers are already included in all our packages.
+            {priceText}
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
@@ -139,19 +184,19 @@ export default function AirportTransfersPage() {
               rel="noopener noreferrer"
               className="rounded-full bg-gradient-to-br from-terracotta to-gold px-7 py-3 text-[14px] font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
             >
-              Get a Quote on WhatsApp →
+              {ctaWhatsapp}
             </a>
             <Link
               href="/contact"
               className="rounded-full border-[1.5px] border-white/40 px-6 py-3 text-[14px] font-medium text-white transition hover:border-white hover:bg-white hover:text-ink"
             >
-              Contact Us
+              {ctaContact}
             </Link>
           </div>
         </div>
       </section>
 
-      <Faq items={FAQS} heading="Airport transfers — good to know" />
+      <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </main>
   );
 }

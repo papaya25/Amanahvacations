@@ -7,8 +7,10 @@ import { getEffectiveDestination, getEffectiveDestinations } from "@/lib/content
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, touristAttractionSchema } from "@/lib/seo";
+import { translateMany } from "@/lib/i18n/translate";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string; locale: string }> };
 
 export function generateStaticParams() {
   return DESTINATIONS.map((d) => ({ slug: d.slug }));
@@ -66,7 +68,8 @@ function faqsFor(title: string) {
 }
 
 export default async function DestinationPage({ params }: Props) {
-  const { slug } = await params;
+  const { slug, locale: rawLocale } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   const all = await getEffectiveDestinations();
   const dest = all.find((d) => d.slug === slug);
   if (!dest) notFound();
@@ -74,7 +77,54 @@ export default async function DestinationPage({ params }: Props) {
   const others = all.filter((d) => d.slug !== dest.slug).slice(0, 4);
   const idx = all.findIndex((d) => d.slug === dest.slug);
   const next = all[(idx + 1) % all.length];
-  const faqs = faqsFor(dest.title);
+  const faqsEn = faqsFor(dest.title);
+
+  const allTitles = await translateMany(all.map((d) => d.title), locale);
+  const titleByslug = new Map(all.map((d, i) => [d.slug, allTitles[i]]));
+  const title = titleByslug.get(dest.slug)!;
+  const nextTitle = titleByslug.get(next.slug)!;
+
+  const paragraphs = await translateMany(dest.paragraphs, locale);
+
+  const staticLabels = await translateMany(
+    [
+      "Description",
+      "Amanah Vacations",
+      "Private · Family Safe · Halal Friendly",
+      "Contact Us to Book It",
+      "Check Our Packages",
+      "Next",
+      "More",
+      "experiences",
+      "View All →",
+      "Explore",
+      "Good to know",
+    ],
+    locale
+  );
+  const [
+    labelDescription,
+    labelBrand,
+    labelPrivateTags,
+    labelContactBook,
+    labelCheckPackages,
+    labelNextWord,
+    labelMore,
+    labelExperiences,
+    labelViewAll,
+    labelExplore,
+    faqEyebrow,
+  ] = staticLabels;
+  const labelNext = `${labelNextWord} · ${nextTitle}`;
+
+  const faqTexts = await translateMany(
+    [...faqsEn.map((f) => f.q), ...faqsEn.map((f) => f.a)],
+    locale
+  );
+  const faqs = faqsEn.map((f, i) => ({ q: faqTexts[i], a: faqTexts[faqsEn.length + i] }));
+  const [faqHeading] = await translateMany([`${title} — your questions answered`], locale);
+
+  const othersTranslated = others.map((d) => ({ ...d, title: titleByslug.get(d.slug)! }));
 
   return (
     <main>
@@ -111,15 +161,15 @@ export default async function DestinationPage({ params }: Props) {
           <article className="overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(10,26,16,0.25)]">
             <div className="bg-cream/80 px-[clamp(22px,2.5vw,40px)] py-[clamp(18px,2vw,30px)]">
               <h1 className="font-serif text-[clamp(32px,4vw,54px)] font-semibold leading-[1.02] tracking-[-1px] text-ink">
-                {dest.title}
+                {title}
               </h1>
             </div>
             <div className="bg-white/55 px-[clamp(22px,2.5vw,40px)] py-[clamp(24px,2.5vw,36px)] backdrop-blur-[2px]">
               <div className="mb-4 flex items-center gap-2.5 border-b border-ink/15 pb-3 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
-                Description
+                {labelDescription}
               </div>
               <div className="space-y-4 text-[clamp(14px,1.05vw,15.5px)] leading-[1.85] text-ink/85">
-                {dest.paragraphs.map((p) => (
+                {paragraphs.map((p) => (
                   <p key={p.slice(0, 40)}>{p}</p>
                 ))}
               </div>
@@ -141,24 +191,24 @@ export default async function DestinationPage({ params }: Props) {
             </div>
             <div className="bg-cream/80 px-6 py-6">
               <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-terracotta">
-                Amanah Vacations
+                {labelBrand}
               </div>
               <p className="mb-5 font-serif text-[19px] font-semibold italic leading-snug text-ink">
-                Private · Family Safe · Halal Friendly
+                {labelPrivateTags}
               </p>
               <div className="space-y-2.5">
                 <Link
                   href="/contact"
                   className="flex items-center justify-between rounded-full bg-ink px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[1px] text-white transition hover:bg-forest"
                 >
-                  Contact Us to Book It
+                  {labelContactBook}
                   <span aria-hidden>→</span>
                 </Link>
                 <Link
                   href="/packages"
                   className="flex items-center justify-between rounded-full bg-gradient-to-br from-terracotta to-gold px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[1px] text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(200,105,58,0.42)]"
                 >
-                  Check Our Packages
+                  {labelCheckPackages}
                   <span aria-hidden>←</span>
                 </Link>
               </div>
@@ -170,7 +220,7 @@ export default async function DestinationPage({ params }: Props) {
                 href={`/destinations/${next.slug}`}
                 className="group inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[1.5px] text-forest transition hover:text-terracotta"
               >
-                Next · {next.title}
+                {labelNext}
                 <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
                   →
                 </span>
@@ -180,24 +230,24 @@ export default async function DestinationPage({ params }: Props) {
         </div>
       </section>
 
-      <Faq items={faqs} heading={`${dest.title} — your questions answered`} />
+      <Faq items={faqs} heading={faqHeading} eyebrow={faqEyebrow} />
 
       {/* More activities */}
       <section className="bg-cream">
         <div className="mx-auto max-w-[1320px] px-5 py-[clamp(40px,5vw,72px)] lg:px-8">
           <div className="mb-6 flex items-end justify-between gap-4">
             <h2 className="font-serif text-[clamp(24px,2.6vw,34px)] font-semibold text-ink">
-              More <em className="italic text-forest">experiences</em>
+              {labelMore} <em className="italic text-forest">{labelExperiences}</em>
             </h2>
             <Link
               href="/activities"
               className="whitespace-nowrap rounded-full border-[1.5px] border-forest px-5 py-2 text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white"
             >
-              View All →
+              {labelViewAll}
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-5">
-            {others.map((d) => (
+            {othersTranslated.map((d) => (
               <Link
                 key={d.slug}
                 href={`/destinations/${d.slug}`}
@@ -223,7 +273,7 @@ export default async function DestinationPage({ params }: Props) {
                     {d.title}
                   </h3>
                   <span className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[2px] text-gold">
-                    Explore <span aria-hidden>→</span>
+                    {labelExplore} <span aria-hidden>→</span>
                   </span>
                 </div>
               </Link>
