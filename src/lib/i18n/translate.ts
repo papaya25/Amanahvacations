@@ -13,6 +13,7 @@ import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Locale } from "./config";
 import { LOCALE_NAMES } from "./config";
+import { OVERRIDES } from "./overrides";
 
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -96,12 +97,17 @@ async function translateBatch(texts: string[], locale: Locale): Promise<string[]
 export async function translateMany(texts: string[], locale: Locale): Promise<string[]> {
   if (locale === "en" || texts.length === 0) return texts;
 
+  // Hand-curated overrides win over cache and AI, and are never sent to the
+  // model — so brand/travel terms are always correct and consistent.
+  const overrides = OVERRIDES[locale] ?? {};
+
   const hashes = texts.map(hash);
   const cached = await getCached(locale, hashes);
 
   const missing: { text: string; hash: string; index: number }[] = [];
   texts.forEach((text, index) => {
-    if (!cached.has(hashes[index])) missing.push({ text, hash: hashes[index], index });
+    if (!overrides[text] && !cached.has(hashes[index]))
+      missing.push({ text, hash: hashes[index], index });
   });
 
   if (missing.length > 0) {
@@ -126,7 +132,7 @@ export async function translateMany(texts: string[], locale: Locale): Promise<st
     }
   }
 
-  return texts.map((text, index) => cached.get(hashes[index]) || text);
+  return texts.map((text, index) => overrides[text] || cached.get(hashes[index]) || text);
 }
 
 /** Split items into chunks small enough to translate in one model call. */
