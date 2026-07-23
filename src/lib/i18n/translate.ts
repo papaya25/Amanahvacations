@@ -39,16 +39,29 @@ async function storeCached(
 ): Promise<void> {
   if (rows.length === 0) return;
   try {
-    const supabase = createAdminClient();
-    await supabase
-      .from("translations")
-      .upsert(
-        rows.map((r) => ({ locale, ...r })),
-        { onConflict: "locale,source_hash" }
-      );
-  } catch {
-    /* cache write is best-effort */
+    // Deduplicate by hash: the same English text can appear multiple times in
+    // one batch (e.g. "Total" used on several pages), and Postgres rejects an
+    // upsert that touches the same (locale, source_hash) row twice — which
+    // would silently drop the WHOLE batch.
+    const unique = [...new Map(rows.map((r) => [r.source_hash, r])).values()];
+    const { error } = await supabase_upsert(locale, unique);
+    if (error) console.error("storeCached:", error.message);
+  } catch (e) {
+    console.error("storeCached:", e instanceof Error ? e.message : e);
   }
+}
+
+function supabase_upsert(
+  locale: string,
+  rows: { source_hash: string; source_text: string; translated: string }[]
+) {
+  const supabase = createAdminClient();
+  return supabase
+    .from("translations")
+    .upsert(
+      rows.map((r) => ({ locale, ...r })),
+      { onConflict: "locale,source_hash" }
+    );
 }
 
 /** Extract the first complete, balanced JSON array from a model response,
@@ -139,9 +152,13 @@ export async function translateMany(texts: string[], locale: Locale): Promise<st
   const cached = await getCached(locale, hashes);
 
   const missing: { text: string; hash: string; index: number }[] = [];
+  const queued = new Set<string>();
   texts.forEach((text, index) => {
-    if (!overrides[text] && !cached.has(hashes[index]))
-      missing.push({ text, hash: hashes[index], index });
+    const h = hashes[index];
+    if (!overrides[text] && !cached.has(h) && !queued.has(h)) {
+      queued.add(h);
+      missing.push({ text, hash: h, index });
+    }
   });
 
   if (missing.length > 0) {
