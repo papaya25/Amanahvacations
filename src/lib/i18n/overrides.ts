@@ -19,9 +19,19 @@ export const OVERRIDES: Partial<Record<Locale, Record<string, string>>> = {
     "Zipline & ATV Adventure": "Aventure Tyrolienne & Quad",
     "A jungle adventure combining zipline and ATV riding — availability depends on the day, our team will confirm.":
       "Une aventure dans la jungle alliant tyrolienne et quad — la disponibilité dépend du jour, notre équipe confirmera.",
+
+    // Overnight stay ≠ "nocturne" (which reads as a night-time outing).
+    // Maher's request: no "nocturne" — the "2 jours, 1 nuit" subtitle already
+    // carries the overnight meaning.
+    "Holbox Island Overnight Escape": "Escapade sur l'île de Holbox",
+    "Overnight": "1 nuit",
   },
   es: {
     "Zipline & ATV": "Tirolesa y Cuatrimoto",
+
+    // Same as French: no "nocturna" for the overnight escape.
+    "Holbox Island Overnight Escape": "Escapada en Isla Holbox",
+    "Overnight": "1 noche",
   },
   ar: {},
 };
