@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Header from "./Header";
 import Footer from "./Footer";
+import ChatWidget from "./ChatWidget";
 import type { ContactInfo } from "@/lib/content/contact";
 
 /* The admin area (/admin/*) renders its own chrome, so the public Header and
@@ -21,6 +22,7 @@ export default function SiteFrame({
       {!isAdmin && <Header />}
       {children}
       {!isAdmin && <Footer contact={contact} />}
+      {!isAdmin && <ChatWidget />}
     </>
   );
 }
