@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import SiteFrame from "@/components/SiteFrame";
 import VisitTracker from "@/components/VisitTracker";
 import JsonLd from "@/components/JsonLd";
@@ -96,6 +97,7 @@ export default async function LocaleRootLayout({
       >
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <SpeedInsights />
+        <Analytics />
         <VisitTracker />
         <I18nProvider locale={locale} dict={dict}>
           <CurrencyProvider settings={currencySettings}>
