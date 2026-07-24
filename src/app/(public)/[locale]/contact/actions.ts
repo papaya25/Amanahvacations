@@ -1,10 +1,10 @@
 "use server";
 
-/* Contact-form delivery. Sends the message to Amanah's inbox (Reply-To set to
+/* Contact-form delivery. Sends the message to the info@ inbox (Reply-To set to
    the visitor, so hitting Reply answers them directly) and a best-effort
-   auto-reply to the visitor (delivers once the domain is verified in Resend). */
+   auto-reply to the visitor from info@ — contact/enquiry mail lives in info@. */
 
-import { ADMIN_NOTIFY, fillTemplate, getEmailTemplate, renderBrandedEmail, sendEmail } from "@/lib/email";
+import { ADMIN_NOTIFY, FROM_INFO, fillTemplate, getEmailTemplate, renderBrandedEmail, sendEmail } from "@/lib/email";
 
 export type ContactMessageInput = {
   name: string;
@@ -39,6 +39,7 @@ export async function sendContactMessage(
   const waDigits = input.whatsapp?.replace(/\D/g, "") ?? "";
   const res = await sendEmail({
     to: ADMIN_NOTIFY,
+    from: FROM_INFO,
     subject: `✉️ ${input.subject?.trim() || `Website message from ${name}`}`,
     text: lines.join("\n"),
     html: renderBrandedEmail({
@@ -66,12 +67,13 @@ export async function sendContactMessage(
     to: email!,
     subject: fillTemplate(tpl.subject, vars),
     text: autoBody,
+    from: FROM_INFO,
     html: renderBrandedEmail({
       heading: "We got your message!",
       bodyText: autoBody,
     }),
-    // Replying to the auto-reply reaches the booking inbox directly.
-    replyTo: "booking@amanahvacations.com",
+    // Replying to the auto-reply reaches the info inbox directly.
+    replyTo: "info@amanahvacations.com",
   });
 
   return { ok: true };

@@ -4,7 +4,16 @@ import "server-only";
    payment is verified). Every send is best-effort: a failed email never
    breaks checkout. */
 
-import { ADMIN_NOTIFY, fillTemplate, getEmailTemplate, renderBrandedEmail, sendEmail } from "@/lib/email";
+import {
+  FROM_BOOKING,
+  FROM_PAYMENT,
+  NOTIFY_BOOKING,
+  NOTIFY_PAYMENT,
+  fillTemplate,
+  getEmailTemplate,
+  renderBrandedEmail,
+  sendEmail,
+} from "@/lib/email";
 import type { CartItem } from "@/lib/cart";
 
 const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
@@ -97,7 +106,8 @@ export async function notifyNewOrder(o: OrderEmailInput): Promise<void> {
       </td></tr>
     </table>`;
   await sendEmail({
-    to: ADMIN_NOTIFY,
+    to: NOTIFY_BOOKING,
+    from: FROM_BOOKING,
     subject: `🌴 New booking ${o.id} — ${fmtMXN(o.total)} (${o.status})`,
     text: lines.join("\n"),
     html: renderBrandedEmail({
@@ -115,7 +125,8 @@ export async function notifyNewOrder(o: OrderEmailInput): Promise<void> {
 export async function notifyOrderPaid(orderId: string): Promise<void> {
   const text = `The payment for booking ${orderId} was verified and the order is now marked "Paid (test mode)".\n\nSee it in your admin: /admin/orders`;
   await sendEmail({
-    to: ADMIN_NOTIFY,
+    to: NOTIFY_PAYMENT,
+    from: FROM_PAYMENT,
     subject: `💳 Payment received — ${orderId}`,
     text,
     html: renderBrandedEmail({ heading: `Payment received — ${orderId}`, bodyText: text }),

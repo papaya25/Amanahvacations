@@ -3,7 +3,7 @@
 /* Welcome email after signup (best-effort; template editable in /admin/emails).
    Full delivery to any address starts once the domain is verified in Resend. */
 
-import { fillTemplate, getEmailTemplate, renderBrandedEmail, sendEmail } from "@/lib/email";
+import { FROM_INFO, fillTemplate, getEmailTemplate, renderBrandedEmail, sendEmail } from "@/lib/email";
 
 export async function sendWelcomeEmail(email: string, name: string): Promise<void> {
   if (!/.+@.+\..+/.test(email)) return;
@@ -14,7 +14,8 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
     to: email,
     subject: fillTemplate(tpl.subject, vars),
     text: body,
+    from: FROM_INFO,
     html: renderBrandedEmail({ heading: "Welcome to Amanah Vacations", bodyText: body }),
-    replyTo: "booking@amanahvacations.com",
+    replyTo: "info@amanahvacations.com",
   });
 }

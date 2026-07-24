@@ -8,7 +8,21 @@ import { getSavedContent } from "@/lib/content/site";
 
 export const emailConfigured = Boolean(process.env.RESEND_API_KEY);
 
-const FROM = process.env.EMAIL_FROM ?? "Amanah Vacations <booking@amanahvacations.com>";
+/* Senders by purpose — customers see and reply to these, matching Maher's
+   inbox split (booking@ for bookings, payment@ for payment, info@ for general).
+   EMAIL_FROM overrides the booking sender, kept for backward compatibility. */
+const SENDER_NAME = "Amanah Vacations";
+const sender = (mailbox: string) => `${SENDER_NAME} <${mailbox}@amanahvacations.com>`;
+
+export const FROM_BOOKING = process.env.EMAIL_FROM ?? sender("booking");
+export const FROM_INFO = sender("info");
+export const FROM_PAYMENT = sender("payment");
+
+/* Where each kind of alert to Maher lands — routed to the matching inbox so
+   each address holds its own kind of message. Override any in the environment
+   to pool them into one box instead. */
+export const NOTIFY_BOOKING = process.env.ADMIN_NOTIFY_BOOKING ?? "booking@amanahvacations.com";
+export const NOTIFY_PAYMENT = process.env.ADMIN_NOTIFY_PAYMENT ?? "payment@amanahvacations.com";
 export const ADMIN_NOTIFY = process.env.ADMIN_NOTIFY_EMAIL ?? "info@amanahvacations.com";
 
 const LOGO_URL =
@@ -71,6 +85,8 @@ export async function sendEmail(opts: {
   text: string;
   html?: string;
   replyTo?: string;
+  /** Sender address; defaults to the booking@ sender. */
+  from?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!emailConfigured) return { ok: false, error: "email not configured" };
   try {
@@ -81,7 +97,7 @@ export async function sendEmail(opts: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: FROM,
+        from: opts.from ?? FROM_BOOKING,
         to: [opts.to],
         subject: opts.subject,
         text: opts.text,
