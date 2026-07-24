@@ -1,16 +1,14 @@
 import "server-only";
 
-/* Transactional email via Resend. Until the amanahvacations.com domain is
-   verified in Resend (deploy time), sends are restricted to the account
-   owner's address and go from onboarding@resend.dev — so customer-facing
-   sends may fail in this phase; every send is best-effort and never breaks
-   the flow that triggered it. */
+/* Transactional email via Resend. The amanahvacations.com domain is verified
+   in Resend, so sends go from booking@amanahvacations.com to any recipient.
+   Every send is best-effort and never breaks the flow that triggered it. */
 
 import { getSavedContent } from "@/lib/content/site";
 
 export const emailConfigured = Boolean(process.env.RESEND_API_KEY);
 
-const FROM = process.env.EMAIL_FROM ?? "Amanah Vacations <onboarding@resend.dev>";
+const FROM = process.env.EMAIL_FROM ?? "Amanah Vacations <booking@amanahvacations.com>";
 export const ADMIN_NOTIFY = process.env.ADMIN_NOTIFY_EMAIL ?? "info@amanahvacations.com";
 
 const LOGO_URL =
