@@ -17,6 +17,8 @@ export type OrderRow = {
   payment_method: string;
   customer_name: string;
   customer_email: string;
+  customer_whatsapp: string | null;
+  promo_code: string | null;
   user_id: string | null;
 };
 
@@ -25,7 +27,7 @@ export async function getAllOrders(): Promise<OrderRow[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id,created_at,status,items,subtotal,discount,total,payment_method,customer_name,customer_email,user_id"
+      "id,created_at,status,items,subtotal,discount,total,payment_method,customer_name,customer_email,customer_whatsapp,promo_code,user_id"
     )
     .order("created_at", { ascending: false })
     .limit(1000);
