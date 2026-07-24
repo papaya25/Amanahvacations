@@ -1,17 +1,24 @@
 import "server-only";
+import { PAYMENTS_LIVE } from "@/lib/payments";
 
-/* Mercado Pago Checkout Pro (test credentials until launch — the env token
-   decides; the current token belongs to an MP test user, verified via
-   /users/me tags). Flow: create a payment preference with the SERVER-computed
-   amount → customer pays on Mercado Pago's page → we verify the payment by id
-   on return and only then mark the booking paid. */
+/* Mercado Pago Checkout Pro. In live mode it uses MERCADOPAGO_LIVE_ACCESS_TOKEN
+   (set in Vercel at launch); otherwise MERCADOPAGO_TEST_ACCESS_TOKEN (an MP test
+   user's token, used locally). The API base is the same for both; the token
+   decides. Flow: create a payment preference with the SERVER-computed amount →
+   customer pays on Mercado Pago's page → we verify the payment by id on return
+   and only then mark the booking paid. */
 
 const BASE = "https://api.mercadopago.com";
 
-export const mercadoPagoConfigured = Boolean(process.env.MERCADOPAGO_TEST_ACCESS_TOKEN);
+const mpToken = () =>
+  PAYMENTS_LIVE
+    ? process.env.MERCADOPAGO_LIVE_ACCESS_TOKEN
+    : process.env.MERCADOPAGO_TEST_ACCESS_TOKEN;
+
+export const mercadoPagoConfigured = Boolean(mpToken());
 
 function tokenOrThrow(): string {
-  const token = process.env.MERCADOPAGO_TEST_ACCESS_TOKEN;
+  const token = mpToken();
   if (!token) throw new Error("Mercado Pago access token not set");
   return token;
 }

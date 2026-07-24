@@ -1,18 +1,26 @@
 import "server-only";
+import { PAYMENTS_LIVE } from "@/lib/payments";
 
-/* PayPal Orders API v2 (sandbox until launch — the env keys decide).
+/* PayPal Orders API v2. In live mode it talks to the live API with the
+   PAYPAL_LIVE_* credentials (set in Vercel at launch); otherwise the sandbox
+   API with the PAYPAL_SANDBOX_* credentials used locally.
    Flow: create an order with the SERVER-computed amount → customer approves on
    PayPal's page → we capture on return and only then mark the booking paid. */
 
-const BASE = "https://api-m.sandbox.paypal.com";
+const BASE = PAYMENTS_LIVE
+  ? "https://api-m.paypal.com"
+  : "https://api-m.sandbox.paypal.com";
 
-export const paypalConfigured = Boolean(
-  process.env.PAYPAL_SANDBOX_CLIENT_ID && process.env.PAYPAL_SANDBOX_SECRET
-);
+const clientId = () =>
+  PAYMENTS_LIVE ? process.env.PAYPAL_LIVE_CLIENT_ID : process.env.PAYPAL_SANDBOX_CLIENT_ID;
+const clientSecret = () =>
+  PAYMENTS_LIVE ? process.env.PAYPAL_LIVE_SECRET : process.env.PAYPAL_SANDBOX_SECRET;
+
+export const paypalConfigured = Boolean(clientId() && clientSecret());
 
 async function getAccessToken(): Promise<string> {
-  const id = process.env.PAYPAL_SANDBOX_CLIENT_ID;
-  const secret = process.env.PAYPAL_SANDBOX_SECRET;
+  const id = clientId();
+  const secret = clientSecret();
   if (!id || !secret) throw new Error("PayPal credentials not set");
   const res = await fetch(`${BASE}/v1/oauth2/token`, {
     method: "POST",
