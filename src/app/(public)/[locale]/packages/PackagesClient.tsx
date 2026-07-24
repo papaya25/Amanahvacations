@@ -370,10 +370,18 @@ export default function PackagesClient({
   const toggleRecommend = (pkgId: PkgId) =>
     setRecommendedActive((prev) => ({ ...prev, [pkgId]: !prev[pkgId] }));
 
+  // The price actually charged per person — the offer when one is active
+  // (otherwise Buy Now would charge the full price despite the card showing
+  // the discounted one).
+  const effectiveUnit = (pkgId: PkgId) => {
+    const off = offers[pkgId];
+    return off !== undefined && off > 0 && off < prices[pkgId] ? off : prices[pkgId];
+  };
+
   const packageTotalMXN = (pkgId: PkgId) => {
     const n = adults + kids;
     const mult = pkgId === "honeymoon" ? 2 : n;
-    return prices[pkgId] * mult;
+    return effectiveUnit(pkgId) * mult;
   };
 
   /* ── BUY NOW — adds the configured booking to the cart, then goes to checkout ── */

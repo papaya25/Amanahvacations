@@ -1,10 +1,10 @@
 "use server";
 
-/* Places an order: validates the payload, recomputes tour prices and the promo
-   discount on the server (the client's numbers are display only), and stores
-   the order in the private `orders` table. Guest checkout — no login required.
-   Remaining before LIVE payments: server-side recomputation of the package
-   configurator's totals. */
+/* Places an order: validates the payload, recomputes every line total and the
+   promo discount on the server (the client's numbers are display only), and
+   stores the order in the private `orders` table. Guest checkout — no login
+   required. Tour AND package prices are re-derived server-side, so the amount
+   charged never comes from the browser. */
 
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -15,6 +15,7 @@ import { createMercadoPagoPreference, mercadoPagoConfigured } from "@/lib/mercad
 import { notifyNewOrder } from "@/lib/orderEmails";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { getTourUnitPrice } from "@/lib/content/tours";
+import { getPackageLineTotal } from "@/lib/content/packages";
 import type { CartItem } from "@/lib/cart";
 
 export type PlaceOrderInput = {
@@ -53,14 +54,25 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     if (!input.consent)
       return { ok: false, error: "Please accept the terms to place your booking." };
 
-    // Server-side pricing: tour line totals are recomputed from OUR price list
-    // (client numbers are display-only). Package-configurator totals are still
-    // client-sent for now and are re-verified before live payments go on.
+    // Server-side pricing: every line total is recomputed from OUR authoritative
+    // prices, so the browser can never state the amount we charge. Tours use the
+    // tour price list; packages are re-derived from the packages table + add-on
+    // catalogue with the exact configurator math. Airport-transfer lines stay 0
+    // (confirmed and charged by the team). Anything we can't price on the server
+    // keeps the client value (harmless — those are "on request", not charged now).
     const items = await Promise.all(
       input.items.map(async (it) => {
+        const people = Math.max(1, it.people || 1);
         if (it.kind === "tour" && it.meta?.tour_key) {
           const unit = await getTourUnitPrice(it.meta.tour_key);
-          if (unit !== null) return { ...it, total: unit * Math.max(1, it.people || 1) };
+          if (unit !== null) return { ...it, total: unit * people };
+        } else if (it.kind === "package" && it.meta?.pkgId && it.meta.pkgId !== "tour") {
+          const addonIds = (it.meta.addon_ids ?? "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s && s !== "None");
+          const serverTotal = await getPackageLineTotal(it.meta.pkgId, people, addonIds);
+          if (serverTotal !== null) return { ...it, total: serverTotal };
         }
         return it;
       })
