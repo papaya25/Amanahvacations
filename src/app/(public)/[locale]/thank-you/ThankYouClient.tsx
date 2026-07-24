@@ -8,7 +8,13 @@ import { getOrder, type Order } from "@/lib/orders";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 
-export default function ThankYouClient({ paid = false }: { paid?: boolean }) {
+export default function ThankYouClient({
+  paid = false,
+  paidStatus = "Paid",
+}: {
+  paid?: boolean;
+  paidStatus?: string;
+}) {
   const params = useSearchParams();
   const { format } = useCurrency();
   const { locale, dict } = useI18n();
@@ -19,8 +25,8 @@ export default function ThankYouClient({ paid = false }: { paid?: boolean }) {
   useEffect(() => {
     const found = id ? getOrder(id) : undefined;
     // Reflect a verified payment in the guest's local copy too.
-    if (found && paid && found.status !== "Paid (test mode)") {
-      found.status = "Paid (test mode)";
+    if (found && paid && found.status !== paidStatus) {
+      found.status = paidStatus;
       try {
         const all = JSON.parse(localStorage.getItem("amanah_orders_v1") ?? "[]") as Order[];
         localStorage.setItem(
@@ -32,7 +38,7 @@ export default function ThankYouClient({ paid = false }: { paid?: boolean }) {
       }
     }
     setOrder(found ?? null);
-  }, [id, paid]);
+  }, [id, paid, paidStatus]);
 
   return (
     <main className="min-h-[70vh] bg-cream">

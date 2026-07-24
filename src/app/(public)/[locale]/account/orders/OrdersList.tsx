@@ -16,6 +16,7 @@ export type AccountOrder = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
+  Paid: "bg-forest/15 text-forest",
   "Paid (test mode)": "bg-forest/15 text-forest",
   Confirmed: "bg-forest/10 text-forest",
   Completed: "bg-forest/15 text-forest",

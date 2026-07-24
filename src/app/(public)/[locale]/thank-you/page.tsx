@@ -6,6 +6,7 @@ import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { capturePayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { mercadoPagoConfigured, verifyMercadoPagoPayment } from "@/lib/mercadopago";
 import { notifyOrderPaid } from "@/lib/orderEmails";
+import { PAID_STATUS } from "@/lib/payments";
 
 export const metadata: Metadata = {
   title: "Thank You",
@@ -20,7 +21,7 @@ async function markPaid(orderId: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("orders")
-    .update({ status: "Paid (test mode)" })
+    .update({ status: PAID_STATUS })
     .eq("id", orderId)
     .in("status", ["Pending payment", "Pending confirmation"])
     .select("id");
@@ -91,7 +92,7 @@ export default async function ThankYouPage({
   else if (id && mp === "1" && payment_id) paid = await verifyMercadoPago(id, payment_id);
   return (
     <Suspense>
-      <ThankYouClient paid={paid} />
+      <ThankYouClient paid={paid} paidStatus={PAID_STATUS} />
     </Suspense>
   );
 }

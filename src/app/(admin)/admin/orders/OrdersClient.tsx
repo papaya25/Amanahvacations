@@ -18,6 +18,7 @@ const fmtDate = (iso: string) =>
 const STATUS_STYLES: Record<string, string> = {
   "Pending payment": "bg-sand text-sage",
   "Pending confirmation": "bg-gold/15 text-[#8a6a1e]",
+  Paid: "bg-forest/15 text-forest",
   "Paid (test mode)": "bg-forest/15 text-forest",
   Confirmed: "bg-forest/10 text-forest",
   Completed: "bg-forest/15 text-forest",

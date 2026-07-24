@@ -14,6 +14,7 @@ import {
   renderBrandedEmail,
   sendEmail,
 } from "@/lib/email";
+import { PAID_STATUS } from "@/lib/payments";
 import type { CartItem } from "@/lib/cart";
 
 const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
@@ -123,7 +124,7 @@ export async function notifyNewOrder(o: OrderEmailInput): Promise<void> {
 
 /** Admin "payment received" notification (after provider verification). */
 export async function notifyOrderPaid(orderId: string): Promise<void> {
-  const text = `The payment for booking ${orderId} was verified and the order is now marked "Paid (test mode)".\n\nSee it in your admin: /admin/orders`;
+  const text = `The payment for booking ${orderId} was verified and the order is now marked "${PAID_STATUS}".\n\nSee it in your admin: /admin/orders`;
   await sendEmail({
     to: NOTIFY_PAYMENT,
     from: FROM_PAYMENT,

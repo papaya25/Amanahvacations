@@ -22,6 +22,7 @@ export type AdminOrder = {
 export const ORDER_STATUSES = [
   "Pending payment",
   "Pending confirmation",
+  "Paid",
   "Paid (test mode)",
   "Confirmed",
   "Completed",

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { notifyOrderPaid } from "@/lib/orderEmails";
+import { PAID_STATUS } from "@/lib/payments";
 
 /* Stripe webhook: marks an order paid even if the customer never returns to
    the thank-you page (closed tab, lost connection). Safe to run alongside the
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       const supabase = createAdminClient();
       const { data } = await supabase
         .from("orders")
-        .update({ status: "Paid (test mode)" })
+        .update({ status: PAID_STATUS })
         .eq("id", orderId)
         .in("status", ["Pending payment", "Pending confirmation"])
         .select("id");
