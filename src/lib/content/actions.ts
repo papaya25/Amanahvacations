@@ -4,7 +4,7 @@
    server and use the service_role key, so they work for every section —
    including the internal ones (emails, costs) that the public key can't read.
 
-   Both require a valid admin session cookie (see adminAuth) — the middleware
+   Both require a valid admin session cookie (see adminAuth) — the proxy
    guards the admin pages, and this guards the actions themselves. */
 
 import { revalidatePath } from "next/cache";

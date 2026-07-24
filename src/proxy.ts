@@ -15,7 +15,7 @@ import { DEFAULT_LOCALE, isLocale, stripLocale, type Locale } from "@/lib/i18n/c
    real prefixes (/fr/packages) with no rewrite. This keeps every existing
    internal link working unchanged for English visitors. */
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {

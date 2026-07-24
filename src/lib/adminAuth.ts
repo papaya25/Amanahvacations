@@ -1,10 +1,10 @@
 /* Admin session tokens. A successful login sets an HttpOnly cookie holding
    `<expiry>.<signature>` where the signature is an HMAC of the expiry with
    ADMIN_SESSION_SECRET — unforgeable without the secret, verifiable in both
-   middleware (edge) and server actions. This is the interim gate until full
+   the proxy (edge) and server actions. This is the interim gate until full
    Supabase Auth accounts land in Step 2; the checks live server-side only.
 
-   NOTE: imported by middleware (edge runtime), so keep this file free of
+   NOTE: imported by the proxy (edge runtime), so keep this file free of
    Node-only APIs — Web Crypto only. */
 
 export const ADMIN_COOKIE = "amanah_admin";
