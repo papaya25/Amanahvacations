@@ -47,18 +47,22 @@ export type CustomerRow = {
 };
 
 export async function getCustomers(): Promise<CustomerRow[]> {
+  // Read accounts via a SECURITY DEFINER RPC (admin_list_customer_accounts)
+  // instead of the GoTrue admin API: the new sb_secret_ key format authenticates
+  // fine against PostgREST but is rejected by the auth admin endpoint. The RPC is
+  // executable only by service_role, so visitors can never enumerate accounts.
   const supabase = createAdminClient();
-  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const { data, error } = await supabase.rpc("admin_list_customer_accounts");
   if (error) {
     console.error("getCustomers:", error.message);
     return [];
   }
-  return data.users.map((u) => ({
+  return (data ?? []).map((u: { id: string; email: string | null; name: string | null; created_at: string; confirmed: boolean }) => ({
     id: u.id,
     email: u.email ?? "",
-    name: (u.user_metadata?.name as string) ?? "",
+    name: u.name ?? "",
     created_at: u.created_at,
-    confirmed: Boolean(u.email_confirmed_at),
+    confirmed: Boolean(u.confirmed),
   }));
 }
 
