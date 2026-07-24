@@ -4,6 +4,9 @@ import { getSavedTransfers } from "@/lib/content/addons";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { isLocale, type Locale } from "@/lib/i18n/config";
+import { stripeConfigured } from "@/lib/stripe";
+import { paypalConfigured } from "@/lib/paypal";
+import { mercadoPagoConfigured } from "@/lib/mercadopago";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -28,6 +31,14 @@ export default async function CheckoutPage({
     getDictionary(locale),
   ]);
   const transferEnabled = transfers?.enabled !== false;
+  // Only offer payment methods that are actually configured for the current
+  // mode (test/live) — so e.g. PayPal isn't shown as an option until its live
+  // credentials exist. Order is preserved (card first).
+  const availablePayments = [
+    stripeConfigured && "stripe",
+    paypalConfigured && "paypal",
+    mercadoPagoConfigured && "mercadopago",
+  ].filter(Boolean) as string[];
   return (
     <main className="min-h-[70vh] bg-cream">
       <div className="mx-auto max-w-[1100px] px-5 py-[clamp(32px,4vw,64px)] lg:px-8">
@@ -44,6 +55,7 @@ export default async function CheckoutPage({
           transferEnabled={transferEnabled}
           initialName={(user?.user_metadata?.name as string) || ""}
           initialEmail={user?.email ?? ""}
+          availablePayments={availablePayments}
         />
       </div>
     </main>

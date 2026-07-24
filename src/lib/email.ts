@@ -16,13 +16,13 @@ const sender = (mailbox: string) => `${SENDER_NAME} <${mailbox}@amanahvacations.
 
 export const FROM_BOOKING = process.env.EMAIL_FROM ?? sender("booking");
 export const FROM_INFO = sender("info");
-export const FROM_PAYMENT = sender("payment");
+export const FROM_PAYMENT = sender("payments");
 
 /* Where each kind of alert to Maher lands — routed to the matching inbox so
    each address holds its own kind of message. Override any in the environment
    to pool them into one box instead. */
 export const NOTIFY_BOOKING = process.env.ADMIN_NOTIFY_BOOKING ?? "booking@amanahvacations.com";
-export const NOTIFY_PAYMENT = process.env.ADMIN_NOTIFY_PAYMENT ?? "payment@amanahvacations.com";
+export const NOTIFY_PAYMENT = process.env.ADMIN_NOTIFY_PAYMENT ?? "payments@amanahvacations.com";
 export const ADMIN_NOTIFY = process.env.ADMIN_NOTIFY_EMAIL ?? "info@amanahvacations.com";
 
 const LOGO_URL =

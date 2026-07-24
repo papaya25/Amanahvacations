@@ -26,11 +26,20 @@ export default function CheckoutClient({
   transferEnabled = true,
   initialName = "",
   initialEmail = "",
+  availablePayments,
 }: {
   transferEnabled?: boolean;
   initialName?: string;
   initialEmail?: string;
+  /** Payment method ids configured for the current mode; falls back to all. */
+  availablePayments?: string[];
 }) {
+  // Show only configured providers; if the server reported none (misconfig),
+  // fall back to all so the flow never breaks.
+  const methods =
+    availablePayments && availablePayments.length
+      ? PAYMENT_METHODS.filter((m) => availablePayments.includes(m.id))
+      : PAYMENT_METHODS;
   const { items, subtotal, clear, ready } = useCart();
   const { format } = useCurrency();
   const router = useRouter();
@@ -48,7 +57,7 @@ export default function CheckoutClient({
   const [email, setEmail] = useState(initialEmail);
   const [whatsapp, setWhatsapp] = useState("");
   const [notes, setNotes] = useState("");
-  const [payment, setPayment] = useState("stripe");
+  const [payment, setPayment] = useState(methods[0]?.id ?? "stripe");
 
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<{ code: string; label: string; amount: number } | null>(null);
@@ -276,7 +285,7 @@ export default function CheckoutClient({
             {dict.co_payment_desc}
           </p>
           <div className="space-y-2.5">
-            {PAYMENT_METHODS.map((m) => (
+            {methods.map((m) => (
               <label
                 key={m.id}
                 className={`flex cursor-pointer items-center gap-3 rounded-xl border-[1.5px] p-4 transition ${
