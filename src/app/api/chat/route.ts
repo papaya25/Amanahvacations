@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (response.stop_reason === "refusal" || !reply) {
       return NextResponse.json({
         reply:
-          "I'd rather hand this one to our human team — message us on WhatsApp at +52 984 452 1184 and we'll help you right away! 🌴",
+          "I'd rather hand this one to our human team — message us on WhatsApp at +52 990 351 6948 and we'll help you right away! 🌴",
       });
     }
     return NextResponse.json({ reply });

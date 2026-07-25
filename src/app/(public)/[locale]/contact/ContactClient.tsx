@@ -4,7 +4,7 @@ import { useState } from "react";
 import { sendContactMessage } from "./actions";
 import { DEFAULT_CONTACT_LABELS, type ContactLabels } from "./labels";
 
-const WA_NUMBER = "529844521184";
+const WA_NUMBER = "529903516948";
 const EMAIL = "booking@amanahvacations.com";
 
 const WA_ICON = (

@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 const CARDS = [
   {
     title: "WhatsApp",
-    value: "+52 984 452 1184",
+    value: "+52 990 351 6948",
     note: "Fastest way to reach us",
-    href: "https://wa.me/529844521184",
+    href: "https://wa.me/529903516948",
   },
   {
     title: "Email",

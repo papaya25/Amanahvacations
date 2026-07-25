@@ -22,7 +22,7 @@ import {
 } from "./data";
 
 /* ── CONFIG ── */
-const WA_NUMBER = "529844521184";
+const WA_NUMBER = "529903516948";
 const EMAIL = "booking@amanahvacations.com";
 const CURRENCY = "MXN";
 const MIN_NIGHTS_PACKAGE = 3;

@@ -82,4 +82,4 @@ with Maher before creating cloud resources. Scope, roughly in order:
    then the Search Console walkthrough.
 
 Contact constants used everywhere until the DB drives them: WhatsApp
-529844521184, booking@amanahvacations.com, Playa del Carmen, Q.R., Mexico.
+529903516948, booking@amanahvacations.com, Playa del Carmen, Q.R., Mexico.

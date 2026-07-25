@@ -16,8 +16,8 @@ type ContactInfo = {
 };
 
 const DEFAULT: ContactInfo = {
-  phone: "+52 984 452 1184",
-  whatsapp: "529844521184",
+  phone: "+52 990 351 6948",
+  whatsapp: "529903516948",
   email: "booking@amanahvacations.com",
   address: "Playa del Carmen, Riviera Maya, Quintana Roo, Mexico",
   instagram: "https://www.instagram.com/amanahvacations/",
@@ -47,7 +47,7 @@ export default function ContactAdmin() {
               label="WhatsApp number (digits only)"
               value={value.whatsapp}
               onChange={(v) => set("whatsapp", v)}
-              placeholder="529844521184"
+              placeholder="529903516948"
             />
             <Field label="Email" value={value.email} onChange={(v) => set("email", v)} />
             <Field label="Address" value={value.address} onChange={(v) => set("address", v)} />

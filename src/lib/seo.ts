@@ -2,7 +2,7 @@
 
 export const SITE_URL = "https://amanahvacations.com";
 export const SITE_NAME = "Amanah Vacations";
-export const WA_NUMBER = "+529844521184";
+export const WA_NUMBER = "+529903516948";
 export const CONTACT_EMAIL = "booking@amanahvacations.com";
 
 /* Organization / LocalBusiness — site-wide identity for Google. */

@@ -98,7 +98,7 @@ export default function ChatWidget() {
               </div>
             </div>
             <a
-              href="https://wa.me/529844521184"
+              href="https://wa.me/529903516948"
               target="_blank"
               rel="noopener noreferrer"
               className="ml-auto shrink-0 rounded-full bg-[#25D366] px-3 py-1.5 text-[11px] font-semibold text-white transition hover:brightness-110"

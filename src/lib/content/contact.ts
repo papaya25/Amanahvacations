@@ -17,8 +17,8 @@ export type ContactInfo = {
 };
 
 export const DEFAULT_CONTACT: ContactInfo = {
-  phone: "+52 984 452 1184",
-  whatsapp: "529844521184",
+  phone: "+52 990 351 6948",
+  whatsapp: "529903516948",
   email: "booking@amanahvacations.com",
   address: "Playa del Carmen, Riviera Maya, Quintana Roo, Mexico",
   instagram: "https://www.instagram.com/amanahvacations/",

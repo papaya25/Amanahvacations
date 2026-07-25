@@ -14,7 +14,7 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 import { TOURS, type Tour, type Stop } from "./data";
 
-const WA_NUMBER = "529844521184";
+const WA_NUMBER = "529903516948";
 const EMAIL = "booking@amanahvacations.com";
 
 const WA_ICON = (

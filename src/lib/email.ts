@@ -70,7 +70,7 @@ export function renderBrandedEmail(opts: {
           <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;color:#6b7b6c;">Trust in Adventure · أمانة</div>
           <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#9aa79b;margin-top:6px;">
             Amanah Vacations · Playa del Carmen, Riviera Maya, Mexico<br />
-            WhatsApp +52 984 452 1184 · booking@amanahvacations.com
+            WhatsApp +52 990 351 6948 · booking@amanahvacations.com
           </div>
         </td></tr>
       </table>
