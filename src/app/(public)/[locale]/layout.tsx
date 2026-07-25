@@ -41,7 +41,7 @@ export function generateStaticParams() {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.amanahvacations.com"),
+  metadataBase: new URL("https://amanahvacations.com"),
   title: {
     default:
       "Amanah Vacations | Private Tours & Halal-Friendly Trips in the Riviera Maya",

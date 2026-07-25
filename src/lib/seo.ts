@@ -1,6 +1,6 @@
 /* Shared SEO constants and structured-data builders. */
 
-export const SITE_URL = "https://www.amanahvacations.com";
+export const SITE_URL = "https://amanahvacations.com";
 export const SITE_NAME = "Amanah Vacations";
 export const WA_NUMBER = "+529844521184";
 export const CONTACT_EMAIL = "booking@amanahvacations.com";
