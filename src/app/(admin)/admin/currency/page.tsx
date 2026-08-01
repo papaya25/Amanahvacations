@@ -9,7 +9,7 @@ type CurrencySettings = {
   rateEUR: number;
 };
 
-const DEFAULT: CurrencySettings = { defaultCurrency: "USD", rateUSD: 17, rateEUR: 19.5 };
+const DEFAULT: CurrencySettings = { defaultCurrency: "USD", rateUSD: 17.5, rateEUR: 19.5 };
 
 export default function CurrencyAdmin() {
   const { value, setValue, save, savedAt, saving, error } = useDbState<CurrencySettings>("admin_currency", DEFAULT);

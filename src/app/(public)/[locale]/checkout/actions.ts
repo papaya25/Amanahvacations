@@ -14,7 +14,7 @@ import { createPayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { createMercadoPagoPreference, mercadoPagoConfigured } from "@/lib/mercadopago";
 import { notifyNewOrder } from "@/lib/orderEmails";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
-import { getTourUnitPrice } from "@/lib/content/tours";
+import { getTourLineTotal } from "@/lib/content/tours";
 import { getPackageLineTotal } from "@/lib/content/packages";
 import type { CartItem } from "@/lib/cart";
 
@@ -64,8 +64,10 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       input.items.map(async (it) => {
         const people = Math.max(1, it.people || 1);
         if (it.kind === "tour" && it.meta?.tour_key) {
-          const unit = await getTourUnitPrice(it.meta.tour_key);
-          if (unit !== null) return { ...it, total: unit * people };
+          // Group-tier pricing: the total for this group size (discount built
+          // in), never a flat per-person multiplication.
+          const serverTotal = await getTourLineTotal(it.meta.tour_key, people);
+          if (serverTotal !== null) return { ...it, total: serverTotal };
         } else if (it.kind === "package" && it.meta?.pkgId && it.meta.pkgId !== "tour") {
           const addonIds = (it.meta.addon_ids ?? "")
             .split(",")

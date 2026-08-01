@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat } from "next/font/google";
 import ToursClient from "./ToursClient";
-import { TOURS, type Tour } from "./data";
+import { TOURS, parseTierPrices, type Tour } from "./data";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
@@ -42,15 +42,16 @@ export const metadata: Metadata = {
   },
 };
 
-// Lightweight summary for structured data (prices in MXN).
+// Lightweight summary for structured data (MXN, per person "from" — the
+// per-person rate at the largest group size, where the group discount peaks).
 const TOUR_SUMMARY = [
-  { name: "Cenotes, Coral & Sea Turtles (Akumal)", price: 2350, img: "/images/tours/akumalcenotes.jpg" },
-  { name: "Cenotes & the Ruins of Tulum", price: 3700, img: "/images/tours/tulumcenotes.jpg" },
-  { name: "Coba Ruins & Jungle Cenotes", price: 3900, img: "/images/tours/cobacenotes.jpg" },
-  { name: "Cozumel Private Boat Snorkeling", price: 4600, img: "/images/tours/cozumel.jpg" },
-  { name: "Tulum & Akumal", price: 5850, img: "/images/tours/akumaltulum.jpg" },
-  { name: "Chichen Itza & Valladolid", price: 6600, img: "/images/tours/chichen.jpg" },
-  { name: "Ruta de Cenotes", price: 2900, img: "/images/tours/rutacenotes.jpg" },
+  { name: "Cenotes, Coral & Sea Turtles (Akumal)", price: 2483, img: "/images/tours/akumalcenotes.jpg" },
+  { name: "Cenotes & the Ruins of Tulum", price: 3325, img: "/images/tours/tulumcenotes.jpg" },
+  { name: "Coba Ruins & Jungle Cenotes", price: 2950, img: "/images/tours/cobacenotes.jpg" },
+  { name: "Cozumel Private Boat Snorkeling", price: 2150, img: "/images/tours/cozumel.jpg" },
+  { name: "Tulum & Akumal", price: 3660, img: "/images/tours/akumaltulum.jpg" },
+  { name: "Chichen Itza & Valladolid", price: 4842, img: "/images/tours/chichen.jpg" },
+  { name: "Ruta de Cenotes", price: 2417, img: "/images/tours/rutacenotes.jpg" },
 ];
 
 const FAQS = [
@@ -87,10 +88,21 @@ export default async function ToursPage({
   const [faqs, dbTours] = await Promise.all([getFaqs("tours", FAQS), getSavedTours()]);
 
   // Structured data follows the live tour list once the admin has saved one.
+  // Tiered tours report the per-person rate at the largest group ("from").
   const summary = dbTours
     ? dbTours
-        .filter((t) => !t.onreq && t.price > 0)
-        .map((t) => ({ name: t.name, price: t.offer > 0 ? t.offer : t.price, img: t.img }))
+        .filter((t) => !t.onreq)
+        .map((t) => {
+          const tiers = parseTierPrices(t.prices);
+          let from = t.offer > 0 && t.offer < t.price ? t.offer : t.price;
+          if (tiers) {
+            const paxes = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+            const top = paxes[paxes.length - 1];
+            from = Math.round(tiers[top] / top);
+          }
+          return { name: t.name, price: from, img: t.img };
+        })
+        .filter((t) => t.price > 0)
     : TOUR_SUMMARY;
 
   const translatedTours = dbTours

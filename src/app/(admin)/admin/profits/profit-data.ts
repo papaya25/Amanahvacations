@@ -4,19 +4,35 @@ import "server-only";
    statistics (tab 3). Reads the same sources the site sells from, so the
    numbers always match what customers actually see. */
 
-import { getSavedContent } from "@/lib/content/site";
+import { createAdminClient, adminConfigured } from "@/lib/supabase/admin";
 import { getAllPackages } from "@/lib/content/packages";
 import { getSavedTours } from "@/lib/content/tours";
 import { getSavedAddons, getSavedTransfers } from "@/lib/content/addons";
-import { TOURS } from "@/app/(public)/[locale]/tours/data";
+import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
 import { ACTIVITIES } from "@/app/(public)/[locale]/packages/data";
 import type { OrderRow } from "../dashboard-data";
 
-export type CostRow = { id: string; name: string; category: string; cost: number };
+export type CostRow = {
+  id: string;
+  name: string;
+  category: string;
+  cost: number;
+  /** Tour rows: supplier cost (total per group) keyed by group size. */
+  tiers?: Record<string, number>;
+};
 export type CostsContent = { taxRate: number; rows: CostRow[] };
 
 export async function getCosts(): Promise<CostsContent> {
-  const saved = await getSavedContent<CostsContent>("costs");
+  // The "costs" section is PRIVATE (excluded from public row-level security),
+  // so it must be read with the service-role client — the anon client that
+  // getSavedContent uses always comes back empty for it.
+  if (!adminConfigured) return { taxRate: 30, rows: [] };
+  const { data } = await createAdminClient()
+    .from("site_content")
+    .select("data")
+    .eq("key", "costs")
+    .maybeSingle();
+  const saved = (data?.data ?? null) as Partial<CostsContent> | null;
   return { taxRate: saved?.taxRate ?? 30, rows: saved?.rows ?? [] };
 }
 
@@ -64,6 +80,13 @@ export async function getServiceMargins(): Promise<MarginRow[]> {
     });
   }
 
+  /* Tours are priced AND costed per group size — one margin row per tier
+     (e.g. "Chichen Itza & Valladolid — 4 people"), so Maher sees the real
+     margin at every group size. Tour cost rows hold their tiers in the Costs
+     section's `tiers` map. */
+  const tourCostTiers = new Map(
+    costs.rows.filter((r) => r.tiers).map((r) => [r.id, r.tiers as Record<string, number>])
+  );
   const tourList =
     tours ??
     TOURS.map((t) => ({
@@ -71,16 +94,34 @@ export async function getServiceMargins(): Promise<MarginRow[]> {
       name: t.name,
       price: t.price ?? 0,
       offer: t.offer ?? 0,
+      prices: t.groupPrices
+        ? Object.fromEntries(Object.entries(t.groupPrices).map(([k, v]) => [String(k), v]))
+        : undefined,
       onreq: !!t.onreq,
     }));
   for (const t of tourList) {
-    rows.push({
-      category: "Tour",
-      name: t.name,
-      unit: "person",
-      price: t.onreq || t.price <= 0 ? null : effective(t.price, t.offer),
-      cost: costOf(t.key),
-    });
+    const tiers = t.onreq ? null : parseTierPrices(t.prices);
+    if (tiers) {
+      const costTiers = tourCostTiers.get(COST_ID_ALIASES[t.key] ?? t.key);
+      for (const pax of Object.keys(tiers).map(Number).sort((a, b) => a - b)) {
+        const tierCost = Number(costTiers?.[String(pax)]) || 0;
+        rows.push({
+          category: "Tour",
+          name: `${t.name} — ${pax} people`,
+          unit: "group",
+          price: tiers[pax],
+          cost: tierCost > 0 ? tierCost : null,
+        });
+      }
+    } else {
+      rows.push({
+        category: "Tour",
+        name: t.name,
+        unit: "person",
+        price: t.onreq || t.price <= 0 ? null : effective(t.price, t.offer),
+        cost: costOf(t.key),
+      });
+    }
   }
 
   const addonList =

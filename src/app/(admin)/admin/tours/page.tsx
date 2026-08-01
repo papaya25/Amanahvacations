@@ -10,13 +10,20 @@ type AdminTour = {
   name: string;
   sub: string;
   dur: string;
+  /** Legacy per-person price — kept for old saves; tiered `prices` wins. */
   price: number;
   offer: number;
+  /** TOTAL group price (MXN) per group size, e.g. {"2":6200,"3":8400}.
+      0 / empty = that group size isn't offered (Cozumel has no 2). */
+  prices?: Record<string, number>;
   onreq: boolean;
   hidden: boolean;
   img: string;
   stops: Stop[];
 };
+
+/** Group sizes shown in the pricing grid. */
+const PAX_SIZES = [2, 3, 4, 5, 6] as const;
 
 const DEFAULT: { tours: AdminTour[] } = {
   tours: TOURS.map((t) => ({
@@ -26,6 +33,9 @@ const DEFAULT: { tours: AdminTour[] } = {
     dur: t.dur,
     price: t.price ?? 0,
     offer: 0,
+    prices: t.groupPrices
+      ? Object.fromEntries(Object.entries(t.groupPrices).map(([k, v]) => [String(k), v]))
+      : undefined,
     onreq: !!t.onreq,
     hidden: false,
     img: t.img,
@@ -40,6 +50,7 @@ const blankTour = (): AdminTour => ({
   dur: "Full day",
   price: 0,
   offer: 0,
+  prices: { "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
   onreq: false,
   hidden: false,
   img: "",
@@ -66,7 +77,7 @@ export default function ToursAdmin() {
       <PageHead
         eyebrow="Content"
         title="Tours"
-        desc="Add, remove or hide tours, set prices and offers, and edit each itinerary. Prices are per person in MXN. Set an 'Offer price' below the normal price to run a sale — leave it 0 for no offer."
+        desc="Add, remove or hide tours, set group prices, and edit each itinerary. Each price is the TOTAL for the whole group in MXN — bigger groups get a better per-person rate (shown under each price). Leave a group size at 0 if you don't offer it (e.g. Cozumel starts at 3 people)."
       />
 
       <button
@@ -106,23 +117,37 @@ export default function ToursAdmin() {
                   <Field label="Name" value={t.name} onChange={(v) => patch(i, { name: v })} />
                   <Field label="Subtitle" value={t.sub} onChange={(v) => patch(i, { sub: v })} />
                   <Field label="Duration" value={t.dur} onChange={(v) => patch(i, { dur: v })} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field
-                      label="Price"
-                      type="number"
-                      prefix="$"
-                      value={t.price}
-                      onChange={(v) => patch(i, { price: Number(v) || 0 })}
-                    />
-                    <Field
-                      label="Offer price"
-                      type="number"
-                      prefix="$"
-                      value={t.offer}
-                      onChange={(v) => patch(i, { offer: Number(v) || 0 })}
-                    />
-                  </div>
                 </div>
+                {!t.onreq && (
+                  <div>
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
+                      Group pricing — total for the whole group (MXN)
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                      {PAX_SIZES.map((pax) => {
+                        const total = Number(t.prices?.[String(pax)]) || 0;
+                        return (
+                          <div key={pax}>
+                            <Field
+                              label={`${pax} people`}
+                              type="number"
+                              prefix="$"
+                              value={total}
+                              onChange={(v) =>
+                                patch(i, {
+                                  prices: { ...(t.prices ?? {}), [String(pax)]: Number(v) || 0 },
+                                })
+                              }
+                            />
+                            <div className="mt-1 text-[11.5px] text-sage">
+                              {total > 0 ? `$${Math.round(total / pax).toLocaleString("en-US")} /person` : "not offered"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <label className="flex items-center gap-2.5 text-[13px] text-ink">
                   <input
                     type="checkbox"

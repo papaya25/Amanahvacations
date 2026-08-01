@@ -1,9 +1,10 @@
 "use client";
 
-/* Ported from Maher's Wix tours embed. Business logic preserved: per-tour
-   pricing (people × price, MXN + USD), 24h booking lead time, group cap of 6,
-   Buy Now handoff to the booking URL with identical params, and the
-   WhatsApp/email request flow for on-request tours. */
+/* Ported from Maher's Wix tours embed, with group-tier pricing: each tour has
+   a TOTAL price per group size (2–6 people; Cozumel from 3) with the group
+   discount built in — NOT a flat per-person price × people. 24h booking lead
+   time, Buy Now handoff to checkout, and the WhatsApp/email request flow for
+   on-request tours are preserved. */
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +13,7 @@ import { useCurrency } from "@/lib/currency";
 import type { AdminTour as AdminTourInput } from "@/lib/content/tours";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
-import { TOURS, type Tour, type Stop } from "./data";
+import { TOURS, parseTierPrices, tourPaxOptions, tourTotalFor, type Tour, type Stop } from "./data";
 
 const WA_NUMBER = "529903516948";
 const EMAIL = "booking@amanahvacations.com";
@@ -44,6 +45,12 @@ export default function ToursClient({
     BUILTIN.forEach((t) => {
       if (t.key) descByKey[t.key] = t.desc;
     });
+    // Admin tours without their own tiers inherit the built-in tier table by
+    // key, so tier pricing survives an admin save made before tiers existed.
+    const tiersByKey: Record<string, Record<number, number>> = {};
+    BUILTIN.forEach((t) => {
+      if (t.key && t.groupPrices) tiersByKey[t.key] = t.groupPrices;
+    });
     return dbTours.map((t) => ({
       key: t.key,
       name: t.name,
@@ -51,6 +58,7 @@ export default function ToursClient({
       dur: t.dur,
       price: t.onreq ? null : t.price > 0 ? t.price : null,
       offer: !t.onreq && t.offer > 0 ? t.offer : undefined,
+      groupPrices: t.onreq ? undefined : parseTierPrices(t.prices) ?? tiersByKey[t.key],
       img: t.img,
       desc: descByKey[t.key] ?? "",
       stops: t.stops.map((s): Stop => [s.time, s.place, s.desc]),
@@ -81,8 +89,21 @@ export default function ToursClient({
     toastTimer.current = setTimeout(() => setToast(""), 3200);
   };
 
-  const step = (idx: number, d: number) =>
-    setPeople((p) => ({ ...p, [idx]: Math.max(1, Math.min(6, (p[idx] || 1) + d)) }));
+  /* Group-size limits per tour: tiered tours book between their smallest and
+     largest priced group (e.g. 2–6, Cozumel 3–6); legacy flat-priced tours
+     keep the old 1–6 range. */
+  const paxRange = (t: Tour): { min: number; max: number } => {
+    const opts = tourPaxOptions(t);
+    return opts.length ? { min: opts[0], max: opts[opts.length - 1] } : { min: 1, max: 6 };
+  };
+  const paxOf = (idx: number) => {
+    const { min, max } = paxRange(TOURS_EFFECTIVE[idx]);
+    return Math.max(min, Math.min(max, people[idx] || min));
+  };
+  const step = (idx: number, d: number) => {
+    const { min, max } = paxRange(TOURS_EFFECTIVE[idx]);
+    setPeople((p) => ({ ...p, [idx]: Math.max(min, Math.min(max, (p[idx] || min) + d)) }));
+  };
 
   const buy = (idx: number) => {
     const t = TOURS_EFFECTIVE[idx];
@@ -91,11 +112,13 @@ export default function ToursClient({
       showToast(dict.tourc_toast_date);
       return;
     }
-    const ppl = people[idx] || 1;
-    // Charge the offer price when a valid sale is on (matches what the card shows).
-    const unit =
+    const ppl = paxOf(idx);
+    /* Total for this group size — tier table first (group discount built in);
+       legacy per-person × people only for tours without tiers. */
+    const tierTotal = tourTotalFor(t, ppl);
+    const legacyUnit =
       t.price != null && t.offer != null && t.offer < t.price ? t.offer : (t.price as number);
-    const total = unit * ppl;
+    const total = tierTotal ?? legacyUnit * ppl;
     add({
       kind: "tour",
       title: t.name,
@@ -146,9 +169,13 @@ export default function ToursClient({
       <div className="at-wrap">
         <div className="at-grid">
           {TOURS_EFFECTIVE.map((t, idx) => {
-            const ppl = people[idx] || 1;
-            const total = t.price ? t.price * ppl : 0;
-            const hasOffer = t.price != null && t.offer != null && t.offer < t.price;
+            const ppl = paxOf(idx);
+            const tiered = tourPaxOptions(t).length > 0;
+            const tierTotal = tourTotalFor(t, ppl);
+            const total = tierTotal ?? (t.price ? t.price * ppl : 0);
+            const perPerson = total > 0 ? Math.round(total / ppl) : 0;
+            // Legacy per-person offers only apply to tours without tier pricing.
+            const hasOffer = !tiered && t.price != null && t.offer != null && t.offer < t.price;
             const offerTotal = hasOffer ? (t.offer as number) * ppl : 0;
             const offerPct = hasOffer ? Math.round((1 - (t.offer as number) / (t.price as number)) * 100) : 0;
             return (
@@ -260,6 +287,11 @@ export default function ToursClient({
                               </span>
                             ) : (
                               <span className="at-total">{format(total)}</span>
+                            )}
+                            {tiered && perPerson > 0 && (
+                              <div style={{ fontSize: 12.5, color: "var(--at-sage, #6b7b6c)", marginTop: 2 }}>
+                                {format(perPerson)}{dict.pkgc_per_person}
+                              </div>
                             )}
                           </div>
                         </div>

@@ -84,7 +84,7 @@ export default async function LocaleRootLayout({
     getContact(),
     getPublicContent<CurrencySettings>("currency", {
       defaultCurrency: "USD",
-      rateUSD: 17,
+      rateUSD: 17.5,
       rateEUR: 19.5,
     }),
     getDictionary(locale),

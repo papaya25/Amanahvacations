@@ -10,21 +10,26 @@ import { getSavedTours } from "@/lib/content/tours";
 import { getSavedAddons, getSavedTransfers } from "@/lib/content/addons";
 import { getContact } from "@/lib/content/contact";
 import { getPublicContent } from "@/lib/content/site";
+import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
 
 const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
 
+/* Tours are priced per GROUP (total, group discount built in) — render one
+   compact line per tour listing every group size, so the bot quotes exact
+   totals and can compute per person. */
+const tierLine = (tiers: Record<number, number>) =>
+  Object.keys(tiers)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((pax) => `${pax} people ${fmtMXN(tiers[pax])}`)
+    .join(" · ");
+
 // Built-in fallbacks mirror the public pages (used until admin saves content).
-const DEFAULT_TOUR_LINES = [
-  "- Cenotes, Coral & Sea Turtles (Dos Ojos + Akumal snorkeling), 6 hours — $2,350 MXN per person",
-  "- Cenotes & the Ruins of Tulum, 6–8 hours — $3,700 MXN per person",
-  "- Coba Ruins & Jungle Cenotes, full day — $3,900 MXN per person",
-  "- Cozumel Private Boat Snorkeling, ~4 hours — $4,600 MXN per person",
-  "- Tulum & Akumal, full day — $5,850 MXN per person",
-  "- Chichen Itza & Valladolid, full day — $6,600 MXN per person (ON OFFER: $5,500 MXN)",
-  "- Ruta de Cenotes, half day — $2,900 MXN per person",
-  "- Holbox Island Overnight Escape — price on request",
-  "- Isla Contoy National Park — price on request",
-];
+const DEFAULT_TOUR_LINES = TOURS.map((t) => {
+  if (t.onreq || !t.groupPrices)
+    return `- ${t.name} (${t.sub}) — price on request`;
+  return `- ${t.name} (${t.sub}), ${t.dur} — TOTAL for the group: ${tierLine(t.groupPrices)}`;
+});
 
 const DEFAULT_PACKAGE_LINES = [
   "- The Basics (Essential Riviera Maya) — $4,600 MXN per person",
@@ -42,7 +47,7 @@ export async function buildChatSystemPrompt(): Promise<string> {
     getSavedAddons(),
     getSavedTransfers(),
     getContact(),
-    getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 17, rateEUR: 19.5 }),
+    getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 17.5, rateEUR: 19.5 }),
   ]);
 
   const packageLines = packages?.length
@@ -60,9 +65,13 @@ export async function buildChatSystemPrompt(): Promise<string> {
 
   const tourLines = tours?.length
     ? tours.map((t) => {
-        const price = t.onreq
-          ? "price on request"
-          : t.offer > 0 && t.offer < t.price
+        if (t.onreq) return `- ${t.name} (${t.sub}) — price on request`;
+        const tiers = parseTierPrices(t.prices);
+        if (tiers)
+          return `- ${t.name} (${t.sub}), ${t.dur} — TOTAL for the group: ${tierLine(tiers)}`;
+        // Legacy flat per-person pricing (saved before group tiers existed).
+        const price =
+          t.offer > 0 && t.offer < t.price
             ? `${fmtMXN(t.price)} per person (ON OFFER: ${fmtMXN(t.offer)})`
             : `${fmtMXN(t.price)} per person`;
         return `- ${t.name} (${t.sub}), ${t.dur} — ${price}`;
@@ -91,7 +100,7 @@ ABOUT AMANAH VACATIONS
 PACKAGES (multi-day, per person in MXN, minimum 3 nights):
 ${packageLines.join("\n")}
 
-DAY TOURS (per person in MXN, book at least 24h ahead, groups up to 6 online — larger groups via WhatsApp):
+DAY TOURS (priced per GROUP — each price is the TOTAL in MXN for that group size, and bigger groups pay less per person; the smallest size listed is the minimum group, e.g. Cozumel starts at 3; book at least 24h ahead; groups up to 6 online — larger groups via WhatsApp):
 ${tourLines.join("\n")}
 
 ADD-ON EXPERIENCES (can be added to packages at checkout):

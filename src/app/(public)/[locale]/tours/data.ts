@@ -9,20 +9,60 @@ export type Tour = {
   name: string;
   sub: string;
   dur: string;
+  /** Legacy per-person price (MXN) — fallback only when `groupPrices` is
+      absent. When tiers exist they are the price authority. */
   price: number | null;
-  /** Optional per-person sale price (MXN). If set below `price`, the card shows
-      the original struck through and this offer price highlighted. */
+  /** Optional per-person sale price (MXN), legacy pricing only. */
   offer?: number;
+  /** TOTAL group price (MXN) per group size — the group discount is built in
+      (a bigger group pays less per person). Keys are pax counts; the smallest
+      key is the minimum bookable group (e.g. Cozumel starts at 3). */
+  groupPrices?: Record<number, number>;
   img: string;
   desc: string;
   stops: Stop[];
   onreq?: boolean;
 };
 
+/** Parse an admin-saved pax→total map (string keys, from JSON) into a clean
+    numeric groupPrices map; null when empty/invalid. Client-safe. */
+export function parseTierPrices(prices?: Record<string, number>): Record<number, number> | null {
+  if (!prices) return null;
+  const out: Record<number, number> = {};
+  for (const [k, v] of Object.entries(prices)) {
+    const pax = Number(k);
+    const total = Number(v);
+    if (Number.isFinite(pax) && pax > 0 && Number.isFinite(total) && total > 0) out[pax] = total;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/** Selectable group sizes for a tour, smallest first. */
+export function tourPaxOptions(t: Pick<Tour, "groupPrices">): number[] {
+  return t.groupPrices
+    ? Object.keys(t.groupPrices).map(Number).filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b)
+    : [];
+}
+
+/** Total group price (MXN) for `pax` people, clamping to the nearest offered
+    tier (below-minimum pays the minimum-group price). Null when unpriced. */
+export function tourTotalFor(t: Pick<Tour, "groupPrices" | "price">, pax: number): number | null {
+  const opts = tourPaxOptions(t);
+  if (opts.length) {
+    const clamped = Math.min(Math.max(pax, opts[0]), opts[opts.length - 1]);
+    // Exact tier when offered; otherwise the nearest tier below.
+    const tier = opts.filter((n) => n <= clamped).pop() ?? opts[0];
+    return t.groupPrices![tier] ?? null;
+  }
+  return t.price != null && t.price > 0 ? t.price * Math.max(1, pax) : null;
+}
+
 export const TOURS: Tour[] = [
   {
     key: "akumalcenotes", name: "Cenotes, Coral & Sea Turtles", sub: "Dos Ojos Cenote + Akumal Snorkeling",
-    dur: "6 hours", price: 2350, img: "/images/tours/akumalcenotes.jpg",
+    dur: "6 hours", price: 3100,
+    groupPrices: { 2: 6200, 3: 8400, 4: 10400, 5: 12750, 6: 14900 },
+    img: "/images/tours/akumalcenotes.jpg",
     desc: "Swim through the sacred chambers of Cenote Dos Ojos, then snorkel alongside sea turtles in Akumal Bay.",
     stops: [
       ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup from your hotel or villa. Cold water and refreshments on board."],
@@ -34,7 +74,9 @@ export const TOURS: Tour[] = [
   },
   {
     key: "tulumcenotes", name: "Cenotes & the Ruins of Tulum", sub: "Dos Ojos Cenote + Tulum Archaeological Site",
-    dur: "6–8 hours", price: 3700, img: "/images/tours/tulumcenotes.jpg",
+    dur: "6–8 hours", price: 4450,
+    groupPrices: { 2: 8900, 3: 11700, 4: 13900, 5: 16900, 6: 19950 },
+    img: "/images/tours/tulumcenotes.jpg",
     desc: "A private guided tour of the only Maya city built on the coast, plus a swim in Cenote Dos Ojos.",
     stops: [
       ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup from your hotel or villa."],
@@ -46,7 +88,9 @@ export const TOURS: Tour[] = [
   },
   {
     key: "cobacenotes", name: "Coba Ruins & Jungle Cenotes", sub: "Coba Zone + Choo-Ha & Tankach-Ha",
-    dur: "Full day", price: 3900, img: "/images/tours/cobacenotes.jpg",
+    dur: "Full day", price: 4300,
+    groupPrices: { 2: 8600, 3: 10900, 4: 13400, 5: 15950, 6: 17700 },
+    img: "/images/tours/cobacenotes.jpg",
     desc: "Climb into the jungle to Nohoch Mul, the tallest pyramid on the Yucatán Peninsula, then cool off in two hidden cenotes.",
     stops: [
       ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup from your hotel or villa."],
@@ -58,7 +102,9 @@ export const TOURS: Tour[] = [
   },
   {
     key: "cozumel", name: "Cozumel Private Boat Snorkeling", sub: "El Cielo, El Cielito, Colombia & Lever Reefs",
-    dur: "Approx. 4 hours", price: 4600, img: "/images/tours/cozumel.jpg",
+    dur: "Approx. 4 hours", price: 3150,
+    groupPrices: { 3: 9450, 4: 10600, 5: 11750, 6: 12900 },
+    img: "/images/tours/cozumel.jpg",
     desc: "A private boat to four of Cozumel's best reefs, with fresh ceviche and drinks on board.",
     stops: [
       ["Morning · Private Pickup", "Playa del Carmen to Cozumel", "Pickup and ferry crossing to the island."],
@@ -70,7 +116,9 @@ export const TOURS: Tour[] = [
   },
   {
     key: "akumaltulum", name: "Tulum & Akumal", sub: "Dos Ojos + Tulum Ruins + Akumal Snorkeling",
-    dur: "Full day", price: 5850, img: "/images/tours/akumaltulum.jpg",
+    dur: "Full day", price: 4950,
+    groupPrices: { 2: 9900, 3: 12900, 4: 15960, 5: 18950, 6: 21960 },
+    img: "/images/tours/akumaltulum.jpg",
     desc: "The best of both worlds — ancient ruins, a sacred cenote, and sea turtles in one action-packed day.",
     stops: [
       ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup."],
@@ -82,7 +130,9 @@ export const TOURS: Tour[] = [
   },
   {
     key: "chichen", name: "Chichen Itza & Valladolid", sub: "New 7 Wonders + Suytun & Samulá Cenotes",
-    dur: "Full day", price: 6600, offer: 5500, img: "/images/tours/chichen.jpg",
+    dur: "Full day", price: 7725,
+    groupPrices: { 2: 15450, 3: 18850, 4: 22250, 5: 25650, 6: 29050 },
+    img: "/images/tours/chichen.jpg",
     desc: "A wonder of the world, a colonial pueblo mágico, and two of the Yucatán's most beautiful cenotes.",
     stops: [
       ["Early Morning · Pickup", "Playa del Carmen", "An early start for a full day of wonders."],
@@ -95,7 +145,9 @@ export const TOURS: Tour[] = [
   },
   {
     key: "rutacenotes", name: "Ruta de Cenotes", sub: "4 Cenotes + Diving Platform + Zip Line",
-    dur: "Half day", price: 2900, img: "/images/tours/rutacenotes.jpg",
+    dur: "Half day", price: 3350,
+    groupPrices: { 2: 6700, 3: 8650, 4: 10600, 5: 12550, 6: 14500 },
+    img: "/images/tours/rutacenotes.jpg",
     desc: "Two open-air and two underground cenotes, a diving platform, and a water zip line in one jungle park.",
     stops: [
       ["Morning · Private Pickup", "Playa del Carmen", "Private, air-conditioned van pickup."],
