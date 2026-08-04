@@ -8,6 +8,12 @@ import { sendWelcomeEmail } from "./actions";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 
+/* Social login ships per provider: set NEXT_PUBLIC_AUTH_GOOGLE / _FACEBOOK to
+   "1" (after configuring that provider in Supabase) to activate its button —
+   until then it stays visibly "coming soon" instead of erroring for visitors. */
+const GOOGLE_ON = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "1";
+const FACEBOOK_ON = process.env.NEXT_PUBLIC_AUTH_FACEBOOK === "1";
+
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -18,8 +24,32 @@ function LoginInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    params.get("oauth_error") ? dict.login_err_oauth : null
+  );
   const [confirmSent, setConfirmSent] = useState(false);
+
+  /* Send the visitor to the provider; Supabase returns them to
+     /api/auth/callback which sets the session and forwards to `next`. */
+  const oauth = async (provider: "google" | "facebook") => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    const next = params.get("next");
+    const dest = L(next && next.startsWith("/account") ? next : "/account/orders");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(dest)}`,
+      },
+    });
+    // On success the browser navigates away; only errors land here.
+    if (error) {
+      setError(dict.login_err_oauth);
+      setBusy(false);
+    }
+  };
 
   const inputCls =
     "w-full rounded-xl border-[1.5px] border-sand bg-white px-4 py-3 text-[14px] text-ink outline-none transition focus:border-forest";
@@ -152,20 +182,28 @@ function LoginInner() {
 
           <div className="space-y-2.5">
             <button
-              disabled
-              title="Coming soon"
-              className="flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-full border-[1.5px] border-sand bg-white py-3 text-[13.5px] font-medium text-ink opacity-50"
+              type="button"
+              disabled={!GOOGLE_ON || busy}
+              title={GOOGLE_ON ? undefined : "Coming soon"}
+              onClick={() => oauth("google")}
+              className={`flex w-full items-center justify-center gap-2.5 rounded-full border-[1.5px] border-sand bg-white py-3 text-[13.5px] font-medium text-ink transition ${
+                GOOGLE_ON ? "hover:border-forest/50 disabled:opacity-60" : "cursor-not-allowed opacity-50"
+              }`}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden><path fill="#4285F4" d="M22.5 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.9a5 5 0 0 1-2.2 3.3v2.700h3.5c2-1.9 3.3-4.7 3.3-7.9Z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.3-1.9-6.2-4.6H2.2v2.8A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.2a11 11 0 0 0 0 9.8l3.6-2.8Z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.2 7.1l3.6 2.8C6.7 7.3 9.1 5.4 12 5.4Z"/></svg>
-              {dict.login_google}
+              {dict.login_google}{GOOGLE_ON ? "" : ` ${dict.login_soon_suffix}`}
             </button>
             <button
-              disabled
-              title="Coming soon"
-              className="flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-full border-[1.5px] border-sand bg-white py-3 text-[13.5px] font-medium text-ink opacity-50"
+              type="button"
+              disabled={!FACEBOOK_ON || busy}
+              title={FACEBOOK_ON ? undefined : "Coming soon"}
+              onClick={() => oauth("facebook")}
+              className={`flex w-full items-center justify-center gap-2.5 rounded-full border-[1.5px] border-sand bg-white py-3 text-[13.5px] font-medium text-ink transition ${
+                FACEBOOK_ON ? "hover:border-forest/50 disabled:opacity-60" : "cursor-not-allowed opacity-50"
+              }`}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="#1877F2" aria-hidden><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7v-3.5h3.1V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.2h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12Z"/></svg>
-              {dict.login_facebook}
+              {dict.login_facebook}{FACEBOOK_ON ? "" : ` ${dict.login_soon_suffix}`}
             </button>
           </div>
 
