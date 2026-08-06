@@ -829,18 +829,22 @@ export default function PackagesClient({
         {/* ONE price on the card: the TOTAL the group actually pays (updates
             live with travelers + add-ons), with the per-person rate as a small
             helper underneath — no competing numbers. */}
+        {/* Per-person is the hero (the travel-industry anchor — smaller number,
+            comparable across sites); the group total stays visible right below
+            so there's never a surprise at checkout. */}
         <div className="pkg-price-area">
           <div>
             <div className="pkg-price-label">
-              {dict.pkgc_total_label} ·{" "}
               {pkgId === "honeymoon"
                 ? dict.pkgc_for_two
                 : `${tierUsed(pkgId).pax} ${tierUsed(pkgId).pax === 1 ? dict.pkgc_traveler : dict.pkgc_travelers}`}
             </div>
-            <div className="pkg-price">{format(displayTotalMXN(pkgId))}</div>
+            <div className="pkg-price">
+              {format(Math.round(displayTotalMXN(pkgId) / tierUsed(pkgId).pax))}{" "}
+              <small>{dict.pkgc_per_person}</small>
+            </div>
             <div className="pkg-price-pp">
-              {dict.pkgc_approx} {format(Math.round(displayTotalMXN(pkgId) / tierUsed(pkgId).pax))}
-              {dict.pkgc_per_person}
+              {dict.pkgc_total_label}: {format(displayTotalMXN(pkgId))}
             </div>
           </div>
           <div className="pkg-nights">{pkgNightsText}</div>
