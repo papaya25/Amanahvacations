@@ -277,7 +277,7 @@ export default function ToursClient({
                           </div>
                         </div>
                         <div className="at-price-row">
-                          <div className="at-label">{dict.tourc_total}</div>
+                          <div className="at-label">{dict.tourc_pricing}</div>
                           <div className="at-amount">
                             {hasOffer ? (
                               <span className="at-total">
@@ -285,13 +285,20 @@ export default function ToursClient({
                                 <span className="at-price-offer">{format(offerTotal)}</span>
                                 <span className="at-offer-badge">−{offerPct}%</span>
                               </span>
+                            ) : tiered && perPerson > 0 ? (
+                              /* Per-person hero (the travel anchor), full group
+                                 total kept visible right below. */
+                              <>
+                                <span className="at-total">
+                                  {format(perPerson)}
+                                  <small style={{ fontSize: 12, fontWeight: 500 }}>{dict.pkgc_per_person}</small>
+                                </span>
+                                <div style={{ fontSize: 12.5, color: "var(--at-sage, #6b7b6c)", marginTop: 2 }}>
+                                  {dict.pkgc_total_label}: {format(total)}
+                                </div>
+                              </>
                             ) : (
                               <span className="at-total">{format(total)}</span>
-                            )}
-                            {tiered && perPerson > 0 && (
-                              <div style={{ fontSize: 12.5, color: "var(--at-sage, #6b7b6c)", marginTop: 2 }}>
-                                {format(perPerson)}{dict.pkgc_per_person}
-                              </div>
                             )}
                           </div>
                         </div>
