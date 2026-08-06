@@ -138,14 +138,10 @@ export default async function ToursPage({
     locale
   );
 
-  /* Single activities bookable on their own — the add-on catalogue minus the
-     combos already shown above as tour cards. Translated for display; ids and
-     prices never change. */
-  const TOUR_CARD_IDS = new Set([
-    "akumalcenotes", "tulumcenotes", "cobacenotes", "cozumel",
-    "akumaltulum", "chichen", "rutacenotes", "holbox",
-  ]);
-  const singlesBase = ACTIVITIES.filter((a) => !TOUR_CARD_IDS.has(a.id));
+  /* Single activities bookable on their own — the FULL add-on catalogue (the
+     tours repeat the cards above, but the picker stays complete so nobody has
+     to scroll back up). Translated for display; ids and prices never change. */
+  const singlesBase = ACTIVITIES;
   let singleActivities: Activity[] = singlesBase;
   if (locale !== "en") {
     const [sNames, sDescs] = await Promise.all([
