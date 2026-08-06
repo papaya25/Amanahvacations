@@ -733,17 +733,7 @@ export default function PackagesClient({
     );
   };
 
-  const addonPanel = (pkgId: PkgId) =>
-    pkgId === "basic" ? (
-      groupedAddonPanel(pkgId)
-    ) : (
-      <div className={`addons-panel${openAddonPanels[pkgId] ? " open" : ""}`}>
-        <div className="addon-note">
-          {dict.pkgc_addon_note}
-        </div>
-        {activities.map((act) => addonItem(act, pkgId))}
-      </div>
-    );
+  const addonPanel = (pkgId: PkgId) => groupedAddonPanel(pkgId);
 
   const pkgNightsText = nights !== null && checkin && checkout ? (
     <>
@@ -786,12 +776,24 @@ export default function PackagesClient({
         <div className="pkg-body">
           <div className="pkg-includes-title">{dict.pkgc_whats_included}</div>
           <ul className="pkg-includes">
-            {meta.includes.map((inc) => (
-              <li key={inc.slice(0, 30)} className="pkg-include-item">
-                <span className="pkg-check">✓</span>
-                {inc}
-              </li>
-            ))}
+            {meta.includes.map((inc) => {
+              /* Trial (The Basics): bold the lead phrase, grey the detail —
+                 scannable two-tone lines read faster and feel shorter. */
+              const dash = pkgId === "basic" ? inc.indexOf(" — ") : -1;
+              return (
+                <li key={inc.slice(0, 30)} className="pkg-include-item">
+                  <span className="pkg-check">✓</span>
+                  {dash > 0 ? (
+                    <span>
+                      <strong className="pkg-include-lead">{inc.slice(0, dash)}</strong>
+                      <span className="pkg-include-sub"> — {inc.slice(dash + 3)}</span>
+                    </span>
+                  ) : (
+                    inc
+                  )}
+                </li>
+              );
+            })}
           </ul>
           {DETAILS[pkgId] && (
             <button
@@ -846,18 +848,10 @@ export default function PackagesClient({
           onClick={() => setOpenAddonPanels((p) => ({ ...p, [pkgId]: !p[pkgId] }))}
         >
           <span className="addons-toggle-label">
-            {pkgId === "basic" ? (
-              /* Trial (The Basics): one clear line — what it is AND what it
-                 does — plus the count as a curiosity hook. */
-              <span className="addons-toggle-line1">
-                {dict.pkgc_make_unforgettable} — {dict.pkgc_add_experiences_inline}
-              </span>
-            ) : (
-              <>
-                <span className="addons-toggle-line1">{dict.pkgc_make_unforgettable}</span>
-                <span className="addons-toggle-line2">{dict.pkgc_add_experiences}</span>
-              </>
-            )}
+            {/* One clear line — what it is AND what it does. */}
+            <span className="addons-toggle-line1">
+              {dict.pkgc_make_unforgettable} — {dict.pkgc_add_experiences_inline}
+            </span>
           </span>
           <span className="addons-toggle-icon">+</span>
         </button>

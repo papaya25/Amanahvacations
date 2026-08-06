@@ -608,3 +608,7 @@
 }
 .addon-cat-chev.open { transform: rotate(0deg); }
 .addon-cat:first-of-type .addon-cat-header { margin-top: 8px; }
+
+/* Two-tone includes: bold lead + grey detail (scannability trial) */
+.pkg-include-lead { font-weight: 650; color: var(--ink, #1c2b1e); }
+.pkg-include-sub { color: #6b7b6c; }
