@@ -519,3 +519,61 @@
   font-family: var(--font-outfit), sans-serif;
   font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
 }
+
+/* ── "See full details" link + details popup ── */
+.pkg-see-details {
+  margin-top: 10px;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--forest, #3a5a3c);
+  text-decoration: underline; text-underline-offset: 3px;
+  padding: 0;
+}
+.pkg-see-details:hover { color: var(--ink, #1c2b1e); }
+
+.pkg-details-modal { max-width: 640px; }
+.pkg-details-intro {
+  font-size: 13.5px; line-height: 1.75; color: #3d4a3e; margin: 0 0 16px;
+}
+.pkg-details-day { border-top: 1px solid #eee7db; padding: 14px 0 4px; }
+.pkg-details-day-title {
+  font-family: var(--font-cormorant), serif;
+  font-size: 18px; font-weight: 600; color: var(--ink, #1c2b1e);
+}
+.pkg-details-day-dur {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--terracotta, #c8693a); margin: 2px 0 6px;
+}
+.pkg-details-day-desc { font-size: 13px; line-height: 1.7; color: #3d4a3e; margin: 0 0 8px; }
+.pkg-details-day-inc {
+  font-size: 12px; line-height: 1.6; color: #6b7b6c;
+  background: #faf6ef; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px;
+}
+.pkg-details-addon {
+  font-size: 12.5px; line-height: 1.65; color: #3d4a3e;
+  border: 1.5px dashed #ddd6ca; border-radius: 12px; padding: 10px 14px; margin: 14px 0;
+}
+.pkg-details-week { border-top: 1px solid #eee7db; margin-top: 14px; padding-top: 12px; }
+.pkg-details-week-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--forest, #3a5a3c); margin-bottom: 8px;
+}
+.pkg-details-week-list { margin: 0 0 8px 18px; padding: 0; }
+.pkg-details-week-list li { font-size: 13px; line-height: 1.8; color: #3d4a3e; }
+.pkg-details-week-note { font-size: 12px; color: #6b7b6c; line-height: 1.6; }
+
+/* ── Live group total above the CTA ── */
+.pkg-total-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; padding: 10px 2px 12px;
+  border-top: 1px dashed #e5ddcf;
+}
+.pkg-total-label {
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.3px; color: #6b7b6c;
+}
+.pkg-total-value {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 19px; font-weight: 700; color: var(--ink, #1c2b1e);
+  white-space: nowrap;
+}

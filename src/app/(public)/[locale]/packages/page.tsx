@@ -13,7 +13,9 @@ import {
   ACCOM_TIERS,
   RECOMMENDED,
   REC_TIPS,
+  PKG_DETAILS,
   type Activity,
+  type PkgDetails,
   type PkgId,
 } from "./data";
 import "./packages.css";
@@ -43,7 +45,41 @@ async function translateCatalogue(locale: Locale) {
   recTipKeys.forEach((k, i) => {
     tRecTips[k] = { label: recTipLabels[i], tip: recTipTexts[i] };
   });
-  return { tActivities, tAccomTiers, tRecommended, tRecTips };
+  const tDetails = await translateDetails(locale);
+  return { tActivities, tAccomTiers, tRecommended, tRecTips, tDetails };
+}
+
+/* Translate the day-by-day details popup content. Flattens every text field of
+   every package into one batched request per field type, then reassembles. */
+async function translateDetails(locale: Locale): Promise<Partial<Record<PkgId, PkgDetails>>> {
+  const ids = Object.keys(PKG_DETAILS) as PkgId[];
+  const flat: string[] = [];
+  ids.forEach((id) => {
+    const d = PKG_DETAILS[id]!;
+    flat.push(d.intro, d.addonNote ?? "", d.weekNote, ...d.week);
+    d.days.forEach((day) => flat.push(day.title, day.dur, day.desc, day.included));
+  });
+  const translated = await translateMany(flat.filter(Boolean), locale);
+  // Re-walk the same order, consuming translated strings (empty strings were
+  // filtered out of the request, so they consume nothing).
+  let i = 0;
+  const take = (s: string) => (s ? translated[i++] ?? s : s);
+  const out: Partial<Record<PkgId, PkgDetails>> = {};
+  ids.forEach((id) => {
+    const d = PKG_DETAILS[id]!;
+    const intro = take(d.intro);
+    const addonNote = d.addonNote ? take(d.addonNote) : undefined;
+    const weekNote = take(d.weekNote);
+    const week = d.week.map((w) => take(w));
+    const days = d.days.map((day) => ({
+      title: take(day.title),
+      dur: take(day.dur),
+      desc: take(day.desc),
+      included: take(day.included),
+    }));
+    out[id] = { intro, addonNote, weekNote, week, days };
+  });
+  return out;
 }
 
 export const metadata: Metadata = {
@@ -190,6 +226,7 @@ export default async function PackagesPage({
         tAccomTiers={catalogue.tAccomTiers}
         tRecommended={catalogue.tRecommended}
         tRecTips={catalogue.tRecTips}
+        tDetails={catalogue.tDetails}
       />
       <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </>

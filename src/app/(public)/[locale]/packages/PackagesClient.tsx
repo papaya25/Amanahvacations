@@ -16,8 +16,10 @@ import {
   ACTIVITIES as DEFAULT_ACTIVITIES,
   RECOMMENDED as DEFAULT_RECOMMENDED,
   REC_TIPS as DEFAULT_REC_TIPS,
+  PKG_DETAILS as DEFAULT_PKG_DETAILS,
   PACKAGE_IDS,
   type Activity,
+  type PkgDetails,
   type PkgId,
 } from "./data";
 
@@ -36,7 +38,7 @@ const DEFAULT_PRICES: Record<PkgId, number> = {
   explorer: 11850,
   honeymoon: 14300,
 };
-const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3 };
+const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3, water: 3 };
 
 /* Optional sale prices per person (MXN). If a package isn't listed here it shows
    its normal price. The admin's "Offer price" field drives these once the
@@ -47,78 +49,82 @@ type PkgMeta = { name: string; tagline: string; badge: string; icon: string; pho
 const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
   basic: {
     name: "The Basics",
-    tagline: "Essential Riviera Maya",
+    tagline: "The essentials, done properly — ruins, cenote, turtles and the town",
     badge: "Essential",
     icon: "🌿",
     photo: "/images/pkg/basic.jpg",
     includes: [
-      "Private airport transfers Cancún ↔ PDC + welcome brochure",
-      "Cenote visit",
-      "Snorkeling in Playa del Carmen",
-      "Beach Club Xpu-Ha",
-      "Guided Quinta Avenida tour",
-      "Personal WhatsApp concierge",
+      "Private airport transfers — Cancún International, arrival & departure",
+      "Tulum Ruins, Cenote Dos Ojos & Akumal — the signature day",
+      "Snorkelling in Playa del Carmen — the reef minutes from town",
+      "Playa del Carmen tour — Quinta Avenida & the town",
+      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
+      "Welcome kit — printed itinerary & local guidance",
     ],
   },
   family: {
     name: "Family Tour",
-    tagline: "Kid-Friendly Riviera Maya",
+    tagline: "For families — turtles, monkeys, cenotes and a park built for wonder",
     badge: "Kid-Friendly",
     icon: "👨‍👩‍👧‍👦",
     photo: "/images/pkg/family.jpg",
     includes: [
-      "Private airport transfers Cancún ↔ PDC + welcome brochure",
-      "Tulum Ruins & City Tour",
-      "Cenotes Tour",
-      "Cancún Aquarium",
-      "Xenses Park or Monkey Sanctuary — you choose",
-      "Personal WhatsApp concierge",
+      "Private airport transfers — Cancún International, arrival & departure",
+      "Akumal & the Monkey Sanctuary — sea turtles & rescued wildlife",
+      "Cenote Cristalino & Cenote Azul — open-air, shallow and easy",
+      "Playa del Carmen tour — Quinta Avenida & the town",
+      "Xenses Park — full admission",
+      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
+      "Welcome kit — printed itinerary & local guidance",
     ],
   },
   water: {
     name: "Water Lovers",
-    tagline: "Beaches, Reefs & Cenotes",
+    tagline: "For those who live for the sea — reefs, turtles and the clearest water in the Caribbean",
     badge: "Water & Reef",
     icon: "🌊",
     photo: "/images/pkg/water.jpg",
     includes: [
-      "Private airport transfers Cancún ↔ PDC + welcome brochure",
-      "Akumal day trip — snorkeling with sea turtles",
-      "Cenotes Tour — 4 different cenotes, water zip line & diving platform",
-      "Snorkeling in Playa del Carmen",
-      "Personal WhatsApp concierge",
+      "Private airport transfers — Cancún International, arrival & departure",
+      "Akumal & Cenote Dos Ojos — turtle snorkelling & the cave cenote",
+      "Cozumel — private boat to El Cielo & El Cielito",
+      "Ruta de los Cenotes — four cenotes, two underground, two open-air",
+      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
+      "Welcome kit — printed itinerary & local guidance",
     ],
   },
   explorer: {
     name: "Indiana Jones",
-    tagline: "Culture & Wonders",
+    tagline: "For the explorer — three Mayan cities, four cenotes, and the Caribbean",
     badge: "Culture & Wonders",
     icon: "🏛️",
     photo: "/images/pkg/explorer.jpg",
     includes: [
-      "Private airport transfers Cancún ↔ PDC + welcome brochure",
-      "Chichén Itzá full day — guided visit to a Wonder of the World",
-      "Valladolid stop — colonial streets & cenote",
-      "Tulum ruins day trip — clifftop Maya ruins above the sea",
-      "Cenote Dos Ojos stop",
-      "Playa del Carmen Explorer Tour",
-      "Personal WhatsApp concierge",
+      "Private airport transfers — Cancún International, arrival & departure",
+      "Chichén Itzá & Valladolid — with Cenote Suytun & Cenote Samulá",
+      "Cobá — with Cenote Choo-Ha & Cenote Tankach-Ha",
+      "Tulum Ruins & Akumal — clifftop ruins & turtle snorkelling",
+      "Playa del Carmen tour — Quinta Avenida & the town",
+      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
+      "Welcome kit — printed itinerary & local guidance",
     ],
   },
   honeymoon: {
     name: "Honeymoon Escape",
-    tagline: "Romance & Intimacy",
+    tagline: "For two — private, halal-certified, unforgettable",
     badge: "Couples",
     icon: "💞",
     photo: "/images/pkg/honeymoon.jpg",
     includes: [
-      "Private airport transfers Cancún ↔ PDC + welcome brochure",
-      "Cozumel private tour by private boat",
-      "Isla Contoy day trip",
-      "Romantic dinner",
-      "Quinta Avenida stroll & discovery",
-      "Xcaret Park",
-      "Personal WhatsApp concierge",
+      "Private airport transfers — Cancún International, arrival & departure",
+      "Holbox Island — full day by private boat",
+      "Tulum Ruins, Cenote Dos Ojos & Akumal — private guided day",
+      "Xcaret Plus — full park access, buffet & the evening show",
+      "Jungle Adventure — ATV, ziplines & two cenotes",
+      "Playa del Carmen evening — Quinta Avenida & romantic dinner",
+      "100% halal certified — every meal & supplier verified",
+      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
+      "Welcome kit — itinerary, Qibla card & prayer schedule",
     ],
   },
 };
@@ -156,21 +162,25 @@ export default function PackagesClient({
   tAccomTiers,
   tRecommended,
   tRecTips,
+  tDetails,
 }: {
   dbPackages?: DbPackage[];
   dbAddons?: AdminAddon[];
   /* Locale-translated copies of the built-in catalogue (add-ons, accommodation
-     tiers, recommended add-ons). Fall back to the English defaults. */
+     tiers, recommended add-ons, day-by-day details). Fall back to the English
+     defaults. */
   tActivities?: Activity[];
   tAccomTiers?: typeof DEFAULT_ACCOM_TIERS;
   tRecommended?: typeof DEFAULT_RECOMMENDED;
   tRecTips?: typeof DEFAULT_REC_TIPS;
+  tDetails?: Partial<Record<PkgId, PkgDetails>>;
 }) {
   const router = useRouter();
   const ACTIVITIES = tActivities ?? DEFAULT_ACTIVITIES;
   const ACCOM_TIERS = tAccomTiers ?? DEFAULT_ACCOM_TIERS;
   const RECOMMENDED = tRecommended ?? DEFAULT_RECOMMENDED;
   const REC_TIPS = tRecTips ?? DEFAULT_REC_TIPS;
+  const DETAILS = tDetails ?? DEFAULT_PKG_DETAILS;
 
   /* Admin-managed add-on list overrides the built-in one; emoji + description
      carry over from the defaults by id. An offer below the price becomes the
@@ -215,7 +225,7 @@ export default function PackagesClient({
     basic: [], family: [], water: [], explorer: [], honeymoon: [],
   });
   const [recommendedActive, setRecommendedActive] = useState<Record<string, boolean>>({});
-  const [familyChoice, setFamilyChoice] = useState("Xenses Park");
+  const [detailsPkg, setDetailsPkg] = useState<PkgId | null>(null);
   const [openAddonPanels, setOpenAddonPanels] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState<ModalState>(null);
   const [modalComment, setModalComment] = useState("");
@@ -384,6 +394,22 @@ export default function PackagesClient({
     return effectiveUnit(pkgId) * mult;
   };
 
+  /* Live total for the configured group — package (offer-adjusted) plus the
+     selected payable add-ons and the recommended add-on. Mirrors buyNow's
+     charge math so the number shown IS the number charged. */
+  const displayTotalMXN = (pkgId: PkgId) => {
+    const n = adults + kids;
+    const mult = pkgId === "honeymoon" ? 2 : n;
+    const cartAddons = (selectedAddons[pkgId] ?? []).filter(
+      (name) => actsByName[name] && actsByName[name].price !== null && actsByName[name].inCart
+    );
+    let total = packageTotalMXN(pkgId);
+    total += cartAddons.reduce((sum, name) => sum + (actsByName[name].price as number) * n, 0);
+    const rec = RECOMMENDED[pkgId];
+    if (rec && recommendedActive[pkgId]) total += rec.price * mult;
+    return total;
+  };
+
   /* ── BUY NOW — adds the configured booking to the cart, then goes to checkout ── */
   const buyNow = (pkgId: PkgId, pkgName: string, experience = "Standard") => {
     if (nights === null || nights < MIN_NIGHTS_PACKAGE) {
@@ -435,7 +461,6 @@ export default function PackagesClient({
         kids > 0 ? `, ${kids} child${kids !== 1 ? "ren" : ""}` : ""
       }`
     );
-    if (pkgId === "family") details.push(`Choice: ${familyChoice}`);
     if (cartAddons.length) details.push(`Add-ons: ${cartAddons.join(", ")}`);
     if (humanAddons.length) details.push(`On request: ${humanAddons.join(", ")}`);
 
@@ -450,7 +475,7 @@ export default function PackagesClient({
       meta: {
         pkgId,
         experience,
-        family_choice: pkgId === "family" ? familyChoice : "",
+        family_choice: "",
         currency: CURRENCY,
         adults: String(adults),
         kids: String(kids),
@@ -703,7 +728,7 @@ export default function PackagesClient({
           <div className="pkg-name">{meta.name}</div>
           <div className="pkg-tagline">{meta.tagline}</div>
           <div className="pkg-min-stay">{dict.pkgc_min_stay}</div>
-          {pkgId === "family" && (
+          {(MIN_PEOPLE[pkgId] ?? 1) > 1 && (
             <div className="pkg-min-people">{dict.pkgc_min_people}</div>
           )}
         </div>
@@ -717,46 +742,34 @@ export default function PackagesClient({
               </li>
             ))}
           </ul>
+          {DETAILS[pkgId] && (
+            <button
+              type="button"
+              className="pkg-see-details"
+              onClick={() => setDetailsPkg(pkgId)}
+            >
+              {dict.pkgc_see_details} →
+            </button>
+          )}
         </div>
-        {pkgId === "family" ? (
+        {rec && recTip && (
           <div className="choice-box">
-            <div className="choice-label">{dict.pkgc_choose_one}</div>
+            <div className="choice-label">{dict.pkgc_recommended_addon}</div>
             <div className="choice-pills">
               <button
-                className={`choice-pill${familyChoice === "Xenses Park" ? " active" : ""}`}
-                onClick={() => setFamilyChoice("Xenses Park")}
+                className={`choice-pill${recommendedActive[pkgId] ? " active" : ""}`}
+                onClick={() => toggleRecommend(pkgId)}
               >
-                ✨ Xenses Park
-              </button>
-              <button
-                className={`choice-pill${familyChoice === "Monkey Sanctuary" ? " active" : ""}`}
-                onClick={() => setFamilyChoice("Monkey Sanctuary")}
-              >
-                🐒 Monkey Sanctuary
+                <span className="rec-icon-label">{recTip.label}</span>
+                <span className="info-icon" data-tip={recTip.tip} onClick={(e) => e.stopPropagation()}>
+                  i
+                </span>
+                <span className="rec-price">
+                  {recommendedActive[pkgId] ? dict.pkgc_added : `+${format(rec.price)}${dict.pkgc_per_person}`}
+                </span>
               </button>
             </div>
           </div>
-        ) : (
-          rec &&
-          recTip && (
-            <div className="choice-box">
-              <div className="choice-label">{dict.pkgc_recommended_addon}</div>
-              <div className="choice-pills">
-                <button
-                  className={`choice-pill${recommendedActive[pkgId] ? " active" : ""}`}
-                  onClick={() => toggleRecommend(pkgId)}
-                >
-                  <span className="rec-icon-label">{recTip.label}</span>
-                  <span className="info-icon" data-tip={recTip.tip} onClick={(e) => e.stopPropagation()}>
-                    i
-                  </span>
-                  <span className="rec-price">
-                    {recommendedActive[pkgId] ? dict.pkgc_added : `+${format(rec.price)}${dict.pkgc_per_person}`}
-                  </span>
-                </button>
-              </div>
-            </div>
-          )
         )}
         <div className="pkg-price-area">
           <div>
@@ -788,6 +801,17 @@ export default function PackagesClient({
         </button>
         {addonPanel(pkgId)}
         <div className="pkg-cta">
+          {/* Live total for the configured group — full price transparency
+              before the button (the #1 checkout-abandonment fix). */}
+          <div className="pkg-total-row">
+            <span className="pkg-total-label">
+              {dict.pkgc_total_label} ·{" "}
+              {pkgId === "honeymoon"
+                ? dict.pkgc_for_two
+                : `${adults + kids} ${adults + kids === 1 ? dict.pkgc_traveler : dict.pkgc_travelers}`}
+            </span>
+            <span className="pkg-total-value">{format(displayTotalMXN(pkgId))}</span>
+          </div>
           <div className="pkg-cta-row">
             <button
               className={`cta-btn-sm cta-buy${valid ? "" : " btn-disabled"}`}
@@ -994,6 +1018,61 @@ export default function PackagesClient({
           </button>
           <div className="byo-count">{dict.pkgc_byo_count}</div>
         </div>
+      </div>
+
+      {/* PACKAGE DETAILS MODAL — day-by-day description of what's inside */}
+      <div
+        className={`pkg-modal-overlay${detailsPkg ? " open" : ""}`}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setDetailsPkg(null);
+        }}
+      >
+        {detailsPkg && DETAILS[detailsPkg] && (
+          <div className="modal pkg-details-modal">
+            <div className="modal-head">
+              <div className="modal-title">
+                {pkgMeta[detailsPkg].icon} {pkgMeta[detailsPkg].name}
+              </div>
+              <button className="modal-close" onClick={() => setDetailsPkg(null)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="pkg-details-intro">{DETAILS[detailsPkg]!.intro}</p>
+              {DETAILS[detailsPkg]!.days.map((day) => (
+                <div key={day.title.slice(0, 30)} className="pkg-details-day">
+                  <div className="pkg-details-day-title">{day.title}</div>
+                  <div className="pkg-details-day-dur">{day.dur}</div>
+                  <p className="pkg-details-day-desc">{day.desc}</p>
+                  <div className="pkg-details-day-inc">
+                    <strong>{dict.pkgc_details_included}</strong> {day.included}
+                  </div>
+                </div>
+              ))}
+              {DETAILS[detailsPkg]!.addonNote && (
+                <div className="pkg-details-addon">{DETAILS[detailsPkg]!.addonNote}</div>
+              )}
+              <div className="pkg-details-week">
+                <div className="pkg-details-week-title">{dict.pkgc_details_week}</div>
+                <ol className="pkg-details-week-list">
+                  {DETAILS[detailsPkg]!.week.map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ol>
+                <p className="pkg-details-week-note">{DETAILS[detailsPkg]!.weekNote}</p>
+              </div>
+              <div className="modal-buttons">
+                <button
+                  className="modal-wa-btn"
+                  style={{ border: 0, cursor: "pointer" }}
+                  onClick={() => setDetailsPkg(null)}
+                >
+                  {dict.pkgc_details_close}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* QUOTE / CONTACT / BYO-RESULT MODAL */}
