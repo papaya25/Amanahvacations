@@ -349,3 +349,36 @@ export const PKG_TIERS: Record<PkgId, Record<number, number>> = {
   explorer: { 2: 23600, 3: 29650, 4: 35350, 5: 41550, 6: 47300 },
   honeymoon: { 2: 45000 },
 };
+
+/* ── Add-on categories for the grouped "Make It Unforgettable" panel ─────────
+   Anything priced "on request" is shown in its own last group at render time
+   regardless of this map, so the buyable items stay undiluted. Unmapped
+   (admin-added) add-ons fall into "special". */
+export type AddonCategory = "tours" | "parks" | "special";
+export const ADDON_CATEGORY: Record<string, AddonCategory> = {
+  chichen: "tours",
+  tulumcenotes: "tours",
+  cobacenotes: "tours",
+  akumaltulum: "tours",
+  akumalcenotes: "tours",
+  cozumel: "tours",
+  rutacenotes: "tours",
+  "jungle-adventure": "tours",
+  siankaan: "tours",
+  holbox: "tours",
+  aquariumcontoy: "tours",
+  whalesharks: "tours",
+  bacalar: "tours",
+  cenotevisit: "tours",
+  yacht: "tours",
+  xcaret: "parks",
+  xelha: "parks",
+  xplor: "parks",
+  xplorfuego: "parks",
+  xsenses: "parks",
+  monkey: "parks",
+  quinta: "special",
+  dinner: "special",
+  photoshoot: "special",
+  tennis: "special",
+};

@@ -18,6 +18,7 @@ import {
   REC_TIPS as DEFAULT_REC_TIPS,
   PKG_DETAILS as DEFAULT_PKG_DETAILS,
   PKG_TIERS,
+  ADDON_CATEGORY,
   PACKAGE_IDS,
   type Activity,
   type PkgDetails,
@@ -631,58 +632,94 @@ export default function PackagesClient({
     </>
   );
 
-  const addonPanel = (pkgId: PkgId) => (
-    <div className={`addons-panel${openAddonPanels[pkgId] ? " open" : ""}`}>
-      <div className="addon-note">
-        {dict.pkgc_addon_note}
-      </div>
-      {activities.map((act) => {
-        const selected = selectedAddons[pkgId].includes(act.name);
-        return (
-          <div
-            key={act.id}
-            className={`addon-item${selected ? " selected" : ""}`}
-            onClick={() => toggleAddon(pkgId, act.name)}
-          >
-            <div className="addon-cb">{selected ? "✓" : ""}</div>
-            <span className="addon-item-name">
-              {act.emoji} {act.name}{" "}
-              <span className="info-icon" data-tip={act.desc} onClick={(e) => e.stopPropagation()}>
-                i
-              </span>
-            </span>
-            {act.price === null ? (
-              <span className="addon-onreq">{dict.pkgc_on_request}</span>
-            ) : !act.inCart ? (
-              <>
-                <span className="addon-item-price">
-                  {format(act.price)}{act.unit}
-                </span>{" "}
-                <span className="addon-onreq">{dict.pkgc_booked_via_contact}</span>
-              </>
-            ) : act.groupPrices ? (
-              /* Tiered add-on: live per-person rate for the current group
-                 (flat total when it's one fixed price, e.g. the dinner). */
-              (() => {
-                const n = Math.max(1, adults + kids);
-                const total = tourTotalFor(act, n) ?? 0;
-                const flat = Object.keys(act.groupPrices!).length === 1 && act.groupPrices![1] !== undefined;
-                return (
-                  <span className="addon-item-price">
-                    {flat ? format(total) : `${format(Math.round(total / n))}${dict.pkgc_per_person}`}
-                  </span>
-                );
-              })()
-            ) : (
+  const addonItem = (act: Activity, pkgId: PkgId) => {
+    const selected = selectedAddons[pkgId].includes(act.name);
+    return (
+      <div
+        key={act.id}
+        className={`addon-item${selected ? " selected" : ""}`}
+        onClick={() => toggleAddon(pkgId, act.name)}
+      >
+        <div className="addon-cb">{selected ? "✓" : ""}</div>
+        <span className="addon-item-name">
+          {act.emoji} {act.name}{" "}
+          <span className="info-icon" data-tip={act.desc} onClick={(e) => e.stopPropagation()}>
+            i
+          </span>
+        </span>
+        {act.price === null ? (
+          <span className="addon-onreq">{dict.pkgc_on_request}</span>
+        ) : !act.inCart ? (
+          <>
+            <span className="addon-item-price">
+              {format(act.price)}{act.unit}
+            </span>{" "}
+            <span className="addon-onreq">{dict.pkgc_booked_via_contact}</span>
+          </>
+        ) : act.groupPrices ? (
+          /* Tiered add-on: live per-person rate for the current group
+             (flat total when it's one fixed price, e.g. the dinner). */
+          (() => {
+            const n = Math.max(1, adults + kids);
+            const total = tourTotalFor(act, n) ?? 0;
+            const flat = Object.keys(act.groupPrices!).length === 1 && act.groupPrices![1] !== undefined;
+            return (
               <span className="addon-item-price">
-                {format(act.price)}{act.unit}
+                {flat ? format(total) : `${format(Math.round(total / n))}${dict.pkgc_per_person}`}
               </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+            );
+          })()
+        ) : (
+          <span className="addon-item-price">
+            {format(act.price)}{act.unit}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  /* Grouped add-on panel (trial on The Basics): always-visible category
+     headers — chunking without extra clicks — with every on-request item
+     collected into the last group so the buyable list stays undiluted. */
+  const groupedAddonPanel = (pkgId: PkgId) => {
+    const groups: { key: string; label: string; items: Activity[] }[] = [
+      { key: "tours", label: dict.pkgc_cat_tours, items: [] },
+      { key: "parks", label: dict.pkgc_cat_parks, items: [] },
+      { key: "special", label: dict.pkgc_cat_special, items: [] },
+      { key: "onreq", label: dict.pkgc_cat_onreq, items: [] },
+    ];
+    activities.forEach((act) => {
+      const key = act.price === null ? "onreq" : ADDON_CATEGORY[act.id] ?? "special";
+      groups.find((g) => g.key === key)!.items.push(act);
+    });
+    return (
+      <div className={`addons-panel${openAddonPanels[pkgId] ? " open" : ""}`}>
+        <div className="addon-note">
+          {dict.pkgc_addon_note}
+        </div>
+        {groups
+          .filter((g) => g.items.length > 0)
+          .map((g) => (
+            <div key={g.key} className="addon-cat">
+              <div className="addon-cat-header">{g.label}</div>
+              {g.items.map((act) => addonItem(act, pkgId))}
+            </div>
+          ))}
+      </div>
+    );
+  };
+
+  const addonPanel = (pkgId: PkgId) =>
+    pkgId === "basic" ? (
+      groupedAddonPanel(pkgId)
+    ) : (
+      <div className={`addons-panel${openAddonPanels[pkgId] ? " open" : ""}`}>
+        <div className="addon-note">
+          {dict.pkgc_addon_note}
+        </div>
+        {activities.map((act) => addonItem(act, pkgId))}
+      </div>
+    );
 
   const pkgNightsText = nights !== null && checkin && checkout ? (
     <>
@@ -785,8 +822,18 @@ export default function PackagesClient({
           onClick={() => setOpenAddonPanels((p) => ({ ...p, [pkgId]: !p[pkgId] }))}
         >
           <span className="addons-toggle-label">
-            <span className="addons-toggle-line1">{dict.pkgc_make_unforgettable}</span>
-            <span className="addons-toggle-line2">{dict.pkgc_add_experiences}</span>
+            {pkgId === "basic" ? (
+              /* Trial (The Basics): one clear line — what it is AND what it
+                 does — plus the count as a curiosity hook. */
+              <span className="addons-toggle-line1">
+                {dict.pkgc_make_unforgettable} — {dict.pkgc_add_experiences_inline} ({activities.length})
+              </span>
+            ) : (
+              <>
+                <span className="addons-toggle-line1">{dict.pkgc_make_unforgettable}</span>
+                <span className="addons-toggle-line2">{dict.pkgc_add_experiences}</span>
+              </>
+            )}
           </span>
           <span className="addons-toggle-icon">+</span>
         </button>

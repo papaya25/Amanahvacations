@@ -582,3 +582,17 @@
 .pkg-price-pp {
   font-size: 12px; font-weight: 500; color: #6b7b6c; margin-top: 2px;
 }
+
+/* ── Grouped add-on panel (category headers, no extra clicks) ── */
+.addon-cat { margin-top: 4px; }
+.addon-cat-header {
+  display: flex; align-items: center; gap: 8px;
+  margin: 12px 2px 6px;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--forest, #3a5a3c);
+}
+.addon-cat-header::after {
+  content: ""; flex: 1; height: 1px; background: #e5ddcf;
+}
+.addon-cat:first-of-type .addon-cat-header { margin-top: 8px; }
