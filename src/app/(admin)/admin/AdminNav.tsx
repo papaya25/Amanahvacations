@@ -18,6 +18,7 @@ const GROUPS: { heading: string; links: { href: string; label: string }[] }[] = 
     links: [
       { href: "/admin/hero", label: "Hero & Home" },
       { href: "/admin/packages", label: "Packages" },
+      { href: "/admin/package-details", label: "Package Details (popup)" },
       { href: "/admin/tours", label: "Tours" },
       { href: "/admin/activities", label: "Activities" },
       { href: "/admin/addons", label: "Add-ons" },

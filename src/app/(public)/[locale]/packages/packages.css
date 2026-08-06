@@ -577,3 +577,8 @@
   font-size: 19px; font-weight: 700; color: var(--ink, #1c2b1e);
   white-space: nowrap;
 }
+
+/* Per-person helper under the single hero total */
+.pkg-price-pp {
+  font-size: 12px; font-weight: 500; color: #6b7b6c; margin-top: 2px;
+}

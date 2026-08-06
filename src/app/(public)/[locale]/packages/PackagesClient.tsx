@@ -17,11 +17,13 @@ import {
   RECOMMENDED as DEFAULT_RECOMMENDED,
   REC_TIPS as DEFAULT_REC_TIPS,
   PKG_DETAILS as DEFAULT_PKG_DETAILS,
+  PKG_TIERS,
   PACKAGE_IDS,
   type Activity,
   type PkgDetails,
   type PkgId,
 } from "./data";
+import { parseTierPrices, tourTotalFor } from "../tours/data";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529903516948";
@@ -31,19 +33,7 @@ const MIN_NIGHTS_PACKAGE = 3;
 const MIN_NIGHTS_BYO = 1;
 
 
-const DEFAULT_PRICES: Record<PkgId, number> = {
-  basic: 4600,
-  family: 8200,
-  water: 7600,
-  explorer: 11850,
-  honeymoon: 14300,
-};
 const MIN_PEOPLE: Partial<Record<PkgId, number>> = { family: 3, water: 3 };
-
-/* Optional sale prices per person (MXN). If a package isn't listed here it shows
-   its normal price. The admin's "Offer price" field drives these once the
-   backend is wired. (Demo: Water Lovers is on offer so you can see the styling.) */
-const DEFAULT_OFFERS: Partial<Record<PkgId, number>> = { water: 6650 };
 
 type PkgMeta = { name: string; tagline: string; badge: string; icon: string; photo: string; includes: string[] };
 const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
@@ -151,6 +141,8 @@ export type DbPackage = {
   badge: string;
   price: number;
   offer: number;
+  /** TOTAL group price (MXN) keyed by pax count — the price authority. */
+  prices?: Record<string, number> | null;
   photo: string;
   includes: string; // one item per line
 };
@@ -201,6 +193,8 @@ export default function PackagesClient({
         unit: a.unit,
         inCart: price !== null,
         desc: base?.desc ?? "",
+        // Tier tables always come from the built-in catalogue (rate card).
+        groupPrices: price !== null ? base?.groupPrices : undefined,
       };
     });
   }, [dbAddons, ACTIVITIES]);
@@ -288,24 +282,6 @@ export default function PackagesClient({
     return m;
   }, [dbPackages]);
 
-  const prices = useMemo(() => {
-    const out = { ...DEFAULT_PRICES };
-    PACKAGE_IDS.forEach((id) => {
-      const db = byId[id];
-      if (db && db.price > 0) out[id] = db.price;
-    });
-    return out;
-  }, [byId]);
-
-  const offers = useMemo(() => {
-    const out: Partial<Record<PkgId, number>> = { ...DEFAULT_OFFERS };
-    PACKAGE_IDS.forEach((id) => {
-      const db = byId[id];
-      if (db) out[id] = db.offer > 0 ? db.offer : undefined;
-    });
-    return out;
-  }, [byId]);
-
   const pkgMeta = useMemo(() => {
     const out = { ...DEFAULT_PKG_META };
     PACKAGE_IDS.forEach((id) => {
@@ -330,25 +306,35 @@ export default function PackagesClient({
       .join(", ");
   };
 
+  /* Group tiers for a package: the DB's `prices` map wins, else the built-in
+     rate-card tiers. The tier actually used for the current group (clamped to
+     the offered range; honeymoon is always the 2-traveller tier). */
+  const pkgTiers = (id: PkgId): Record<number, number> =>
+    parseTierPrices(byId[id]?.prices ?? undefined) ?? PKG_TIERS[id];
+  const tierUsed = (id: PkgId): { pax: number; total: number } => {
+    const tiers = pkgTiers(id);
+    const opts = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+    const mult = id === "honeymoon" ? 2 : adults + kids;
+    const clamped = Math.min(Math.max(mult, opts[0]), opts[opts.length - 1]);
+    const pax = opts.filter((p) => p <= clamped).pop() ?? opts[0];
+    return { pax, total: tiers[pax] };
+  };
+
+  /* Per-person price shown on the card — the group tier for the current
+     group size divided by its pax count (plus the recommended add-on when
+     selected), so the card always shows the rate the group actually pays. */
   const priceMXN = (id: PkgId) => {
-    let mxn = prices[id];
+    const { pax, total } = tierUsed(id);
+    let mxn = Math.round(total / pax);
     const rec = RECOMMENDED[id];
     if (rec && recommendedActive[id]) mxn += rec.price;
     return mxn;
   };
 
-  // Offer price for a package's currently-displayed total (offer base + any
-  // selected recommended add-on), or null if the package has no active offer.
-  const offerFor = (id: PkgId, displayedMxn: number) => {
-    const off = offers[id];
-    if (off === undefined || off >= prices[id]) return null;
-    return off + (displayedMxn - prices[id]);
-  };
-  const offerPct = (id: PkgId) => {
-    const off = offers[id];
-    if (off === undefined) return 0;
-    return Math.round((1 - off / prices[id]) * 100);
-  };
+  /* One add-on's cost for a group of n: tiered tour add-ons charge their
+     group total once; flat add-ons charge per person. */
+  const addonTotalFor = (act: Activity, n: number) =>
+    act.groupPrices ? tourTotalFor(act, n) ?? 0 : (act.price ?? 0) * n;
 
   const adjust = (type: "adults" | "kids", delta: number) => {
     if (type === "adults") setAdults((a) => Math.max(1, a + delta));
@@ -380,22 +366,10 @@ export default function PackagesClient({
   const toggleRecommend = (pkgId: PkgId) =>
     setRecommendedActive((prev) => ({ ...prev, [pkgId]: !prev[pkgId] }));
 
-  // The price actually charged per person — the offer when one is active
-  // (otherwise Buy Now would charge the full price despite the card showing
-  // the discounted one).
-  const effectiveUnit = (pkgId: PkgId) => {
-    const off = offers[pkgId];
-    return off !== undefined && off > 0 && off < prices[pkgId] ? off : prices[pkgId];
-  };
+  const packageTotalMXN = (pkgId: PkgId) => tierUsed(pkgId).total;
 
-  const packageTotalMXN = (pkgId: PkgId) => {
-    const n = adults + kids;
-    const mult = pkgId === "honeymoon" ? 2 : n;
-    return effectiveUnit(pkgId) * mult;
-  };
-
-  /* Live total for the configured group — package (offer-adjusted) plus the
-     selected payable add-ons and the recommended add-on. Mirrors buyNow's
+  /* Live total for the configured group — the package's group-tier total plus
+     the selected payable add-ons and the recommended add-on. Mirrors buyNow's
      charge math so the number shown IS the number charged. */
   const displayTotalMXN = (pkgId: PkgId) => {
     const n = adults + kids;
@@ -404,7 +378,7 @@ export default function PackagesClient({
       (name) => actsByName[name] && actsByName[name].price !== null && actsByName[name].inCart
     );
     let total = packageTotalMXN(pkgId);
-    total += cartAddons.reduce((sum, name) => sum + (actsByName[name].price as number) * n, 0);
+    total += cartAddons.reduce((sum, name) => sum + addonTotalFor(actsByName[name], n), 0);
     const rec = RECOMMENDED[pkgId];
     if (rec && recommendedActive[pkgId]) total += rec.price * mult;
     return total;
@@ -442,7 +416,7 @@ export default function PackagesClient({
       );
       if (!proceed) return;
     }
-    let addonsTotal = cartAddons.reduce((sum, name) => sum + (actsByName[name].price as number) * n, 0);
+    let addonsTotal = cartAddons.reduce((sum, name) => sum + addonTotalFor(actsByName[name], n), 0);
     const cartAddonIdList = cartAddons.map((name) => actsByName[name].id);
     if (recSelected && rec) {
       addonsTotal += rec.price * mult;
@@ -686,6 +660,19 @@ export default function PackagesClient({
                 </span>{" "}
                 <span className="addon-onreq">{dict.pkgc_booked_via_contact}</span>
               </>
+            ) : act.groupPrices ? (
+              /* Tiered add-on: live per-person rate for the current group
+                 (flat total when it's one fixed price, e.g. the dinner). */
+              (() => {
+                const n = Math.max(1, adults + kids);
+                const total = tourTotalFor(act, n) ?? 0;
+                const flat = Object.keys(act.groupPrices!).length === 1 && act.groupPrices![1] !== undefined;
+                return (
+                  <span className="addon-item-price">
+                    {flat ? format(total) : `${format(Math.round(total / n))}${dict.pkgc_per_person}`}
+                  </span>
+                );
+              })()
             ) : (
               <span className="addon-item-price">
                 {format(act.price)}{act.unit}
@@ -712,7 +699,6 @@ export default function PackagesClient({
     const meta = pkgMeta[pkgId];
     const rec = RECOMMENDED[pkgId];
     const recTip = REC_TIPS[pkgId];
-    const mxn = priceMXN(pkgId);
     const minPeople = MIN_PEOPLE[pkgId] || 1;
     const peopleOK = adults + kids >= minPeople;
     const valid = nightsOK && peopleOK;
@@ -728,9 +714,13 @@ export default function PackagesClient({
           <div className="pkg-name">{meta.name}</div>
           <div className="pkg-tagline">{meta.tagline}</div>
           <div className="pkg-min-stay">{dict.pkgc_min_stay}</div>
-          {(MIN_PEOPLE[pkgId] ?? 1) > 1 && (
-            <div className="pkg-min-people">{dict.pkgc_min_people}</div>
-          )}
+          <div className="pkg-min-people">
+            {pkgId === "honeymoon"
+              ? dict.pkgc_only_two
+              : (MIN_PEOPLE[pkgId] ?? 1) > 1
+                ? dict.pkgc_min_people
+                : dict.pkgc_min_people_2}
+          </div>
         </div>
         <div className="pkg-body">
           <div className="pkg-includes-title">{dict.pkgc_whats_included}</div>
@@ -771,21 +761,22 @@ export default function PackagesClient({
             </div>
           </div>
         )}
+        {/* ONE price on the card: the TOTAL the group actually pays (updates
+            live with travelers + add-ons), with the per-person rate as a small
+            helper underneath — no competing numbers. */}
         <div className="pkg-price-area">
           <div>
-            <div className="pkg-price-label">{dict.pkgc_from}</div>
-            {offerFor(pkgId, mxn) !== null ? (
-              <div className="pkg-price">
-                <span className="pkg-price-was">{format(mxn)}</span>
-                <span className="pkg-price-offer">{format(offerFor(pkgId, mxn)!)}</span>{" "}
-                <small>{dict.pkgc_per_person}</small>
-                <span className="offer-badge">−{offerPct(pkgId)}%</span>
-              </div>
-            ) : (
-              <div className="pkg-price">
-                {format(mxn)} <small>{dict.pkgc_per_person}</small>
-              </div>
-            )}
+            <div className="pkg-price-label">
+              {dict.pkgc_total_label} ·{" "}
+              {pkgId === "honeymoon"
+                ? dict.pkgc_for_two
+                : `${tierUsed(pkgId).pax} ${tierUsed(pkgId).pax === 1 ? dict.pkgc_traveler : dict.pkgc_travelers}`}
+            </div>
+            <div className="pkg-price">{format(displayTotalMXN(pkgId))}</div>
+            <div className="pkg-price-pp">
+              {dict.pkgc_approx} {format(Math.round(displayTotalMXN(pkgId) / tierUsed(pkgId).pax))}
+              {dict.pkgc_per_person}
+            </div>
           </div>
           <div className="pkg-nights">{pkgNightsText}</div>
         </div>
@@ -801,17 +792,6 @@ export default function PackagesClient({
         </button>
         {addonPanel(pkgId)}
         <div className="pkg-cta">
-          {/* Live total for the configured group — full price transparency
-              before the button (the #1 checkout-abandonment fix). */}
-          <div className="pkg-total-row">
-            <span className="pkg-total-label">
-              {dict.pkgc_total_label} ·{" "}
-              {pkgId === "honeymoon"
-                ? dict.pkgc_for_two
-                : `${adults + kids} ${adults + kids === 1 ? dict.pkgc_traveler : dict.pkgc_travelers}`}
-            </span>
-            <span className="pkg-total-value">{format(displayTotalMXN(pkgId))}</span>
-          </div>
           <div className="pkg-cta-row">
             <button
               className={`cta-btn-sm cta-buy${valid ? "" : " btn-disabled"}`}

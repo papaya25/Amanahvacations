@@ -10,10 +10,15 @@ export type Activity = {
   id: string;
   name: string;
   emoji: string;
+  /** Per-person anchor price (MXN) at the smallest group, or null = on request. */
   price: number | null;
   unit: string;
   inCart: boolean;
   desc: string;
+  /** TOTAL group price (MXN) per group size for tour-type add-ons — charged
+      once for the whole group (rate-card standalone tour rates). A single
+      {1: total} tier means one flat price regardless of group size. */
+  groupPrices?: Record<number, number>;
 };
 
 export const ACCOM_TIERS = [
@@ -24,45 +29,46 @@ export const ACCOM_TIERS = [
 ];
 
 export const ACTIVITIES: Activity[] = [
-  { id: "chichen", name: "Chichén + Valladolid", emoji: "🏛️", price: 6600, unit: "/person", inCart: true, desc: "Round-trip private transportation, entrance with a private guide to Chichén Itzá — a Wonder of the World — a stop in colonial Valladolid, plus swimming in nearby cenotes." },
-  { id: "tulumcenotes", name: "Tulum & Cenotes Tour", emoji: "🌊", price: 3700, unit: "/person", inCart: true, desc: "Private transportation, a guided walk through the clifftop Tulum ruins above the Caribbean, plus a refreshing cenote stop." },
-  { id: "cobacenotes", name: "Cobá & Cenotes Tour", emoji: "🏛️", price: 3900, unit: "/person", inCart: true, desc: "Round-trip private transportation to Cobá — an ancient Maya city in the jungle, crowned by Nohoch Mul, the tallest pyramid on the Peninsula — with a guide, entrance fees, refreshments and cenote stops." },
-  { id: "akumaltulum", name: "Tulum + Akumal", emoji: "🐢", price: 5850, unit: "/person", inCart: true, desc: "Two experiences in one day: the Tulum ruins and Akumal, snorkeling in the natural habitat of sea turtles. Includes private transportation." },
-  { id: "akumalcenotes", name: "Akumal & Cenotes Tour", emoji: "🐢", price: 2350, unit: "/person", inCart: true, desc: "Snorkel with sea turtles in Akumal and cool off in a cenote — private transportation, free drinks, and a boat to the turtle habitat included." },
-  { id: "quinta", name: "Quinta Av Guided Tour", emoji: "🛍️", price: 500, unit: "/person", inCart: true, desc: "A private guided walk down the charming Quinta Avenida in Playa del Carmen, with stops at recommended shops and restaurants." },
-  { id: "cozumel", name: "Cozumel Private Tour", emoji: "⛵", price: 4600, unit: "/person", inCart: true, desc: "A private tour of Cozumel by private boat — reefs, beaches and the island at your own pace." },
-  { id: "rutacenotes", name: "Ruta de los Cenotes Tour", emoji: "💧", price: 2900, unit: "/person", inCart: true, desc: "A full cenote route — four different cenotes (two open-air, two underground) with a diving platform and water zip line. Includes hammock area, life jackets, lockers, parking and showers." },
-  { id: "cenotevisit", name: "Cenote Visit", emoji: "💦", price: 1000, unit: "/person", inCart: true, desc: "A visit to one beautiful cenote — perfect for a refreshing swim in crystal-clear water." },
+  { id: "chichen", name: "Chichén + Valladolid", emoji: "🏛️", price: 4575, unit: "/person", inCart: true, groupPrices: { 2: 9150, 3: 11550, 4: 14000, 5: 16800, 6: 18850 }, desc: "Round-trip private transportation, entrance with a private guide to Chichén Itzá — a Wonder of the World — a stop in colonial Valladolid, plus swimming in nearby cenotes." },
+  { id: "tulumcenotes", name: "Tulum & Cenotes Tour", emoji: "🌊", price: 2650, unit: "/person", inCart: true, groupPrices: { 2: 5300, 3: 6850, 4: 8000, 5: 9650, 6: 11150 }, desc: "Private transportation, a guided walk through the clifftop Tulum ruins above the Caribbean, plus a refreshing cenote stop." },
+  { id: "cobacenotes", name: "Cobá & Cenotes Tour", emoji: "🏛️", price: 2850, unit: "/person", inCart: true, groupPrices: { 2: 5700, 3: 7300, 4: 8700, 5: 10300, 6: 12000 }, desc: "Round-trip private transportation to Cobá — an ancient Maya city in the jungle, crowned by Nohoch Mul, the tallest pyramid on the Peninsula — with a guide, entrance fees, refreshments and cenote stops." },
+  { id: "akumaltulum", name: "Tulum + Akumal", emoji: "🐢", price: 3775, unit: "/person", inCart: true, groupPrices: { 2: 7550, 3: 10050, 4: 12300, 5: 14650, 6: 17150 }, desc: "Two experiences in one day: the Tulum ruins and Akumal, snorkeling in the natural habitat of sea turtles. Includes private transportation." },
+  { id: "akumalcenotes", name: "Akumal & Cenotes Tour", emoji: "🐢", price: 3000, unit: "/person", inCart: true, groupPrices: { 2: 6000, 3: 7850, 4: 9850, 5: 11650, 6: 13300 }, desc: "Snorkel with sea turtles in Akumal and cool off in a cenote — private transportation, free drinks, and a boat to the turtle habitat included." },
+  { id: "quinta", name: "Quinta Av Guided Tour", emoji: "🛍️", price: 300, unit: "/person", inCart: true, groupPrices: { 1: 300, 2: 600, 3: 900, 4: 1200 }, desc: "A private guided walk down the charming Quinta Avenida in Playa del Carmen, with stops at recommended shops and restaurants. 300 MXN per person, capped at 1,200 for groups of 4 or more." },
+  { id: "cozumel", name: "Cozumel Private Tour", emoji: "⛵", price: 6650, unit: "/person", inCart: true, groupPrices: { 2: 13300, 3: 13950, 4: 14850, 5: 16800, 6: 18700 }, desc: "A private tour of Cozumel by private boat — reefs, beaches and the island at your own pace." },
+  { id: "rutacenotes", name: "Ruta de los Cenotes Tour", emoji: "💧", price: 3350, unit: "/person", inCart: true, groupPrices: { 2: 6700, 3: 8550, 4: 9700, 5: 11550, 6: 12700 }, desc: "A full cenote route — four different cenotes (two open-air, two underground) with a diving platform and water zip line. Includes hammock area, life jackets, lockers, parking and showers." },
+  { id: "cenotevisit", name: "Cenote Visit", emoji: "💦", price: null, unit: "", inCart: false, desc: "A visit to one beautiful cenote — perfect for a refreshing swim in crystal-clear water. Your concierge quotes the exact cenote and transport for your group." },
   { id: "aquariumcontoy", name: "Isla Contoy", emoji: "🦅", price: null, unit: "", inCart: false, desc: "A private excursion to the protected paradise of Isla Contoy — arranged personally with you, priced per group." },
   { id: "whalesharks", name: "Whale Sharks Tour", emoji: "🐋", price: null, unit: "", inCart: false, desc: "A seasonal encounter swimming alongside the world's largest fish. Availability depends on the season — our team will confirm dates for you." },
   { id: "yacht", name: "Private Yacht", emoji: "⛵", price: null, unit: "", inCart: false, desc: "A private yacht charter tailored to your group — pricing depends on the number of hours and type of tour you'd like." },
-  { id: "siankaan", name: "Sian Ka'an", emoji: "🌿", price: null, unit: "", inCart: false, desc: "A boat journey through the ancient Maya canals of the Sian Ka'an Biosphere Reserve — availability depends on the day, our team will confirm." },
-  { id: "jungle-adventure", name: "Jungle Adventure", emoji: "🛺", price: null, unit: "", inCart: false, desc: "7–8 hours of adrenaline in the Mayan jungle — an ATV ride along jungle trails, a zipline course above the canopy, suspension bridges, swimming in two crystal-clear cenotes, a Mayan pyramid and museum. Lunch and private transportation included." },
+  { id: "siankaan", name: "Sian Ka'an", emoji: "🌿", price: 4575, unit: "/person", inCart: true, groupPrices: { 2: 9150, 3: 11550, 4: 14000, 5: 16800, 6: 18850 }, desc: "A full-day boat journey through the UNESCO-protected Sian Ka'an Biosphere Reserve — floating the ancient Maya canal, with dolphins, sea turtles and hundreds of bird species." },
+  { id: "jungle-adventure", name: "Jungle Adventure", emoji: "🛺", price: 2850, unit: "/person", inCart: true, groupPrices: { 2: 5700, 3: 8150, 4: 10000, 5: 11450, 6: 12850 }, desc: "7–8 hours of adrenaline in the Mayan jungle — an ATV ride along jungle trails, a zipline course above the canopy, suspension bridges, swimming in two crystal-clear cenotes, a Mayan pyramid and museum. Lunch and private transportation included." },
+  { id: "holbox", name: "Holbox Island", emoji: "🦩", price: 5725, unit: "/person", inCart: true, groupPrices: { 2: 11450, 3: 15000, 4: 17150, 5: 19300, 6: 21450 }, desc: "A full private-boat day on the car-free island — Isla Pasión, Punta Mosquito, rooftop views, a beachfront lunch and Holbox town by buggy taxi." },
   { id: "photoshoot", name: "Photoshoot", emoji: "📸", price: null, unit: "", inCart: false, desc: "A professional photoshoot at one of the region's most beautiful locations — fully tailored to your occasion." },
-  { id: "dinner", name: "Romantic Dinner", emoji: "🌅", price: null, unit: "", inCart: false, desc: "A private romantic dinner set up in a stunning location, arranged around your preferences and special occasion." },
+  { id: "dinner", name: "Romantic Dinner", emoji: "🌅", price: 3000, unit: "", inCart: true, groupPrices: { 1: 3000 }, desc: "A private romantic dinner set up in a stunning location, arranged around your preferences and special occasion. One flat price for the table." },
   { id: "bacalar", name: "Bacalar Lagoon", emoji: "💙", price: null, unit: "", inCart: false, desc: "A day trip to the \"Lagoon of Seven Colors\" — Mexico's breathtaking turquoise lake. Our team will tailor the details with you." },
-  { id: "xcaret", name: "Xcaret Park", emoji: "🌺", price: 3500, unit: "/person", inCart: true, desc: "A full day at Xcaret, an eco-archaeological park blending underground rivers, wildlife encounters, cultural shows and Maya history." },
-  { id: "xelha", name: "Xel-Há Park", emoji: "🎢", price: 2850, unit: "/person", inCart: true, desc: "An all-inclusive natural aquatic park — snorkel a lagoon fed by underground rivers, cliff-jump, and relax on the beach, all included." },
-  { id: "xplor", name: "Xplor Park", emoji: "🌴", price: 3350, unit: "/person", inCart: true, desc: "An adrenaline-packed adventure park through the jungle — zipline circuits, amphibious vehicles, rafts on underground rivers, and stalactite caves." },
-  { id: "xplorfuego", name: "Xplor Fuego", emoji: "🔥", price: 2850, unit: "/person", inCart: true, desc: "The nighttime edition of Xplor — the same jungle adventure circuits illuminated after dark for a completely different thrill. Open 5:30 PM – 11:00 PM." },
-  { id: "xsenses", name: "Xenses Park", emoji: "✨", price: 1850, unit: "/person", inCart: true, desc: "A sensory adventure park challenging your five senses through jungle trails, ziplines, and unique perception experiences." },
-  { id: "monkey", name: "Monkey Sanctuary", emoji: "🐒", price: 1900, unit: "/person", inCart: true, desc: "A visit to a monkey sanctuary — get close to rescued wildlife in a natural, protected setting." },
-  { id: "tennis", name: "Tennis Lessons", emoji: "🎾", price: 800, unit: "/hour/person", inCart: false, desc: "Private tennis lessons with a local instructor, billed per hour, per person. Our team will confirm hours and charge separately." },
+  { id: "xcaret", name: "Xcaret Plus", emoji: "🌺", price: 3550, unit: "/person", inCart: true, desc: "A full day at Xcaret, the landmark eco-archaeological park — underground rivers, wildlife and Maya heritage, ending with the Xcaret México Espectacular evening show. Plus admission includes buffet dining, changing rooms, lockers and towels. Ticket + private round-trip transport." },
+  { id: "xelha", name: "Xel-Há Park", emoji: "🎢", price: 2700, unit: "/person", inCart: true, desc: "An all-inclusive natural aquatic park — snorkel a lagoon fed by underground rivers, cliff-jump, and relax on the beach, all included." },
+  { id: "xplor", name: "Xplor Park", emoji: "🌴", price: null, unit: "", inCart: false, desc: "An adrenaline-packed adventure park through the jungle — zipline circuits, amphibious vehicles, rafts on underground rivers, and stalactite caves. Our team confirms current pricing for you." },
+  { id: "xplorfuego", name: "Xplor Fuego", emoji: "🔥", price: null, unit: "", inCart: false, desc: "The nighttime edition of Xplor — the same jungle adventure circuits illuminated after dark for a completely different thrill. Open 5:30 PM – 11:00 PM. Our team confirms current pricing for you." },
+  { id: "xsenses", name: "Xenses Park", emoji: "✨", price: 1900, unit: "/person", inCart: true, desc: "A sensory adventure park challenging your five senses through jungle trails, ziplines, and unique perception experiences." },
+  { id: "monkey", name: "Monkey Sanctuary", emoji: "🐒", price: 1700, unit: "/person", inCart: true, desc: "A visit to a monkey sanctuary — get close to rescued wildlife in a natural, protected setting." },
+  { id: "tennis", name: "Tennis Lessons", emoji: "🎾", price: null, unit: "", inCart: false, desc: "Private tennis lessons with a local instructor. Our team will confirm hours and pricing with you." },
 ];
 
 export const RECOMMENDED: Partial<Record<PkgId, { id: string; name: string; price: number }>> = {
-  basic: { id: "xcaret", name: "Xcaret Park", price: 3500 },
-  family: { id: "xcaret", name: "Xcaret Park", price: 3500 },
-  water: { id: "xelha", name: "Xel-Há Park", price: 2850 },
-  explorer: { id: "xplorfuego", name: "Xplor Fuego", price: 2850 },
-  honeymoon: { id: "cozumel", name: "Cozumel Private Boat", price: 4600 },
+  basic: { id: "xcaret", name: "Xcaret Plus", price: 3550 },
+  family: { id: "xcaret", name: "Xcaret Plus", price: 3550 },
+  water: { id: "xelha", name: "Xel-Há Park", price: 2700 },
+  explorer: { id: "xcaret", name: "Xcaret Plus", price: 3550 },
+  honeymoon: { id: "cozumel", name: "Cozumel Private Boat", price: 6650 },
 };
 
 export const REC_TIPS: Partial<Record<PkgId, { label: string; tip: string }>> = {
-  basic: { label: "🌺 Xcaret Park", tip: "Round out your trip with a full day at Xcaret — an eco-archaeological park blending underground rivers, wildlife encounters and Maya history." },
+  basic: { label: "🌺 Xcaret Plus", tip: "Round out your trip with a full day at Xcaret — underground rivers, wildlife and Maya heritage, ending with the Xcaret México Espectacular evening show. Buffet, lockers and towels included." },
   family: { label: "🌺 Xcaret Plus", tip: "The landmark park of the Riviera Maya — underground rivers, wildlife and Maya heritage, ending with the Xcaret México Espectacular evening show. Plus admission adds buffet dining, changing rooms, lockers and towels." },
   water: { label: "🎢 Xel-Há Park", tip: "An all-inclusive natural aquatic park — snorkel a lagoon fed by underground rivers, cliff-jump, and relax on the beach, all included." },
-  explorer: { label: "🔥 Xplor Fuego Park", tip: "The nighttime edition of Xplor — the same jungle adventure circuits illuminated after dark for a completely different thrill. Open 5:30 PM – 11:00 PM." },
+  explorer: { label: "🌺 Xcaret Plus", tip: "The perfect cultural finale — Xcaret's underground rivers and Maya heritage by day, and the Xcaret México Espectacular evening show with 300 performers." },
   honeymoon: { label: "⛵ Cozumel — El Cielo", tip: "A private boat to El Cielo and El Cielito — starfish resting on white sand under water so clear the boat seems to float on air. Ferry, captain and crew, snorkel gear, fresh fruit and ceviche included." },
 };
 
@@ -330,4 +336,16 @@ export const PKG_DETAILS: Partial<Record<PkgId, PkgDetails>> = {
     weekNote:
       "This sequence is a recommendation — your concierge adjusts it to your flights, your preferences and your pace.",
   },
+};
+
+/* ── Package group-tier prices (rate card v2, Aug 2026) ──────────────────────
+   TOTAL MXN for the whole group; the smallest key is the minimum group.
+   Honeymoon is for two travellers only. Used as built-in fallback when the
+   packages table has no `prices` map. */
+export const PKG_TIERS: Record<PkgId, Record<number, number>> = {
+  basic: { 2: 11050, 3: 14050, 4: 16800, 5: 20200, 6: 23150 },
+  family: { 3: 27100, 4: 34300, 5: 41850, 6: 48550 },
+  water: { 3: 30350, 4: 34150, 5: 39350, 6: 43650 },
+  explorer: { 2: 23600, 3: 29650, 4: 35350, 5: 41550, 6: 47300 },
+  honeymoon: { 2: 45000 },
 };

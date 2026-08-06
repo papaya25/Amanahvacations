@@ -9,20 +9,26 @@ export type Pkg = {
   name: string;
   tagline: string;
   badge: string;
+  /** Per-person "from" anchor — derived automatically from the tiers on save. */
   price: number;
   offer: number;
+  /** TOTAL group price (MXN) per pax count; 0 = that size isn't offered. */
+  prices?: Record<string, number> | null;
   hidden: boolean;
   photo: string;
   includes: string;
 };
 
+/** Group sizes shown in the pricing grid (matches the tours editor). */
+const PAX_SIZES = [2, 3, 4, 5, 6] as const;
+
 // Seed used only as a fallback when the backend isn't reachable.
 export const DEFAULT_PACKAGES: Pkg[] = [
-  { id: "basic", name: "The Basics", tagline: "Essential Riviera Maya", badge: "Essential", price: 4600, offer: 0, hidden: false, photo: "/images/pkg/basic.jpg", includes: "Private airport transfers Cancún ↔ PDC + welcome brochure\nCenote visit\nSnorkeling in Playa del Carmen\nBeach Club Xpu-Ha\nGuided Quinta Avenida tour\nPersonal WhatsApp concierge" },
-  { id: "family", name: "Family Tour", tagline: "Kid-Friendly Riviera Maya", badge: "Kid-Friendly", price: 8200, offer: 0, hidden: false, photo: "/images/pkg/family.jpg", includes: "Private airport transfers Cancún ↔ PDC + welcome brochure\nTulum Ruins & City Tour\nCenotes Tour\nCancún Aquarium\nXenses Park or Monkey Sanctuary — you choose\nPersonal WhatsApp concierge" },
-  { id: "water", name: "Water Lovers", tagline: "Beaches, Reefs & Cenotes", badge: "Water & Reef", price: 7600, offer: 6650, hidden: false, photo: "/images/pkg/water.jpg", includes: "Private airport transfers Cancún ↔ PDC + welcome brochure\nAkumal day trip — snorkeling with sea turtles\nCenotes Tour — 4 different cenotes, water zip line & diving platform\nSnorkeling in Playa del Carmen\nPersonal WhatsApp concierge" },
-  { id: "explorer", name: "Indiana Jones", tagline: "Culture & Wonders", badge: "Culture & Wonders", price: 11850, offer: 0, hidden: false, photo: "/images/pkg/explorer.jpg", includes: "Private airport transfers Cancún ↔ PDC + welcome brochure\nChichén Itzá full day — guided visit to a Wonder of the World\nValladolid stop — colonial streets & cenote\nTulum ruins day trip — clifftop Maya ruins above the sea\nCenote Dos Ojos stop\nPlaya del Carmen Explorer Tour\nPersonal WhatsApp concierge" },
-  { id: "honeymoon", name: "Honeymoon Escape", tagline: "Romance & Intimacy", badge: "Couples", price: 14300, offer: 0, hidden: false, photo: "/images/pkg/honeymoon.jpg", includes: "Private airport transfers Cancún ↔ PDC + welcome brochure\nCozumel private tour by private boat\nIsla Contoy day trip\nRomantic dinner\nQuinta Avenida stroll & discovery\nXcaret Park\nPersonal WhatsApp concierge" },
+  { id: "basic", name: "The Basics", tagline: "The essentials, done properly — ruins, cenote, turtles and the town", badge: "Essential", price: 5525, offer: 0, prices: { "2": 11050, "3": 14050, "4": 16800, "5": 20200, "6": 23150 }, hidden: false, photo: "/images/pkg/basic.jpg", includes: "Private airport transfers — Cancún International, arrival & departure\nTulum Ruins, Cenote Dos Ojos & Akumal — the signature day\nSnorkelling in Playa del Carmen — the reef minutes from town\nPlaya del Carmen tour — Quinta Avenida & the town\n24/7 WhatsApp concierge — Arabic, English, French or Spanish\nWelcome kit — printed itinerary & local guidance" },
+  { id: "family", name: "Family Tour", tagline: "For families — turtles, monkeys, cenotes and a park built for wonder", badge: "Kid-Friendly", price: 9033, offer: 0, prices: { "3": 27100, "4": 34300, "5": 41850, "6": 48550 }, hidden: false, photo: "/images/pkg/family.jpg", includes: "Private airport transfers — Cancún International, arrival & departure\nAkumal & the Monkey Sanctuary — sea turtles & rescued wildlife\nCenote Cristalino & Cenote Azul — open-air, shallow and easy\nPlaya del Carmen tour — Quinta Avenida & the town\nXenses Park — full admission\n24/7 WhatsApp concierge — Arabic, English, French or Spanish\nWelcome kit — printed itinerary & local guidance" },
+  { id: "water", name: "Water Lovers", tagline: "For those who live for the sea — reefs, turtles and the clearest water in the Caribbean", badge: "Water & Reef", price: 10117, offer: 0, prices: { "3": 30350, "4": 34150, "5": 39350, "6": 43650 }, hidden: false, photo: "/images/pkg/water.jpg", includes: "Private airport transfers — Cancún International, arrival & departure\nAkumal & Cenote Dos Ojos — turtle snorkelling & the cave cenote\nCozumel — private boat to El Cielo & El Cielito\nRuta de los Cenotes — four cenotes, two underground, two open-air\n24/7 WhatsApp concierge — Arabic, English, French or Spanish\nWelcome kit — printed itinerary & local guidance" },
+  { id: "explorer", name: "Indiana Jones", tagline: "For the explorer — three Mayan cities, four cenotes, and the Caribbean", badge: "Culture & Wonders", price: 11800, offer: 0, prices: { "2": 23600, "3": 29650, "4": 35350, "5": 41550, "6": 47300 }, hidden: false, photo: "/images/pkg/explorer.jpg", includes: "Private airport transfers — Cancún International, arrival & departure\nChichén Itzá & Valladolid — with Cenote Suytun & Cenote Samulá\nCobá — with Cenote Choo-Ha & Cenote Tankach-Ha\nTulum Ruins & Akumal — clifftop ruins & turtle snorkelling\nPlaya del Carmen tour — Quinta Avenida & the town\n24/7 WhatsApp concierge — Arabic, English, French or Spanish\nWelcome kit — printed itinerary & local guidance" },
+  { id: "honeymoon", name: "Honeymoon Escape", tagline: "For two — private, halal-certified, unforgettable", badge: "Couples", price: 22500, offer: 0, prices: { "2": 45000 }, hidden: false, photo: "/images/pkg/honeymoon.jpg", includes: "Private airport transfers — Cancún International, arrival & departure\nHolbox Island — full day by private boat\nTulum Ruins, Cenote Dos Ojos & Akumal — private guided day\nXcaret Plus — full park access, buffet & the evening show\nJungle Adventure — ATV, ziplines & two cenotes\nPlaya del Carmen evening — Quinta Avenida & romantic dinner\n100% halal certified — every meal & supplier verified\n24/7 WhatsApp concierge — Arabic, English, French or Spanish\nWelcome kit — itinerary, Qibla card & prayer schedule" },
   { id: "vip", name: "VIP Plan", tagline: "Luxury & Total Freedom", badge: "Premium", price: 0, offer: 0, hidden: false, photo: "/images/pkg/vip.jpg", includes: "Luxury hotels or private villas\nPrivate transport with dedicated driver\nFully private tours & flexible itinerary\nPrivate boat or yacht experiences\nPrivate chef options\nConcierge service 24/7" },
 ];
 
@@ -33,6 +39,7 @@ const blankPkg = (): Pkg => ({
   badge: "New",
   price: 0,
   offer: 0,
+  prices: { "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
   hidden: false,
   photo: "",
   includes: "",
@@ -63,7 +70,7 @@ export default function PackagesAdminClient({ initial }: { initial: Pkg[] }) {
       <PageHead
         eyebrow="Content"
         title="Packages"
-        desc="Add, remove or hide packages, set prices, offers, what's included and photos. Prices are per person in MXN. Set an 'Offer price' below the normal price to run a sale — leave it 0 for no offer. VIP is priced on request; leave its price 0. Changes go live on your website as soon as you save."
+        desc="Add, remove or hide packages, set group prices, what's included and photos. Each price is the TOTAL for the whole group in MXN — leave a size at 0 if you don't offer it (e.g. Family starts at 3, Honeymoon is for 2 only). The per-person 'From' price updates automatically. VIP is priced on request; leave all its prices 0. Changes go live as soon as you save."
       />
 
       <button
@@ -102,21 +109,33 @@ export default function PackagesAdminClient({ initial }: { initial: Pkg[] }) {
                   <Field label="Name" value={p.name} onChange={(v) => patch(i, { name: v })} />
                   <Field label="Tagline" value={p.tagline} onChange={(v) => patch(i, { tagline: v })} />
                   <Field label="Badge" value={p.badge} onChange={(v) => patch(i, { badge: v })} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field
-                      label="Price / person"
-                      type="number"
-                      prefix="$"
-                      value={p.price}
-                      onChange={(v) => patch(i, { price: Number(v) || 0 })}
-                    />
-                    <Field
-                      label="Offer price"
-                      type="number"
-                      prefix="$"
-                      value={p.offer}
-                      onChange={(v) => patch(i, { offer: Number(v) || 0 })}
-                    />
+                </div>
+                <div>
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[1.5px] text-forest">
+                    Group pricing — total for the whole group (MXN)
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    {PAX_SIZES.map((pax) => {
+                      const total = Number(p.prices?.[String(pax)]) || 0;
+                      return (
+                        <div key={pax}>
+                          <Field
+                            label={`${pax} people`}
+                            type="number"
+                            prefix="$"
+                            value={total}
+                            onChange={(v) =>
+                              patch(i, {
+                                prices: { ...(p.prices ?? {}), [String(pax)]: Number(v) || 0 },
+                              })
+                            }
+                          />
+                          <div className="mt-1 text-[11.5px] text-sage">
+                            {total > 0 ? `$${Math.round(total / pax).toLocaleString("en-US")} /person` : "not offered"}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 <TextArea

@@ -9,7 +9,7 @@ import { getAllPackages } from "@/lib/content/packages";
 import { getSavedTours } from "@/lib/content/tours";
 import { getSavedAddons, getSavedTransfers } from "@/lib/content/addons";
 import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
-import { ACTIVITIES } from "@/app/(public)/[locale]/packages/data";
+import { ACTIVITIES, PKG_TIERS, type PkgId } from "@/app/(public)/[locale]/packages/data";
 import type { OrderRow } from "../dashboard-data";
 
 export type CostRow = {
@@ -70,14 +70,35 @@ export async function getServiceMargins(): Promise<MarginRow[]> {
 
   const rows: MarginRow[] = [];
 
+  /* Packages are priced AND costed per group size (rate card v2) — one margin
+     row per tier, mirroring the tours below. Falls back to the flat per-person
+     row for packages without tiers (e.g. VIP shows on request). */
+  const costTiersById = new Map(
+    costs.rows.filter((r) => r.tiers).map((r) => [r.id, r.tiers as Record<string, number>])
+  );
   for (const p of pkgs ?? []) {
-    rows.push({
-      category: "Package",
-      name: p.name,
-      unit: "person",
-      price: p.price > 0 ? effective(p.price, p.offer) : null,
-      cost: costOf(p.id),
-    });
+    const tiers = parseTierPrices(p.prices ?? undefined) ?? PKG_TIERS[p.id as PkgId] ?? null;
+    if (tiers) {
+      const ct = costTiersById.get(p.id);
+      for (const pax of Object.keys(tiers).map(Number).sort((a, b) => a - b)) {
+        const tierCost = Number(ct?.[String(pax)]) || 0;
+        rows.push({
+          category: "Package",
+          name: `${p.name} — ${pax} people`,
+          unit: "group",
+          price: tiers[pax],
+          cost: tierCost > 0 ? tierCost : null,
+        });
+      }
+    } else {
+      rows.push({
+        category: "Package",
+        name: p.name,
+        unit: "person",
+        price: p.price > 0 ? effective(p.price, p.offer) : null,
+        cost: costOf(p.id),
+      });
+    }
   }
 
   /* Tours are priced AND costed per group size — one margin row per tier

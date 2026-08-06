@@ -11,6 +11,7 @@ import { getSavedAddons, getSavedTransfers } from "@/lib/content/addons";
 import { getContact } from "@/lib/content/contact";
 import { getPublicContent } from "@/lib/content/site";
 import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
+import { PKG_TIERS, type PkgId } from "@/app/(public)/[locale]/packages/data";
 
 const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
 
@@ -32,11 +33,11 @@ const DEFAULT_TOUR_LINES = TOURS.map((t) => {
 });
 
 const DEFAULT_PACKAGE_LINES = [
-  "- The Basics (Essential Riviera Maya) — $4,600 MXN per person",
-  "- Family Tour (Kid-Friendly, groups of 3+) — $8,200 MXN per person",
-  "- Water Lovers (Beaches, Reefs & Cenotes) — $7,600 MXN per person (ON OFFER: $6,650 MXN)",
-  "- Indiana Jones (Culture & Wonders) — $11,850 MXN per person",
-  "- Honeymoon Escape (Romance, priced for 2) — $14,300 MXN per person",
+  `- The Basics (no minimum) — TOTAL for the group: ${tierLine(PKG_TIERS.basic)}`,
+  `- Family Tour (minimum 3 travellers) — TOTAL for the group: ${tierLine(PKG_TIERS.family)}`,
+  `- Water Lovers (minimum 3 travellers) — TOTAL for the group: ${tierLine(PKG_TIERS.water)}`,
+  `- Indiana Jones (no minimum) — TOTAL for the group: ${tierLine(PKG_TIERS.explorer)}`,
+  `- Honeymoon Escape (2 travellers only) — ${fmtMXN(PKG_TIERS.honeymoon[2])} total for the couple`,
   "- VIP Plan (Luxury & Total Freedom) — price on request",
 ];
 
@@ -47,16 +48,17 @@ export async function buildChatSystemPrompt(): Promise<string> {
     getSavedAddons(),
     getSavedTransfers(),
     getContact(),
-    getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 17.5, rateEUR: 19.5 }),
+    getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 16.5, rateEUR: 19.5 }),
   ]);
 
   const packageLines = packages?.length
     ? packages.map((p) => {
-        const price =
-          p.price > 0
-            ? p.offer > 0 && p.offer < p.price
-              ? `${fmtMXN(p.price)} per person (ON OFFER: ${fmtMXN(p.offer)})`
-              : `${fmtMXN(p.price)} per person`
+        const tiers =
+          parseTierPrices(p.prices ?? undefined) ?? PKG_TIERS[p.id as PkgId] ?? null;
+        const price = tiers
+          ? `TOTAL for the group: ${tierLine(tiers)}`
+          : p.price > 0
+            ? `${fmtMXN(p.price)} per person`
             : "price on request";
         const includes = p.includes.split("\n").filter(Boolean).join("; ");
         return `- ${p.name} (${p.tagline}) — ${price}. Includes: ${includes}`;
@@ -97,7 +99,7 @@ ABOUT AMANAH VACATIONS
 - Multilingual team: English, French, Spanish, Arabic.
 - Based in Playa del Carmen; operates across the Riviera Maya and Yucatán (Tulum, Cancún, Akumal, Cobá, Chichén Itzá, Holbox, Cozumel and more).
 
-PACKAGES (multi-day, per person in MXN, minimum 3 nights):
+PACKAGES (multi-day, minimum 3 nights; priced per GROUP — each price is the TOTAL in MXN for that group size; the smallest size listed is the minimum group; Honeymoon is for 2 travellers only; Family and Water Lovers require at least 3):
 ${packageLines.join("\n")}
 
 DAY TOURS (priced per GROUP — each price is the TOTAL in MXN for that group size, and bigger groups pay less per person; the smallest size listed is the minimum group, e.g. Cozumel starts at 3; book at least 24h ahead; groups up to 6 online — larger groups via WhatsApp):

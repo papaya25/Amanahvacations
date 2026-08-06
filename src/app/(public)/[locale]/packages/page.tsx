@@ -6,6 +6,7 @@ import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from 
 import { getPublicPackages } from "@/lib/content/packages";
 import { getFaqs } from "@/lib/content/faq";
 import { getSavedAddons } from "@/lib/content/addons";
+import { getSavedContent } from "@/lib/content/site";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import {
@@ -45,17 +46,40 @@ async function translateCatalogue(locale: Locale) {
   recTipKeys.forEach((k, i) => {
     tRecTips[k] = { label: recTipLabels[i], tip: recTipTexts[i] };
   });
-  const tDetails = await translateDetails(locale);
-  return { tActivities, tAccomTiers, tRecommended, tRecTips, tDetails };
+  return { tActivities, tAccomTiers, tRecommended, tRecTips };
+}
+
+/* The popup details actually shown: the admin-saved copy (site_content
+   "pkg_details") merged over the built-in defaults, package by package. */
+async function getEffectiveDetails(): Promise<Partial<Record<PkgId, PkgDetails>>> {
+  const saved = await getSavedContent<Partial<Record<PkgId, PkgDetails>>>("pkg_details");
+  const out: Partial<Record<PkgId, PkgDetails>> = {};
+  (Object.keys(PKG_DETAILS) as PkgId[]).forEach((id) => {
+    const base = PKG_DETAILS[id]!;
+    const s = saved?.[id];
+    out[id] = s
+      ? {
+          intro: s.intro ?? base.intro,
+          addonNote: s.addonNote,
+          weekNote: s.weekNote ?? base.weekNote,
+          week: (s.week ?? base.week).filter((w) => w && w.trim()),
+          days: (s.days ?? base.days).filter((d) => d && d.title),
+        }
+      : base;
+  });
+  return out;
 }
 
 /* Translate the day-by-day details popup content. Flattens every text field of
    every package into one batched request per field type, then reassembles. */
-async function translateDetails(locale: Locale): Promise<Partial<Record<PkgId, PkgDetails>>> {
-  const ids = Object.keys(PKG_DETAILS) as PkgId[];
+async function translateDetails(
+  details: Partial<Record<PkgId, PkgDetails>>,
+  locale: Locale
+): Promise<Partial<Record<PkgId, PkgDetails>>> {
+  const ids = Object.keys(details) as PkgId[];
   const flat: string[] = [];
   ids.forEach((id) => {
-    const d = PKG_DETAILS[id]!;
+    const d = details[id]!;
     flat.push(d.intro, d.addonNote ?? "", d.weekNote, ...d.week);
     d.days.forEach((day) => flat.push(day.title, day.dur, day.desc, day.included));
   });
@@ -66,7 +90,7 @@ async function translateDetails(locale: Locale): Promise<Partial<Record<PkgId, P
   const take = (s: string) => (s ? translated[i++] ?? s : s);
   const out: Partial<Record<PkgId, PkgDetails>> = {};
   ids.forEach((id) => {
-    const d = PKG_DETAILS[id]!;
+    const d = details[id]!;
     const intro = take(d.intro);
     const addonNote = d.addonNote ? take(d.addonNote) : undefined;
     const weekNote = take(d.weekNote);
@@ -107,12 +131,13 @@ export const metadata: Metadata = {
 };
 
 // Fallback summary for the structured data if the backend isn't reachable.
+// Per-person "from" prices at the smallest group (rate card v2).
 const PKG_SUMMARY_FALLBACK = [
-  { name: "The Basics — Essential Riviera Maya", price: 4600, img: "/images/pkg/basic.jpg" },
-  { name: "Family Tour — Kid-Friendly Riviera Maya", price: 8200, img: "/images/pkg/family.jpg" },
-  { name: "Water Lovers — Beaches, Reefs & Cenotes", price: 7600, img: "/images/pkg/water.jpg" },
-  { name: "Indiana Jones — Culture & Wonders", price: 11850, img: "/images/pkg/explorer.jpg" },
-  { name: "Honeymoon Escape — Romance & Intimacy", price: 14300, img: "/images/pkg/honeymoon.jpg" },
+  { name: "The Basics", price: 5525, img: "/images/pkg/basic.jpg" },
+  { name: "Family Tour", price: 9033, img: "/images/pkg/family.jpg" },
+  { name: "Water Lovers", price: 10117, img: "/images/pkg/water.jpg" },
+  { name: "Indiana Jones", price: 11800, img: "/images/pkg/explorer.jpg" },
+  { name: "Honeymoon Escape", price: 22500, img: "/images/pkg/honeymoon.jpg" },
 ];
 
 const FAQS = [
@@ -171,6 +196,9 @@ export default async function PackagesPage({
     : dbAddons;
 
   const catalogue = await translateCatalogue(locale);
+  const effectiveDetails = await getEffectiveDetails();
+  const tDetails =
+    locale === "en" ? effectiveDetails : await translateDetails(effectiveDetails, locale);
 
   const faqTexts = await translateMany(
     [...faqs.map((f) => f.q), ...faqs.map((f) => f.a)],
@@ -226,7 +254,7 @@ export default async function PackagesPage({
         tAccomTiers={catalogue.tAccomTiers}
         tRecommended={catalogue.tRecommended}
         tRecTips={catalogue.tRecTips}
-        tDetails={catalogue.tDetails}
+        tDetails={tDetails}
       />
       <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </>

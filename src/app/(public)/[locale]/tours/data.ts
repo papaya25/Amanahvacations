@@ -60,8 +60,8 @@ export function tourTotalFor(t: Pick<Tour, "groupPrices" | "price">, pax: number
 export const TOURS: Tour[] = [
   {
     key: "akumalcenotes", name: "Cenotes, Coral & Sea Turtles", sub: "Dos Ojos Cenote + Akumal Snorkeling",
-    dur: "6 hours", price: 3100,
-    groupPrices: { 2: 6200, 3: 8400, 4: 10400, 5: 12750, 6: 14900 },
+    dur: "6 hours", price: 3000,
+    groupPrices: { 2: 6000, 3: 7850, 4: 9850, 5: 11650, 6: 13300 },
     img: "/images/tours/akumalcenotes.jpg",
     desc: "Swim through the sacred chambers of Cenote Dos Ojos, then snorkel alongside sea turtles in Akumal Bay.",
     stops: [
@@ -74,8 +74,8 @@ export const TOURS: Tour[] = [
   },
   {
     key: "tulumcenotes", name: "Cenotes & the Ruins of Tulum", sub: "Dos Ojos Cenote + Tulum Archaeological Site",
-    dur: "6–8 hours", price: 4450,
-    groupPrices: { 2: 8900, 3: 11700, 4: 13900, 5: 16900, 6: 19950 },
+    dur: "6–8 hours", price: 2650,
+    groupPrices: { 2: 5300, 3: 6850, 4: 8000, 5: 9650, 6: 11150 },
     img: "/images/tours/tulumcenotes.jpg",
     desc: "A private guided tour of the only Maya city built on the coast, plus a swim in Cenote Dos Ojos.",
     stops: [
@@ -88,8 +88,8 @@ export const TOURS: Tour[] = [
   },
   {
     key: "cobacenotes", name: "Coba Ruins & Jungle Cenotes", sub: "Coba Zone + Choo-Ha & Tankach-Ha",
-    dur: "Full day", price: 4300,
-    groupPrices: { 2: 8600, 3: 10900, 4: 13400, 5: 15950, 6: 17700 },
+    dur: "Full day", price: 2850,
+    groupPrices: { 2: 5700, 3: 7300, 4: 8700, 5: 10300, 6: 12000 },
     img: "/images/tours/cobacenotes.jpg",
     desc: "Climb into the jungle to Nohoch Mul, the tallest pyramid on the Yucatán Peninsula, then cool off in two hidden cenotes.",
     stops: [
@@ -102,8 +102,8 @@ export const TOURS: Tour[] = [
   },
   {
     key: "cozumel", name: "Cozumel Private Boat Snorkeling", sub: "El Cielo, El Cielito, Colombia & Lever Reefs",
-    dur: "Approx. 4 hours", price: 3150,
-    groupPrices: { 3: 9450, 4: 10600, 5: 11750, 6: 12900 },
+    dur: "Approx. 4 hours", price: 6650,
+    groupPrices: { 2: 13300, 3: 13950, 4: 14850, 5: 16800, 6: 18700 },
     img: "/images/tours/cozumel.jpg",
     desc: "A private boat to four of Cozumel's best reefs, with fresh ceviche and drinks on board — plus top-quality photos and videos of your day, shot with a GoPro and the latest-generation iPhone, all included.",
     stops: [
@@ -117,8 +117,8 @@ export const TOURS: Tour[] = [
   },
   {
     key: "akumaltulum", name: "Tulum & Akumal", sub: "Dos Ojos + Tulum Ruins + Akumal Snorkeling",
-    dur: "Full day", price: 4950,
-    groupPrices: { 2: 9900, 3: 12900, 4: 15960, 5: 18950, 6: 21960 },
+    dur: "Full day", price: 3775,
+    groupPrices: { 2: 7550, 3: 10050, 4: 12300, 5: 14650, 6: 17150 },
     img: "/images/tours/akumaltulum.jpg",
     desc: "The best of both worlds — ancient ruins, a sacred cenote, and sea turtles in one action-packed day.",
     stops: [
@@ -131,8 +131,8 @@ export const TOURS: Tour[] = [
   },
   {
     key: "chichen", name: "Chichen Itza & Valladolid", sub: "New 7 Wonders + Suytun & Samulá Cenotes",
-    dur: "Full day", price: 7725,
-    groupPrices: { 2: 15450, 3: 18850, 4: 22250, 5: 25650, 6: 29050 },
+    dur: "Full day", price: 4575,
+    groupPrices: { 2: 9150, 3: 11550, 4: 14000, 5: 16800, 6: 18850 },
     img: "/images/tours/chichen.jpg",
     desc: "A wonder of the world, a colonial pueblo mágico, and two of the Yucatán's most beautiful cenotes.",
     stops: [
@@ -147,7 +147,7 @@ export const TOURS: Tour[] = [
   {
     key: "rutacenotes", name: "Ruta de Cenotes", sub: "4 Cenotes + Diving Platform + Zip Line",
     dur: "Half day", price: 3350,
-    groupPrices: { 2: 6700, 3: 8650, 4: 10600, 5: 12550, 6: 14500 },
+    groupPrices: { 2: 6700, 3: 8550, 4: 9700, 5: 11550, 6: 12700 },
     img: "/images/tours/rutacenotes.jpg",
     desc: "Two open-air and two underground cenotes, a diving platform, and a water zip line in one jungle park.",
     stops: [
@@ -159,9 +159,11 @@ export const TOURS: Tour[] = [
     ],
   },
   {
-    key: null, name: "Holbox Island Overnight Escape", sub: "2 Days, 1 Night",
-    dur: "Overnight", price: null, onreq: true, img: "/images/tours/holbox.jpg",
-    desc: "A car-free island of flamingos, bioluminescent water, and untouched beaches — explored by private boat, with unlimited water and soft drinks on board. Arranged personally with you.",
+    key: "holbox", name: "Holbox Island", sub: "Private Boat · Isla Pasión + Punta Mosquito + Holbox Town",
+    dur: "Full day (~12 hours)", price: 5725,
+    groupPrices: { 2: 11450, 3: 15000, 4: 17150, 5: 19300, 6: 21450 },
+    img: "/images/tours/holbox.jpg",
+    desc: "A car-free island of flamingos, bioluminescent water, and untouched beaches — explored by private boat, with unlimited water and soft drinks on board.",
     stops: [
       ["Morning · Private Pickup", "Your Hotel or Airbnb → Chiquilá", "We pick you up directly and drive you to the port of Chiquilá, where your private boat is waiting."],
       ["First Stop", "Isla Pasión", "A stunning island famous for its migratory birds — we arrive among the first visitors of the day to enjoy its peaceful beauty."],

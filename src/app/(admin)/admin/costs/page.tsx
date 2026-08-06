@@ -8,8 +8,8 @@ type CostRow = {
   name: string;
   category: string;
   cost: number;
-  /** Tour rows: supplier cost (TOTAL for the group, MXN) per group size,
-      e.g. {"2":4300,"3":5200}. Matches the tours' group pricing. */
+  /** Tour/Package rows: supplier cost (TOTAL for the group, MXN) per group
+      size, e.g. {"2":4300,"3":5200}. Matches the group pricing model. */
   tiers?: Record<string, number>;
 };
 
@@ -123,9 +123,9 @@ export default function CostsAdmin() {
             <Card key={cat} title={`${cat} costs`}>
               <div className="space-y-2.5">
                 {rows.map(({ r, i }) =>
-                  cat === "Tour" ? (
-                    /* Tours: supplier cost is a TOTAL per group size, matching
-                       the tours' group pricing. */
+                  cat === "Tour" || cat === "Package" ? (
+                    /* Tours & packages: supplier cost is a TOTAL per group
+                       size, matching the group pricing model. */
                     <div key={r.id} className="rounded-xl border border-sand bg-cream/40 p-3">
                       <div className="grid items-end gap-3 sm:grid-cols-[1fr_auto]">
                         <Field label="Item" value={r.name} onChange={(v) => patch(i, { name: v })} />
