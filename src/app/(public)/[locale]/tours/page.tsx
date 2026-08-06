@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Caveat } from "next/font/google";
 import ToursClient from "./ToursClient";
 import { TOURS, parseTierPrices, type Tour } from "./data";
-import { ACTIVITIES, type Activity } from "../packages/data";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
@@ -138,19 +137,6 @@ export default async function ToursPage({
     locale
   );
 
-  /* Single activities bookable on their own — the FULL add-on catalogue (the
-     tours repeat the cards above, but the picker stays complete so nobody has
-     to scroll back up). Translated for display; ids and prices never change. */
-  const singlesBase = ACTIVITIES;
-  let singleActivities: Activity[] = singlesBase;
-  if (locale !== "en") {
-    const [sNames, sDescs] = await Promise.all([
-      translateMany(singlesBase.map((a) => a.name), locale),
-      translateMany(singlesBase.map((a) => a.desc), locale),
-    ]);
-    singleActivities = singlesBase.map((a, i) => ({ ...a, name: sNames[i], desc: sDescs[i] }));
-  }
-
   // Translate the built-in tour list for display (names, subtitles, durations,
   // descriptions and itinerary stop labels). The `key` is preserved so
   // server-side price verification still matches by tour_key.
@@ -194,11 +180,7 @@ export default async function ToursPage({
           faqSchema(faqs),
         ]}
       />
-      <ToursClient
-        dbTours={translatedTours ?? undefined}
-        defaultTours={defaultTours}
-        singleActivities={singleActivities}
-      />
+      <ToursClient dbTours={translatedTours ?? undefined} defaultTours={defaultTours} />
       <Faq items={translatedFaqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </main>
   );
