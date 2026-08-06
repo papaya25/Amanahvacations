@@ -49,8 +49,7 @@ const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
       "Tulum Ruins, Cenote Dos Ojos & Akumal — the signature day",
       "Snorkelling in Playa del Carmen — the reef minutes from town",
       "Playa del Carmen tour — Quinta Avenida & the town",
-      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
-      "Welcome kit — printed itinerary & local guidance",
+      "24/7 WhatsApp concierge",
     ],
   },
   family: {
@@ -65,8 +64,7 @@ const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
       "Cenote Cristalino & Cenote Azul — open-air, shallow and easy",
       "Playa del Carmen tour — Quinta Avenida & the town",
       "Xenses Park — full admission",
-      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
-      "Welcome kit — printed itinerary & local guidance",
+      "24/7 WhatsApp concierge",
     ],
   },
   water: {
@@ -80,8 +78,7 @@ const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
       "Akumal & Cenote Dos Ojos — turtle snorkelling & the cave cenote",
       "Cozumel — private boat to El Cielo & El Cielito",
       "Ruta de los Cenotes — four cenotes, two underground, two open-air",
-      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
-      "Welcome kit — printed itinerary & local guidance",
+      "24/7 WhatsApp concierge",
     ],
   },
   explorer: {
@@ -96,8 +93,7 @@ const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
       "Cobá — with Cenote Choo-Ha & Cenote Tankach-Ha",
       "Tulum Ruins & Akumal — clifftop ruins & turtle snorkelling",
       "Playa del Carmen tour — Quinta Avenida & the town",
-      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
-      "Welcome kit — printed itinerary & local guidance",
+      "24/7 WhatsApp concierge",
     ],
   },
   honeymoon: {
@@ -114,8 +110,7 @@ const DEFAULT_PKG_META: Record<PkgId, PkgMeta> = {
       "Jungle Adventure — ATV, ziplines & two cenotes",
       "Playa del Carmen evening — Quinta Avenida & romantic dinner",
       "100% halal certified — every meal & supplier verified",
-      "24/7 WhatsApp concierge — Arabic, English, French or Spanish",
-      "Welcome kit — itinerary, Qibla card & prayer schedule",
+      "24/7 WhatsApp concierge",
     ],
   },
 };
@@ -779,7 +774,7 @@ export default function PackagesClient({
             {meta.includes.map((inc) => {
               /* Trial (The Basics): bold the lead phrase, grey the detail —
                  scannable two-tone lines read faster and feel shorter. */
-              const dash = pkgId === "basic" ? inc.indexOf(" — ") : -1;
+              const dash = inc.indexOf(" — ");
               return (
                 <li key={inc.slice(0, 30)} className="pkg-include-item">
                   <span className="pkg-check">✓</span>
@@ -789,7 +784,7 @@ export default function PackagesClient({
                       <span className="pkg-include-sub"> — {inc.slice(dash + 3)}</span>
                     </span>
                   ) : (
-                    inc
+                    <strong className="pkg-include-lead">{inc}</strong>
                   )}
                 </li>
               );
@@ -806,22 +801,29 @@ export default function PackagesClient({
           )}
         </div>
         {rec && recTip && (
-          <div className="choice-box">
-            <div className="choice-label">{dict.pkgc_recommended_addon}</div>
-            <div className="choice-pills">
-              <button
-                className={`choice-pill${recommendedActive[pkgId] ? " active" : ""}`}
-                onClick={() => toggleRecommend(pkgId)}
-              >
-                <span className="rec-icon-label">{recTip.label}</span>
+          /* "Guest favorite" upsell card: warm gold tint isolates it from the
+             white card (Von Restorff), social-proof label, transparent price,
+             and an explicit Add button that flips to a green Added state. */
+          <div className="choice-box rec-box">
+            <div className="choice-label rec-box-label">⭐ {dict.pkgc_guest_favorite}</div>
+            <button
+              type="button"
+              className={`rec-card${recommendedActive[pkgId] ? " active" : ""}`}
+              onClick={() => toggleRecommend(pkgId)}
+            >
+              <span className="rec-card-main">
+                <span className="rec-card-name">{recTip.label}</span>
                 <span className="info-icon" data-tip={recTip.tip} onClick={(e) => e.stopPropagation()}>
                   i
                 </span>
-                <span className="rec-price">
-                  {recommendedActive[pkgId] ? dict.pkgc_added : `+${format(rec.price)}${dict.pkgc_per_person}`}
+              </span>
+              <span className="rec-card-right">
+                <span className="rec-card-price">+{format(rec.price)}{dict.pkgc_per_person}</span>
+                <span className="rec-card-btn">
+                  {recommendedActive[pkgId] ? `✓ ${dict.pkgc_added_btn}` : `+ ${dict.pkgc_add_btn}`}
                 </span>
-              </button>
-            </div>
+              </span>
+            </button>
           </div>
         )}
         {/* ONE price on the card: the TOTAL the group actually pays (updates

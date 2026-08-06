@@ -612,3 +612,38 @@
 /* Two-tone includes: bold lead + grey detail (scannability trial) */
 .pkg-include-lead { font-weight: 650; color: var(--ink, #1c2b1e); }
 .pkg-include-sub { color: #6b7b6c; }
+
+/* ── "Guest favorite" recommended add-on card ── */
+.rec-box {
+  background: linear-gradient(135deg, #fdf6e8, #fbf0dc);
+  border-color: #ecd9b0;
+}
+.rec-box-label { color: #8a6a1e; }
+.rec-card {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: #ffffff;
+  border: 1.5px solid #ecd9b0; border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer; transition: all 0.2s ease;
+  font-family: var(--font-outfit), sans-serif;
+  text-align: left;
+}
+.rec-card:hover {
+  border-color: #c8693a;
+  box-shadow: 0 4px 14px rgba(200, 105, 58, 0.16);
+  transform: translateY(-1px);
+}
+.rec-card.active { border-color: #3a5a3c; background: #f3f7f2; }
+.rec-card-main { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rec-card-name { font-size: 13px; font-weight: 600; color: #1c2b1e; }
+.rec-card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.rec-card-price { font-size: 12px; font-weight: 700; color: #1c2b1e; white-space: nowrap; }
+.rec-card-btn {
+  background: #c8693a; color: white;
+  border-radius: 50px; padding: 5px 12px;
+  font-size: 11.5px; font-weight: 700; white-space: nowrap;
+  transition: background 0.2s ease;
+}
+.rec-card:hover .rec-card-btn { background: #b25a2f; }
+.rec-card.active .rec-card-btn { background: #3a5a3c; }
