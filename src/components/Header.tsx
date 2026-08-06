@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { useCart } from "@/lib/cart";
+import { createClient } from "@/lib/supabase/browser";
 import { CURRENCIES, SYMBOLS, useCurrency } from "@/lib/currency";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { LOCALES, LOCALE_LABELS, localizeHref, stripLocale, type Locale } from "@/lib/i18n/config";
@@ -43,10 +45,44 @@ export default function Header() {
   const withLocale = (href: string) => localizeHref(href, locale);
 
   const { currency, setCurrency } = useCurrency();
-  const [openMenu, setOpenMenu] = useState<"lang" | "currency" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"lang" | "currency" | "account" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { count } = useCart();
+
+  /* Logged-in customer (null = guest). Kept in sync with Supabase auth so the
+     button flips between "Log In" and the account menu without a reload. */
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) =>
+      setUser(session?.user ?? null)
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const firstName =
+    ((user?.user_metadata?.name as string) || user?.email || "")
+      .split(" ")[0]
+      .split("@")[0] || "";
+
+  const ACCOUNT_LINKS = [
+    { label: dict.acctnav_orders, href: "/account/orders" },
+    { label: dict.acctnav_profile, href: "/account/profile" },
+    { label: dict.acctnav_settings, href: "/account/settings" },
+    { label: dict.acctnav_preferences, href: "/account/preferences" },
+  ] as const;
+
+  const logout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    setOpenMenu(null);
+    setMobileOpen(false);
+    router.push(withLocale("/"));
+    router.refresh();
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -170,13 +206,58 @@ export default function Header() {
             )}
           </div>
 
-          {/* Log in */}
-          <Link
-            href={withLocale("/login")}
-            className="hidden items-center gap-1.5 rounded-full border-[1.5px] border-forest px-4 py-[7px] text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white md:flex"
-          >
-            {dict.login}
-          </Link>
+          {/* Log in / account menu */}
+          {user ? (
+            <div className="relative hidden md:block">
+              <button
+                onClick={() => setOpenMenu(openMenu === "account" ? null : "account")}
+                className="flex items-center gap-2 rounded-full border-[1.5px] border-forest py-[5px] pl-[6px] pr-3 text-[13px] font-semibold text-forest transition hover:bg-forest/5"
+                aria-haspopup="menu"
+                aria-expanded={openMenu === "account"}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forest text-[12px] font-bold uppercase text-white">
+                  {firstName.charAt(0) || "A"}
+                </span>
+                <span className="max-w-[110px] truncate">{firstName}</span>
+                <Chevron open={openMenu === "account"} />
+              </button>
+              {openMenu === "account" && (
+                <ul
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+8px)] w-52 overflow-hidden rounded-2xl border border-sand bg-white py-1.5 shadow-[0_16px_40px_rgba(28,43,30,0.14)]"
+                >
+                  {ACCOUNT_LINKS.map((item) => (
+                    <li key={item.href} role="none">
+                      <Link
+                        role="menuitem"
+                        href={withLocale(item.href)}
+                        onClick={() => setOpenMenu(null)}
+                        className="block px-4 py-2 text-[13px] text-ink transition hover:bg-cream"
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                  <li role="none" className="mt-1 border-t border-sand pt-1">
+                    <button
+                      role="menuitem"
+                      onClick={logout}
+                      className="block w-full px-4 py-2 text-left text-[13px] font-semibold text-terracotta transition hover:bg-cream"
+                    >
+                      {dict.acct_logout}
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </div>
+          ) : (
+            <Link
+              href={withLocale("/login")}
+              className="hidden items-center gap-1.5 rounded-full border-[1.5px] border-forest px-4 py-[7px] text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white md:flex"
+            >
+              {dict.login}
+            </Link>
+          )}
 
           {/* Cart */}
           <Link
@@ -272,13 +353,40 @@ export default function Header() {
                   </button>
                 ))}
               </div>
-              <Link
-                href={withLocale("/login")}
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-full border-[1.5px] border-forest py-2.5 text-center text-[14px] font-semibold text-forest"
-              >
-                {dict.login}
-              </Link>
+              {user ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 px-1 pb-1 text-[13px] font-semibold text-ink">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forest text-[12px] font-bold uppercase text-white">
+                      {firstName.charAt(0) || "A"}
+                    </span>
+                    <span className="truncate">{firstName}</span>
+                  </div>
+                  {ACCOUNT_LINKS.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={withLocale(item.href)}
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink transition hover:bg-forest/8"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <button
+                    onClick={logout}
+                    className="block w-full rounded-full border-[1.5px] border-terracotta py-2.5 text-center text-[14px] font-semibold text-terracotta"
+                  >
+                    {dict.acct_logout}
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href={withLocale("/login")}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-full border-[1.5px] border-forest py-2.5 text-center text-[14px] font-semibold text-forest"
+                >
+                  {dict.login}
+                </Link>
+              )}
             </div>
           </div>
         </div>
