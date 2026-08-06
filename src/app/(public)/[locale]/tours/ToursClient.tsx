@@ -14,6 +14,8 @@ import type { AdminTour as AdminTourInput } from "@/lib/content/tours";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 import { TOURS, parseTierPrices, tourPaxOptions, tourTotalFor, type Tour, type Stop } from "./data";
+import type { Activity } from "../packages/data";
+import ActivityPicker, { activityChargeTotal } from "@/components/ActivityPicker";
 
 const WA_NUMBER = "529903516948";
 const EMAIL = "booking@amanahvacations.com";
@@ -30,11 +32,15 @@ const fmtDate = (v: string) =>
 export default function ToursClient({
   dbTours,
   defaultTours,
+  singleActivities,
 }: {
   dbTours?: AdminTourInput[];
   /** Locale-translated copy of the built-in TOURS list, used for display when
       the admin hasn't saved custom tours. Falls back to English TOURS. */
   defaultTours?: Tour[];
+  /** Translated single activities bookable on their own (add-on catalogue
+      minus the combos already shown as tour cards). */
+  singleActivities?: Activity[];
 }) {
   const BUILTIN = defaultTours ?? TOURS;
   /* Admin-managed content from the DB overrides the built-in list; card
@@ -74,6 +80,10 @@ export default function ToursClient({
   const [openItin, setOpenItin] = useState<Record<number, boolean>>({});
   const [modalTour, setModalTour] = useState<Tour | null>(null);
   const [comment, setComment] = useState("");
+  /* "Just One Activity?" section */
+  const [singlesSel, setSinglesSel] = useState<string[]>([]);
+  const [singlesDate, setSinglesDate] = useState("");
+  const [singlesPeople, setSinglesPeople] = useState(2);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -139,6 +149,47 @@ export default function ToursClient({
         people: String(ppl),
         date: fmtDate(date),
       },
+    });
+    router.push(localizeHref("/checkout", locale));
+  };
+
+
+  const singlesByName: Record<string, Activity> = {};
+  (singleActivities ?? []).forEach((a) => (singlesByName[a.name] = a));
+
+  const buySingles = () => {
+    if (!singlesDate) {
+      showToast(dict.tourc_toast_date);
+      return;
+    }
+    const n = Math.max(1, singlesPeople);
+    const sel = singlesSel.map((name) => singlesByName[name]).filter(Boolean);
+    const priced = sel.filter((a) => activityChargeTotal(a, n) !== null);
+    const human = sel.filter((a) => activityChargeTotal(a, n) === null).map((a) => a.name);
+    if (!priced.length) return;
+    if (human.length > 0) {
+      const proceed = confirm(
+        "These selections need to be arranged personally and are NOT charged now:\n\n" +
+          human.join(", ") +
+          "\n\nOur team will follow up to finalize and charge those separately. Continue to checkout with the rest?"
+      );
+      if (!proceed) return;
+    }
+    priced.forEach((act, i) => {
+      add({
+        kind: "activity",
+        title: act.name,
+        details: [fmtDate(singlesDate), `${n} ${n === 1 ? "person" : "people"}`],
+        total: activityChargeTotal(act, n) as number,
+        people: n,
+        meta: {
+          activity_id: act.id,
+          currency: "MXN",
+          people: String(n),
+          date: fmtDate(singlesDate),
+          ...(i === 0 && human.length ? { addons_human: human.join(", ") } : {}),
+        },
+      });
     });
     router.push(localizeHref("/checkout", locale));
   };
@@ -316,6 +367,73 @@ export default function ToursClient({
             );
           })}
         </div>
+
+        {/* "Just One Activity?" — book a single activity without a full tour */}
+        {singleActivities && singleActivities.length > 0 && (
+          <div className="apk-section">
+            <h2 className="apk-section-title">{dict.act_singles_title}</h2>
+            <p className="apk-section-sub">{dict.act_singles_sub}</p>
+            <div className="apk-controls">
+              <div className="apk-ctrl">
+                <label>{dict.tourc_date}</label>
+                <input
+                  type="date"
+                  min={minDate}
+                  value={singlesDate}
+                  onChange={(e) => setSinglesDate(e.target.value)}
+                />
+              </div>
+              <div className="apk-ctrl" style={{ flex: "0 0 auto", minWidth: 0 }}>
+                <label>{dict.tourc_people}</label>
+                <div className="apk-stepper">
+                  <button type="button" onClick={() => setSinglesPeople((p) => Math.max(1, p - 1))}>−</button>
+                  <div className="apk-count">{singlesPeople}</div>
+                  <button type="button" onClick={() => setSinglesPeople((p) => Math.min(6, p + 1))}>+</button>
+                </div>
+              </div>
+            </div>
+            <ActivityPicker
+              activities={singleActivities}
+              selected={singlesSel}
+              onToggle={(name) =>
+                setSinglesSel((prev) =>
+                  prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]
+                )
+              }
+              people={singlesPeople}
+            />
+            {(() => {
+              const n = Math.max(1, singlesPeople);
+              const pricedSel = singlesSel
+                .map((name) => singlesByName[name])
+                .filter(Boolean)
+                .filter((a) => activityChargeTotal(a, n) !== null);
+              const total = pricedSel.reduce(
+                (sum, a) => sum + (activityChargeTotal(a, n) as number),
+                0
+              );
+              return (
+                <div className="apk-total-bar">
+                  <div>
+                    <div className="apk-total-label">
+                      {pricedSel.length} {dict.act_selected} · {n}{" "}
+                      {n === 1 ? "person" : "people"}
+                    </div>
+                    <div className="apk-total-value">{format(total)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="apk-buy"
+                    disabled={pricedSel.length === 0}
+                    onClick={buySingles}
+                  >
+                    {dict.tourc_buy_now}
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Contact modal (on-request tours) */}

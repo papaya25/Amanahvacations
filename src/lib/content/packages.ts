@@ -55,6 +55,30 @@ export async function getAllPackages(): Promise<Package[] | null> {
   return data as Package[];
 }
 
+/** Authoritative server-side total (MXN) for ONE activity booked on its own
+    (Build Your Own Plan / single-activity booking): tiered tour-type
+    activities charge their group total, flat ones charge per person. Returns
+    null for on-request/unknown/not-directly-bookable activities — those are
+    never charged online. */
+export async function getActivityLineTotal(
+  activityId: string,
+  people: number
+): Promise<number | null> {
+  const n = Math.max(1, people || 1);
+  const { ACTIVITIES } = await import("@/app/(public)/[locale]/packages/data");
+  const b = ACTIVITIES.find((a) => a.id === activityId);
+  if (b?.groupPrices) return tourTotalFor(b, n);
+  const { getSavedAddons } = await import("@/lib/content/addons");
+  const saved = await getSavedAddons();
+  const s = saved?.find((a) => a.id === activityId);
+  if (s && !s.onRequest && s.price > 0) {
+    const unit = s.offer && s.offer > 0 && s.offer < s.price ? s.offer : s.price;
+    return unit * n;
+  }
+  if (b && b.inCart && b.price !== null && b.price > 0) return b.price * n;
+  return null;
+}
+
 /** Authoritative server-side total for a configured package booking, matching
     the configurator's own math exactly: the package's GROUP-TIER total for the
     group size (honeymoon is always the 2-traveller price), plus the selected

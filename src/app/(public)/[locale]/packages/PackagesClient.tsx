@@ -25,6 +25,7 @@ import {
   type PkgId,
 } from "./data";
 import { parseTierPrices, tourTotalFor } from "../tours/data";
+import ActivityPicker, { activityChargeTotal } from "@/components/ActivityPicker";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529903516948";
@@ -553,6 +554,59 @@ export default function PackagesClient({
     setByoOpen(false);
     setModalComment("");
     setModal({ kind: "byo-result" });
+  };
+
+  /* BYO Buy Now: every priced selected activity becomes its own cart line
+     (kind "activity", server re-prices by meta.activity_id); on-request
+     selections are flagged for the team like the package flow. */
+  const buyNowByo = () => {
+    if (nights === null || nights < MIN_NIGHTS_BYO) {
+      alert(`Please select your check-in and check-out dates (at least ${MIN_NIGHTS_BYO} night) before booking.`);
+      return;
+    }
+    const n = adults + kids;
+    const sel = byoAddons.map((name) => actsByName[name]).filter(Boolean);
+    const priced = sel.filter((a) => activityChargeTotal(a, n) !== null);
+    const human = sel.filter((a) => activityChargeTotal(a, n) === null).map((a) => a.name);
+    if (!priced.length) {
+      submitByo();
+      return;
+    }
+    if (human.length > 0) {
+      const proceed = confirm(
+        "These selections need to be arranged personally and are NOT charged now:\n\n" +
+          human.join(", ") +
+          "\n\nOur team will follow up to finalize and charge those separately. Continue to checkout with the rest?"
+      );
+      if (!proceed) return;
+    }
+    priced.forEach((act, i) => {
+      add({
+        kind: "activity",
+        title: act.name,
+        details: [
+          `${fmtDate(checkin)} → ${fmtDate(checkout)}`,
+          `${n} ${n === 1 ? "person" : "people"}`,
+        ],
+        total: activityChargeTotal(act, n) as number,
+        people: n,
+        meta: {
+          activity_id: act.id,
+          custom_plan: "1",
+          currency: CURRENCY,
+          adults: String(adults),
+          kids: String(kids),
+          children_ages: getKidsAgesText(),
+          checkin: fmtDate(checkin),
+          checkout: fmtDate(checkout),
+          accommodation: accomText(),
+          ...(i === 0 && human.length ? { addons_human: human.join(", ") } : {}),
+          ...(i === 0 && byoComment.trim() ? { comment: byoComment.trim() } : {}),
+        },
+      });
+    });
+    setByoOpen(false);
+    router.push(localizeHref("/checkout", locale));
   };
 
   const links = buildContactLinks();
@@ -1255,38 +1309,47 @@ export default function PackagesClient({
                   <div className="addon-note">
                     {dict.pkgc_byo_addon_note}
                   </div>
-                  {activities.map((act) => {
-                    const selected = byoAddons.includes(act.name);
-                    return (
-                      <div
-                        key={act.id}
-                        className={`addon-item${selected ? " selected" : ""}`}
-                        onClick={() =>
-                          setByoAddons((prev) =>
-                            prev.includes(act.name)
-                              ? prev.filter((n) => n !== act.name)
-                              : [...prev, act.name]
-                          )
-                        }
-                      >
-                        <div className="addon-cb">{selected ? "✓" : ""}</div>
-                        <span className="addon-item-name">
-                          {act.emoji} {act.name}{" "}
-                          <span className="info-icon" data-tip={act.desc} onClick={(e) => e.stopPropagation()}>
-                            i
-                          </span>
-                        </span>
-                        {act.price === null ? (
-                          <span className="addon-onreq">{dict.pkgc_on_request}</span>
-                        ) : (
-                          <span className="addon-item-price">
-                            {format(act.price)}{act.unit}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <ActivityPicker
+                    activities={activities}
+                    selected={byoAddons}
+                    onToggle={(name) =>
+                      setByoAddons((prev) =>
+                        prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]
+                      )
+                    }
+                    people={adults + kids}
+                  />
                 </div>
+                {(() => {
+                  const n = Math.max(1, adults + kids);
+                  const pricedSel = byoAddons
+                    .map((name) => actsByName[name])
+                    .filter(Boolean)
+                    .filter((a) => activityChargeTotal(a, n) !== null);
+                  const total = pricedSel.reduce(
+                    (sum, a) => sum + (activityChargeTotal(a, n) as number),
+                    0
+                  );
+                  return (
+                    <div className="apk-total-bar">
+                      <div>
+                        <div className="apk-total-label">
+                          {pricedSel.length} {dict.act_selected} · {n}{" "}
+                          {n === 1 ? dict.pkgc_traveler : dict.pkgc_travelers}
+                        </div>
+                        <div className="apk-total-value">{format(total)}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="apk-buy"
+                        disabled={pricedSel.length === 0}
+                        onClick={buyNowByo}
+                      >
+                        {dict.pkgc_buy_now}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
               <label className="modal-comment-label">{dict.pkgc_dreaming_label}</label>
               <textarea

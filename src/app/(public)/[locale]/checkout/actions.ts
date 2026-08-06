@@ -15,7 +15,7 @@ import { createMercadoPagoPreference, mercadoPagoConfigured } from "@/lib/mercad
 import { notifyNewOrder } from "@/lib/orderEmails";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { getTourLineTotal } from "@/lib/content/tours";
-import { getPackageLineTotal } from "@/lib/content/packages";
+import { getActivityLineTotal, getPackageLineTotal } from "@/lib/content/packages";
 import type { CartItem } from "@/lib/cart";
 
 export type PlaceOrderInput = {
@@ -74,6 +74,11 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
             .map((s) => s.trim())
             .filter((s) => s && s !== "None");
           const serverTotal = await getPackageLineTotal(it.meta.pkgId, people, addonIds);
+          if (serverTotal !== null) return { ...it, total: serverTotal };
+        } else if (it.kind === "activity" && it.meta?.activity_id) {
+          // Single activities (Build Your Own Plan / tours-page singles) are
+          // re-priced from the catalogue the same way.
+          const serverTotal = await getActivityLineTotal(it.meta.activity_id, people);
           if (serverTotal !== null) return { ...it, total: serverTotal };
         }
         return it;
