@@ -222,6 +222,15 @@ export default function PackagesClient({
   const [recommendedActive, setRecommendedActive] = useState<Record<string, boolean>>({});
   const [detailsPkg, setDetailsPkg] = useState<PkgId | null>(null);
   const [openAddonPanels, setOpenAddonPanels] = useState<Record<string, boolean>>({});
+  /* Grouped panel: which categories are expanded. Tours & parks start open
+     (the money-makers stay visible); special touches and on-request start
+     collapsed to keep the list short. */
+  const [openAddonCats, setOpenAddonCats] = useState<Record<string, boolean>>({
+    tours: true,
+    parks: true,
+    special: false,
+    onreq: false,
+  });
   const [modal, setModal] = useState<ModalState>(null);
   const [modalComment, setModalComment] = useState("");
   const [byoOpen, setByoOpen] = useState(false);
@@ -699,12 +708,27 @@ export default function PackagesClient({
         </div>
         {groups
           .filter((g) => g.items.length > 0)
-          .map((g) => (
-            <div key={g.key} className="addon-cat">
-              <div className="addon-cat-header">{g.label}</div>
-              {g.items.map((act) => addonItem(act, pkgId))}
-            </div>
-          ))}
+          .map((g) => {
+            const open = !!openAddonCats[g.key];
+            return (
+              <div key={g.key} className={`addon-cat${open ? " open" : ""}`}>
+                <button
+                  type="button"
+                  className="addon-cat-header"
+                  aria-expanded={open}
+                  onClick={() =>
+                    setOpenAddonCats((p) => ({ ...p, [g.key]: !p[g.key] }))
+                  }
+                >
+                  <span>{g.label} ({g.items.length})</span>
+                  <span className={`addon-cat-chev${open ? " open" : ""}`} aria-hidden>
+                    ▾
+                  </span>
+                </button>
+                {open && g.items.map((act) => addonItem(act, pkgId))}
+              </div>
+            );
+          })}
       </div>
     );
   };
@@ -826,7 +850,7 @@ export default function PackagesClient({
               /* Trial (The Basics): one clear line — what it is AND what it
                  does — plus the count as a curiosity hook. */
               <span className="addons-toggle-line1">
-                {dict.pkgc_make_unforgettable} — {dict.pkgc_add_experiences_inline} ({activities.length})
+                {dict.pkgc_make_unforgettable} — {dict.pkgc_add_experiences_inline}
               </span>
             ) : (
               <>
