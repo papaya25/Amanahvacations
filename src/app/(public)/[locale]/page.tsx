@@ -6,7 +6,7 @@ import HowItWorks from "@/components/HowItWorks";
 import DreamAdventure from "@/components/DreamAdventure";
 import Faq from "@/components/Faq";
 import JsonLd from "@/components/JsonLd";
-import { faqSchema } from "@/lib/seo";
+import { faqSchema, pageAlternates } from "@/lib/seo";
 import { getHero } from "@/lib/content/hero";
 import { getFaqs } from "@/lib/content/faq";
 import { translateMany } from "@/lib/i18n/translate";
@@ -34,6 +34,15 @@ const FAQS = [
     a: "Browse our activities, tours and packages, pick your dates and group size, then book online or message us on WhatsApp for a tailored quote. We confirm within a few hours.",
   },
 ];
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return { alternates: pageAlternates(locale, "/") };
+}
 
 export default async function Home({
   params,

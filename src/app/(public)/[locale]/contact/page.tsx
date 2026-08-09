@@ -1,14 +1,24 @@
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/seo";
 import ContactClient from "./ContactClient";
 import { DEFAULT_CONTACT_LABELS } from "./labels";
 import { translateMany, translateDict } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Contact Us — Book Your Vacation",
   description:
     "Contact Amanah Vacations to book your Riviera Maya trip — reach us by WhatsApp, email or the contact form. Based in Playa del Carmen, replying same-day in English, French, Spanish and Arabic.",
-};
+    alternates: pageAlternates(locale, "/contact"),
+  };
+}
 
 const CARDS = [
   {

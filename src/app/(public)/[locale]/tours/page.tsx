@@ -4,7 +4,7 @@ import ToursClient from "./ToursClient";
 import { TOURS, parseTierPrices, type Tour } from "./data";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
-import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
+import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema, pageAlternates } from "@/lib/seo";
 import { getFaqs } from "@/lib/content/faq";
 import { getSavedTours } from "@/lib/content/tours";
 import { translateMany } from "@/lib/i18n/translate";
@@ -17,7 +17,14 @@ const caveat = Caveat({
   weight: ["400", "600", "700"],
 });
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Private Tours & Day Trips from Playa del Carmen | Riviera Maya",
   description:
     "Private guided tours from Playa del Carmen: Chichén Itzá, Tulum ruins, Cobá, cenotes, snorkeling with sea turtles in Akumal, Cozumel reefs, Holbox and Isla Contoy. Family-safe, halal-friendly, hotel pickup included.",
@@ -31,7 +38,6 @@ export const metadata: Metadata = {
     "Cozumel snorkeling",
     "things to do Riviera Maya",
   ],
-  alternates: { canonical: "/tours" },
   openGraph: {
     type: "website",
     title: "Private Tours & Day Trips from Playa del Carmen",
@@ -40,7 +46,9 @@ export const metadata: Metadata = {
     url: "/tours",
     images: ["/images/tours/chichen.jpg"],
   },
-};
+    alternates: pageAlternates(locale, "/tours"),
+  };
+}
 
 // Lightweight summary for structured data (MXN, per person "from" — the
 // per-person rate at the largest group size, where the group discount peaks).

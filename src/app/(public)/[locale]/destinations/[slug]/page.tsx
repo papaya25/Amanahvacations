@@ -6,7 +6,7 @@ import { DESTINATIONS } from "@/data/destinations";
 import { getEffectiveDestination, getEffectiveDestinations } from "@/lib/content/activities";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
-import { breadcrumbSchema, faqSchema, touristAttractionSchema } from "@/lib/seo";
+import { breadcrumbSchema, faqSchema, touristAttractionSchema, pageAlternates } from "@/lib/seo";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 
@@ -17,7 +17,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const dest = await getEffectiveDestination(slug);
   if (!dest) return {};
   const title = `${dest.title} — Private Tour from Playa del Carmen`;
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       "Riviera Maya activities",
       "things to do Playa del Carmen",
     ],
-    alternates: { canonical: `/destinations/${dest.slug}` },
+    alternates: pageAlternates(locale, `/destinations/${dest.slug}`),
     openGraph: {
       type: "website",
       title,

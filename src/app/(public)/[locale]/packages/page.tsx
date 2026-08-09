@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import PackagesClient from "./PackagesClient";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
-import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema } from "@/lib/seo";
+import { breadcrumbSchema, faqSchema, itemListSchema, productOfferSchema, pageAlternates } from "@/lib/seo";
 import { getPublicPackages } from "@/lib/content/packages";
 import { getFaqs } from "@/lib/content/faq";
 import { getSavedAddons } from "@/lib/content/addons";
@@ -106,7 +106,14 @@ async function translateDetails(
   return out;
 }
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Riviera Maya Vacation Packages — Private, Family & Halal-Friendly",
   description:
     "All-in-one Riviera Maya packages built around you: cenotes, Chichén Itzá, Tulum, Akumal, Xcaret parks and more. Essentials, Family, Water, Culture, Honeymoon and VIP — private, family-safe and halal-friendly.",
@@ -119,7 +126,6 @@ export const metadata: Metadata = {
     "private tour package Playa del Carmen",
     "Cancún tour package",
   ],
-  alternates: { canonical: "/packages" },
   openGraph: {
     type: "website",
     title: "Riviera Maya Vacation Packages — Private, Family & Halal-Friendly",
@@ -128,7 +134,9 @@ export const metadata: Metadata = {
     url: "/packages",
     images: ["/images/pkg/honeymoon.jpg"],
   },
-};
+    alternates: pageAlternates(locale, "/packages"),
+  };
+}
 
 // Fallback summary for the structured data if the backend isn't reachable.
 // Per-person "from" prices at the smallest group (rate card v2).

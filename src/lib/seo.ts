@@ -1,6 +1,24 @@
 /* Shared SEO constants and structured-data builders. */
 
 export const SITE_URL = "https://amanahvacations.com";
+
+/* Per-locale canonical + hreflang alternates for a public page. English is
+   the unprefixed default (x-default); each language canonicalizes to ITS OWN
+   URL so Google can index all four versions instead of collapsing everything
+   onto English. Pass the locale-free path ("/tours", "/"). */
+export function pageAlternates(locale: string, path: string) {
+  const p = path === "/" ? "" : path;
+  return {
+    canonical: locale === "en" ? p || "/" : `/${locale}${p}`,
+    languages: {
+      en: p || "/",
+      fr: `/fr${p}`,
+      es: `/es${p}`,
+      ar: `/ar${p}`,
+      "x-default": p || "/",
+    },
+  };
+}
 export const SITE_NAME = "Amanah Vacations";
 export const WA_NUMBER = "+529903516948";
 export const CONTACT_EMAIL = "booking@amanahvacations.com";

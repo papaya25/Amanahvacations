@@ -3,11 +3,18 @@ import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
-import { breadcrumbSchema, faqSchema } from "@/lib/seo";
+import { breadcrumbSchema, faqSchema, pageAlternates } from "@/lib/seo";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Cancún Airport Transfers — Private to Playa del Carmen & Tulum",
   description:
     "Private airport transfers from Cancún International Airport to Playa del Carmen, Tulum and the Riviera Maya. Meet & greet, air-conditioned private vans, flight tracking, child seats — just your group, never shared.",
@@ -18,7 +25,6 @@ export const metadata: Metadata = {
     "private airport transfer Riviera Maya",
     "airport shuttle Playa del Carmen",
   ],
-  alternates: { canonical: "/airport-transfers" },
   openGraph: {
     type: "website",
     title: "Private Cancún Airport Transfers | Amanah Vacations",
@@ -27,7 +33,9 @@ export const metadata: Metadata = {
     url: "/airport-transfers",
     images: ["/images/hero-beaches.jpg"],
   },
-};
+    alternates: pageAlternates(locale, "/airport-transfers"),
+  };
+}
 
 const FEATURES = [
   { title: "Meet & Greet at Arrivals", desc: "Your driver waits for you inside the terminal with a sign — no hunting for taxis, no negotiating." },

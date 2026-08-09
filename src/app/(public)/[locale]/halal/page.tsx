@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/seo";
 import HalalClient from "./HalalClient";
 import { HALAL_CONTENT_EN, type HalalContent } from "./content";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import "./halal.css";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Halal-Friendly Travel — Travel With Peace of Mind",
   description:
     "Halal travel in the Riviera Maya: halal-certified dining and private chefs, alcohol-free private villas, prayer and Qibla arrangements, modest beach setups, and family-first experiences.",
-};
+    alternates: pageAlternates(locale, "/halal"),
+  };
+}
 
 /* Flatten the whole Halal content object into one ordered array, translate it
    in a single batched call, then reassemble a fully-localized HalalContent. */

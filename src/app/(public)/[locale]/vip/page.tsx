@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/seo";
 import VipClient from "./VipClient";
 import { VIP_CONTENT_EN, type VipContent } from "./content";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import "./vip.css";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "VIP Experience — Luxury Without Limits",
   description:
     "A fully personalized VIP journey in the Riviera Maya: private transportation, dedicated guide, 24/7 concierge, yacht experiences, private chef, luxury villas and the region's finest resorts.",
-};
+    alternates: pageAlternates(locale, "/vip"),
+  };
+}
 
 /* Translate the whole VIP content object for a locale. Everything is flattened
    into one ordered array, translated in one batched call, then reassembled —

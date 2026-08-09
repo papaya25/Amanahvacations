@@ -1,14 +1,24 @@
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/seo";
 import { BODY, TITLE } from "./content";
 import { getLegalDoc, renderLegalHtml } from "@/lib/content/legal";
 import { translateHtml } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import "@/data/legal/legal.css";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Terms & Conditions",
   description: "Booking terms, payment, cancellation and refund policy for Amanah Vacations packages and tours.",
-};
+    alternates: pageAlternates(locale, "/terms-and-conditions"),
+  };
+}
 
 export default async function Page({
   params,

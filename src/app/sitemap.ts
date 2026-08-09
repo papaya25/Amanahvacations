@@ -21,19 +21,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/liability-waiver", priority: 0.2, freq: "yearly" },
   ];
 
-  const corePages = core.map((c) => ({
-    url: `${SITE_URL}${c.path}`,
-    lastModified: now,
-    changeFrequency: c.freq,
-    priority: c.priority,
-  }));
+  /* Every page is listed in all four languages (English unprefixed) so Google
+     discovers the localized versions; each page's hreflang tags tie the set
+     together. */
+  const LOCALE_PREFIXES = ["", "/fr", "/es", "/ar"];
+  const localized = (path: string) =>
+    LOCALE_PREFIXES.map((prefix) => `${SITE_URL}${prefix}${path === "/" ? "" : path}`);
 
-  const destinationPages = DESTINATIONS.map((d) => ({
-    url: `${SITE_URL}/destinations/${d.slug}`,
-    lastModified: now,
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
+  const corePages = core.flatMap((c) =>
+    localized(c.path).map((url) => ({
+      url,
+      lastModified: now,
+      changeFrequency: c.freq,
+      priority: c.priority,
+    }))
+  );
+
+  const destinationPages = DESTINATIONS.flatMap((d) =>
+    localized(`/destinations/${d.slug}`).map((url) => ({
+      url,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    }))
+  );
 
   return [...corePages, ...destinationPages];
 }

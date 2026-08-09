@@ -3,11 +3,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { getEffectiveDestinations } from "@/lib/content/activities";
 import JsonLd from "@/components/JsonLd";
-import { breadcrumbSchema, itemListSchema } from "@/lib/seo";
+import { breadcrumbSchema, itemListSchema, pageAlternates } from "@/lib/seo";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+
   title: "Things to Do in the Riviera Maya — Activities & Day Trips",
   description:
     "24 handpicked activities in the Riviera Maya: cenotes, Chichén Itzá, Tulum, snorkeling with turtles in Akumal, Holbox, whale sharks, Xcaret parks and more. Private, family-safe and halal-friendly, from Playa del Carmen.",
@@ -21,7 +28,6 @@ export const metadata: Metadata = {
     "Xcaret Xel-Há Xplor",
     "Chichén Itzá day trip",
   ],
-  alternates: { canonical: "/activities" },
   openGraph: {
     type: "website",
     title: "Things to Do in the Riviera Maya — Activities & Day Trips",
@@ -30,7 +36,9 @@ export const metadata: Metadata = {
     url: "/activities",
     images: ["/images/act-whaleshark.jpg"],
   },
-};
+    alternates: pageAlternates(locale, "/activities"),
+  };
+}
 
 export default async function ActivitiesPage({
   params,
