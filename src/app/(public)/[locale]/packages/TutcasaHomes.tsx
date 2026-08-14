@@ -195,18 +195,26 @@ export default function TutcasaHomes({
               </div>
 
               <div className="tc-actions">
-                <button
-                  className={`tc-choose-btn${chosen?.slug === openHome.slug ? " chosen" : ""}`}
-                  onClick={() =>
-                    onChoose(
-                      chosen?.slug === openHome.slug
-                        ? null
-                        : { slug: openHome.slug, title: openHome.title }
-                    )
-                  }
-                >
-                  {chosen?.slug === openHome.slug ? `✓ ${dict.tc_chosen}` : dict.tc_choose}
-                </button>
+                {/* Choosing requires trip dates AND a quote confirming the home
+                    is actually available for them; un-choosing is always allowed. */}
+                {(() => {
+                  const isChosen = chosen?.slug === openHome.slug;
+                  const datesOk = Boolean(checkin && checkout);
+                  const quoteOk = quote !== null && quote !== "loading" && quote.ok;
+                  const canChoose = isChosen || (datesOk && quoteOk);
+                  return (
+                    <button
+                      className={`tc-choose-btn${isChosen ? " chosen" : ""}`}
+                      disabled={!canChoose}
+                      title={!canChoose ? dict.tc_pick_dates : undefined}
+                      onClick={() =>
+                        onChoose(isChosen ? null : { slug: openHome.slug, title: openHome.title })
+                      }
+                    >
+                      {isChosen ? `✓ ${dict.tc_chosen}` : dict.tc_choose}
+                    </button>
+                  );
+                })()}
                 <a
                   className="tc-book-btn"
                   href={bookHref(openHome)}

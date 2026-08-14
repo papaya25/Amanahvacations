@@ -738,8 +738,9 @@
   border-radius: 50px; padding: 10px 20px; font-family: var(--font-outfit), sans-serif;
   font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
-.tc-choose-btn:hover { background: #3a5a3c; color: white; }
+.tc-choose-btn:hover:not(:disabled) { background: #3a5a3c; color: white; }
 .tc-choose-btn.chosen { background: #3a5a3c; color: white; }
+.tc-choose-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .tc-book-btn {
   display: inline-block; border-radius: 50px; padding: 10px 22px;
   background: linear-gradient(135deg, #c8693a, #d99a3f); color: white;
