@@ -199,7 +199,7 @@ export const EN_DICT = {
   login_err_exists: "This email already has an account — try logging in instead.",
 
   /* Tours configurator (ToursClient) */
-  tourc_title: "Our Tours",
+  tourc_title: "Tours & Parks",
   tourc_intro: "Private, guided day adventures across the Riviera Maya and Yucatán — pick your date and group size, then choose the tour that calls to you. Every tour is fully private, just for your group.",
   tourc_see_itinerary: "See itinerary",
   tourc_pricing: "Pricing",

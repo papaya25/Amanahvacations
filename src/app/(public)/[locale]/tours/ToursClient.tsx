@@ -16,6 +16,7 @@ import { localizeHref } from "@/lib/i18n/config";
 import { TOURS, parseTierPrices, tourPaxOptions, tourTotalFor, type Tour, type Stop } from "./data";
 import type { Activity } from "../packages/data";
 import ActivityPicker, { activityChargeTotal } from "@/components/ActivityPicker";
+import TourParkTabs from "@/components/TourParkTabs";
 
 const WA_NUMBER = "529903516948";
 const EMAIL = "booking@amanahvacations.com";
@@ -216,6 +217,8 @@ export default function ToursClient({
         <div className="at-rule" />
         <p>{dict.tourc_intro}</p>
       </div>
+
+      <TourParkTabs active="tours" />
 
       <div className="at-wrap">
         <div className="at-grid">
