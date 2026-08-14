@@ -26,6 +26,7 @@ import {
 } from "./data";
 import { parseTierPrices, tourTotalFor } from "../tours/data";
 import ActivityPicker, { activityChargeTotal } from "@/components/ActivityPicker";
+import TutcasaHomes, { type ChosenHome } from "./TutcasaHomes";
 
 /* ── CONFIG ── */
 const WA_NUMBER = "529903516948";
@@ -210,6 +211,8 @@ export default function PackagesClient({
   const [kidsAges, setKidsAges] = useState<string[]>([]);
   const [accom, setAccomState] = useState(false);
   const [accomTier, setAccomTier] = useState("");
+  // Partner home picked from the TutCasa panel (Airbnb / Villa tier).
+  const [tutHome, setTutHome] = useState<ChosenHome | null>(null);
   const [checkin, setCheckin] = useState("");
   const [checkout, setCheckout] = useState("");
   const [selectedAddons, setSelectedAddons] = useState<Record<PkgId, string[]>>({
@@ -270,7 +273,13 @@ export default function PackagesClient({
   const nightsOK = nights !== null && nights >= MIN_NIGHTS_PACKAGE;
 
   const accomTierName = () => ACCOM_TIERS.find((t) => t.id === accomTier)?.label ?? "";
-  const accomText = () => (accom ? `Yes — ${accomTierName() || "hotel"}` : "Not needed");
+  const accomText = () => {
+    if (!accom) return "Not needed";
+    // Airbnb/Villa with a partner home chosen: record WHICH home, so the
+    // concierge sees it on the order and in the quote messages.
+    if (accomTier === "airbnb" && tutHome) return `Yes — Airbnb / Villa — ${tutHome.title} (TutCasa)`;
+    return `Yes — ${accomTierName() || "hotel"}`;
+  };
 
   // "T00:00:00" forces local-time parsing — bare "YYYY-MM-DD" parses as UTC and
   // shows the previous day in timezones behind UTC (bug carried over from the embed)
@@ -465,6 +474,7 @@ export default function PackagesClient({
         checkout: fmtDate(checkout),
         accommodation: accomText(),
         accom_type: accom ? accomTier : "",
+        tutcasa_home: accom && accomTier === "airbnb" && tutHome ? tutHome.slug : "",
         addon_ids: cartAddonIdList.join(",") || "None",
         addons: cartAddons.join(", ") || "None",
         addons_human: humanAddons.join(", ") || "None",
@@ -532,7 +542,7 @@ export default function PackagesClient({
       email: `mailto:${EMAIL}?subject=${emailSubject}&body=${emailBody}`,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modal, modalComment, selectedAddons, recommendedActive, checkin, checkout, adults, kids, kidsAges, accom, accomTier, nights, byoSubmitted]);
+  }, [modal, modalComment, selectedAddons, recommendedActive, checkin, checkout, adults, kids, kidsAges, accom, accomTier, tutHome, nights, byoSubmitted]);
 
   const submitByo = () => {
     if (nights === null || nights < MIN_NIGHTS_BYO) {
@@ -1040,6 +1050,18 @@ export default function PackagesClient({
         <span className="accom-options-label">{dict.pkgc_preferred_stay}</span>
         {accomPills}
       </div>
+
+      {/* TUTCASA PARTNER HOMES — expands inline for the Airbnb/Villa tier;
+          the guest never leaves this page (booking opens TutCasa in a new tab) */}
+      {accom && accomTier === "airbnb" && (
+        <TutcasaHomes
+          checkin={checkin}
+          checkout={checkout}
+          guests={adults + kids}
+          chosen={tutHome}
+          onChoose={setTutHome}
+        />
+      )}
 
       {/* PACKAGES GRID */}
       <div className="packages-wrap">
