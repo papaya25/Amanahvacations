@@ -8,7 +8,7 @@
 
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validatePromo } from "@/lib/content/promo-actions";
+import { applyPromo } from "@/lib/content/promo-actions";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { createPayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { createMercadoPagoPreference, mercadoPagoConfigured } from "@/lib/mercadopago";
@@ -86,20 +86,22 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     );
 
     // Server-side totals: subtotal from (verified) line totals, discount
-    // recomputed from the promo table (never trusted from the client).
+    // recomputed from the promo table against those verified totals — the
+    // promo's conditions (min spend / min people / categories) are re-checked
+    // here too, so neither the amount nor the eligibility comes from the client.
     const subtotal = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
     let discount = 0;
     let discountLabel: string | undefined;
     let promoCode: string | undefined;
     if (input.promoCode?.trim()) {
-      const def = await validatePromo(input.promoCode);
-      if (def) {
-        discount =
-          def.type === "pct"
-            ? Math.round((subtotal * def.value) / 100)
-            : Math.min(def.value, subtotal);
-        discountLabel = def.label;
-        promoCode = input.promoCode.trim().toUpperCase();
+      const res = await applyPromo(
+        input.promoCode,
+        items.map((it) => ({ kind: it.kind, total: Number(it.total) || 0, people: it.people }))
+      );
+      if (res.ok) {
+        discount = res.amount;
+        discountLabel = res.label;
+        promoCode = res.code;
       }
     }
     const total = Math.max(0, subtotal - discount);

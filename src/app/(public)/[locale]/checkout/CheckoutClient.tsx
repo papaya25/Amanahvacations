@@ -11,7 +11,7 @@ import { placeOrder as placeOrderAction } from "./actions";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 
-import { validatePromo } from "@/lib/content/promo-actions";
+import { applyPromo as applyPromoAction } from "@/lib/content/promo-actions";
 
 /* Payment identity is fixed in English: `id` drives server routing and `name`
    is the human-readable label stored with the order (kept English so the admin
@@ -68,6 +68,16 @@ export default function CheckoutClient({
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
 
+  // The airport-transfer add-on only makes sense for standalone tours/activities.
+  // Packages already bundle private transfers, so we never re-offer it when a
+  // package (or an existing transfer line) is in the cart. See placeOrder below,
+  // which honours the same rule so a stale checkbox can't slip through.
+  const cartHasPackage = items.some((i) => i.kind === "package");
+  const cartHasTransfer = items.some(
+    (i) => i.meta?.type === "transfer" || /airport\s*transfer/i.test(i.title)
+  );
+  const showTransferOffer = transferEnabled && !cartHasPackage && !cartHasTransfer;
+
   const discount = promo?.amount ?? 0;
   const total = Math.max(0, subtotal - discount);
   const emailValid = /.+@.+\..+/.test(email);
@@ -93,23 +103,36 @@ export default function CheckoutClient({
     setPromoError("");
     if (!code || checkingPromo) return;
     setCheckingPromo(true);
-    const def = await validatePromo(code); // validated on the server
+    // The server validates the code AND its conditions (min spend, min group
+    // size, eligible categories) against the cart, and computes the discount
+    // over the eligible items only. placeOrder re-runs the same check against
+    // server-verified prices, so this result is display — not authority.
+    const res = await applyPromoAction(
+      code,
+      items.map((i) => ({ kind: i.kind, total: i.total, people: i.people }))
+    );
     setCheckingPromo(false);
-    if (!def) {
+    if (!res.ok) {
       setPromo(null);
-      setPromoError(dict.co_promo_invalid);
+      setPromoError(
+        res.reason === "min_spend"
+          ? `${dict.co_promo_min_spend} ${format(res.minSpend ?? 0)} ${dict.co_promo_min_spend_post}`
+          : res.reason === "min_people"
+            ? `${dict.co_promo_min_people} ${res.minPeople ?? 0} ${dict.co_promo_min_people_post}`
+            : res.reason === "no_eligible"
+              ? dict.co_promo_not_applicable
+              : dict.co_promo_invalid
+      );
       return;
     }
-    const amount =
-      def.type === "pct" ? Math.round((subtotal * def.value) / 100) : Math.min(def.value, subtotal);
-    setPromo({ code, label: def.label, amount });
+    setPromo({ code: res.code, label: res.label, amount: res.amount });
   };
 
   const placeOrder = async () => {
     if (!canPlace || placing) return;
     setPlacing(true);
     setPlaceError(null);
-    const orderItems = transfer
+    const orderItems = transfer && showTransferOffer
       ? [
           ...items,
           {
@@ -239,8 +262,10 @@ export default function CheckoutClient({
           </div>
         </section>
 
-        {/* Airport transfer add-on (admin can disable in /admin/transfers) */}
-        {transferEnabled && (
+        {/* Airport transfer add-on — only for standalone tours/activities;
+            packages already include private transfers (admin can also disable
+            it in /admin/transfers). */}
+        {showTransferOffer && (
         <section className="rounded-[20px] border border-sand bg-white p-[clamp(20px,2.5vw,32px)]">
           <label className="flex cursor-pointer items-start gap-3">
             <input
