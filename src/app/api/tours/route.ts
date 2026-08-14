@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSavedTours } from "@/lib/content/tours";
+import { getSavedAddons } from "@/lib/content/addons";
 import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
+import { ACTIVITIES } from "@/app/(public)/[locale]/packages/data";
 
 export const dynamic = "force-dynamic";
 
@@ -66,8 +68,35 @@ export async function GET(req: Request) {
         stops: (t.stops ?? []).map(([time, place, desc]) => ({ time, place, desc })),
       }));
 
+  // Activities & park tickets ("Add Experiences" catalog): the admin-saved
+  // list wins (emoji/tiers carried over from the built-in by id); price null
+  // or a not-directly-bookable entry = on request.
+  const savedAddons = await getSavedAddons();
+  const addons = savedAddons
+    ? savedAddons.map((a) => {
+        const base = ACTIVITIES.find((b) => b.id === a.id);
+        return {
+          id: a.id,
+          name: a.name,
+          emoji: base?.emoji ?? "🎟️",
+          priceMXN: a.onRequest ? null : (a.offer && a.offer < a.price ? a.offer : a.price) || null,
+          unit: a.unit || "/person",
+          groupPrices: base?.groupPrices ?? null,
+          onRequest: a.onRequest || !a.price,
+        };
+      })
+    : ACTIVITIES.map((a) => ({
+        id: a.id,
+        name: a.name,
+        emoji: a.emoji,
+        priceMXN: a.price,
+        unit: a.unit || "/person",
+        groupPrices: a.groupPrices ?? null,
+        onRequest: a.price == null || !a.inCart,
+      }));
+
   return NextResponse.json(
-    { tours, count: tours.length, currency: "MXN", pricingModel: "group-total" },
+    { tours, addons, count: tours.length, currency: "MXN", pricingModel: "group-total" },
     {
       headers: {
         "Access-Control-Allow-Origin": "*",

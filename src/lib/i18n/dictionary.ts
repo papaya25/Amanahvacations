@@ -11,7 +11,7 @@ export const EN_DICT = {
   nav_home: "Home",
   nav_activities: "Activities",
   nav_packages: "Packages",
-  nav_tours: "Tours",
+  nav_tours: "Tours & Parks",
   nav_vip: "VIP",
   nav_about: "About",
   nav_contact: "Contact",
@@ -236,6 +236,14 @@ export const EN_DICT = {
   pkgc_yes_include: "Yes, include it",
   pkgc_no_thanks: "No thanks",
   pkgc_preferred_stay: "Preferred stay:",
+
+  /* Tours & Parks — shared tabs + parks page */
+  tp_tab_tours: "Private Tours",
+  tp_tab_parks: "Parks",
+  parks_title: "Parks & Experiences",
+  parks_intro: "The Riviera Maya's world-famous parks — booked with your ticket and private round-trip transportation from your hotel or villa, all arranged by us.",
+  parks_included: "Park ticket + private round-trip transportation included",
+  parks_ticket_badge: "Ticket + Transport",
 
   /* Packages — TutCasa partner homes (Airbnb / Villa tier) */
   tc_partner_line: "Private homes & villas by our partner TutCasa — all-in prices, no hidden fees.",
