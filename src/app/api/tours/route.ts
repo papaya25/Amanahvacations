@@ -3,6 +3,7 @@ import { getSavedTours } from "@/lib/content/tours";
 import { getSavedAddons } from "@/lib/content/addons";
 import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
 import { ACTIVITIES } from "@/app/(public)/[locale]/packages/data";
+import { PARKS } from "@/app/(public)/[locale]/parks/data";
 
 export const dynamic = "force-dynamic";
 
@@ -95,8 +96,26 @@ export async function GET(req: Request) {
         onRequest: a.price == null || !a.inCart,
       }));
 
+  // Parks catalogue — id-matched to the add-on list; the admin's saved
+  // add-on price by id is live, the rate-card price is the fallback.
+  const parks = PARKS.map((p) => {
+    const live = savedAddons?.find((a) => a.id === p.id);
+    const price = live
+      ? (live.offer && live.offer < live.price ? live.offer : live.price) || p.price
+      : p.price;
+    return {
+      id: p.id,
+      name: p.name,
+      sub: p.sub,
+      dur: p.dur,
+      priceMXN: price,
+      img: absolute(req, p.img),
+      desc: p.desc,
+    };
+  });
+
   return NextResponse.json(
-    { tours, addons, count: tours.length, currency: "MXN", pricingModel: "group-total" },
+    { tours, addons, parks, count: tours.length, currency: "MXN", pricingModel: "group-total" },
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
