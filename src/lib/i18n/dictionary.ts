@@ -262,8 +262,9 @@ export const EN_DICT = {
   tc_added: "Added to your package",
   tc_view_cart: "View cart",
   tc_pay_note: "Your stay is paid together with your package — the reservation is locked with our partner TutCasa the moment you pay.",
-  tc_request_note: "This home is booked on request — the owner approves each stay. Send your request on our partner TutCasa (opens in a new tab) and we'll take it from there.",
-  tc_request_btn: "Request this home",
+  tc_request_note: "This home is booked on request — nothing is charged now. The owner has 72 hours to approve; once confirmed, we'll email you a secure payment link for the stay.",
+  tc_request_btn: "Request this home — no charge yet",
+  tc_request_line: "owner approval pending — charged only after confirmation",
 
   /* Side cart (packages page) */
   sc_title: "Your trip",

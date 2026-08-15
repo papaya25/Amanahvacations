@@ -172,3 +172,59 @@ export async function confirmTutcasaHold(
 export async function releaseTutcasaHold(holdId: string): Promise<void> {
   await partnerPost(`/api/partner/holds/${encodeURIComponent(holdId)}/release`);
 }
+
+/* ── Request-to-book (owner-approved homes, no payment upfront) ────────── */
+
+export type TutcasaRequest =
+  | {
+      ok: true;
+      requestId: string;
+      status: string;
+      expiresAt: string;
+      quote: { nights: number; currency: string; total: number };
+    }
+  | { ok: false; error: string };
+
+/** Create a pending 72h booking request (holds the dates while the owner
+    decides in TutCasa's admin). Nothing is charged at this point. */
+export async function createTutcasaRequest(payload: {
+  slug: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  partnerRef: string;
+  guestName: string;
+  guestEmail: string;
+  guestWhatsapp?: string;
+  notes?: string;
+}): Promise<TutcasaRequest> {
+  const data = await partnerPost("/api/partner/requests", {
+    ...payload,
+    guests: Math.max(1, payload.guests),
+  });
+  if (data?.ok && typeof data.requestId === "string") return data as unknown as TutcasaRequest;
+  return { ok: false, error: typeof data?.error === "string" ? data.error : "UNAVAILABLE" };
+}
+
+export type TutcasaBookingStatus = {
+  ok: boolean;
+  bookingId?: string;
+  status?: "pending" | "confirmed" | "cancelled" | "completed";
+  total?: number;
+  currency?: string;
+  amountPaid?: number;
+};
+
+/** Poll a hold/request/booking's current state. */
+export async function getTutcasaBookingStatus(id: string): Promise<TutcasaBookingStatus | null> {
+  try {
+    const res = await fetch(`${BASE}/api/partner/bookings/${encodeURIComponent(id)}`, {
+      cache: "no-store",
+      headers: { "x-partner-key": PARTNER_KEY },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as TutcasaBookingStatus;
+  } catch {
+    return null;
+  }
+}

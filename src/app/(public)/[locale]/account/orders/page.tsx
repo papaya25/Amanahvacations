@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { syncStayRequests } from "@/lib/tutcasaBooking";
 import OrdersList, { type AccountOrder } from "./OrdersList";
 import type { CartItem } from "@/lib/cart";
 
@@ -20,6 +21,8 @@ export default async function OrdersPage() {
   const user = await getSessionUser();
   let orders: AccountOrder[] = [];
   if (user) {
+    // Refresh any pending owner-approval stays before showing the list.
+    await syncStayRequests().catch(() => {});
     const supabase = createAdminClient();
     // The user's own orders, plus guest orders placed with the same email.
     const { data } = await supabase

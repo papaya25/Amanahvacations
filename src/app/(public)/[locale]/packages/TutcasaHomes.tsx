@@ -64,13 +64,6 @@ export default function TutcasaHomes({
   // Slide-in cart: review the trip without ever leaving this page.
   const [sideOpen, setSideOpen] = useState(false);
 
-  // Owner-approved homes can't be sold instantly (TutCasa partner API refuses
-  // holds for them) — the guest sends a request on TutCasa instead.
-  const requestHref = (h: TutcasaListing) =>
-    hasDates
-      ? `${h.bookUrl}?${new URLSearchParams({ ci: checkin, co: checkout, guests: String(Math.max(1, guests)) })}`
-      : h.bookUrl;
-
   const hasDates = Boolean(checkin && checkout);
 
   // A stay for this home + these exact dates already sits in the cart.
@@ -128,11 +121,17 @@ export default function TutcasaHomes({
     return !(q && q !== "loading" && !q.ok);
   });
 
+  /* Instant homes join the cart at full price (paid with the package).
+     Request-to-book homes join at ZERO — nothing is charged until the owner
+     approves; checkout submits the request to TutCasa and we email a payment
+     link after confirmation. */
   const addStay = (h: TutcasaListing, q: Extract<TutcasaQuote, { ok: true }>) => {
     const details = [
       `${fmtDate(checkin)} → ${fmtDate(checkout)}`,
       `${q.nights} ${dict.tc_quote_nights} · ${Math.max(1, guests)} ${dict.tc_guests}`,
-      h.instantBook ? "TutCasa · instant booking" : "TutCasa · owner confirmation pending",
+      h.instantBook
+        ? "TutCasa · instant booking"
+        : `TutCasa · ${fmtUsd(q.total)} — ${dict.tc_request_line}`,
     ];
     add({
       kind: "stay",
@@ -140,7 +139,7 @@ export default function TutcasaHomes({
       subtitle: `${h.city} · ${h.propertyType}`,
       image: h.photos[0]?.url,
       details,
-      total: Math.round(q.total * rateUSD),
+      total: h.instantBook ? Math.round(q.total * rateUSD) : 0,
       people: Math.max(1, guests),
       meta: {
         stay_slug: h.slug,
@@ -211,31 +210,22 @@ export default function TutcasaHomes({
                       )}
                     </div>
                     {/* Primary shortcut: book straight from the card.
-                        Owner-approved homes route to a TutCasa request instead
-                        (the partner API refuses instant holds for them). */}
+                        Request-to-book homes add with NO charge (owner approves
+                        first; payment link follows) — everything stays here. */}
                     {added ? (
                       <button className="tc-add-btn added" onClick={() => setSideOpen(true)}>
                         ✓ {dict.tc_added} — {dict.tc_view_cart}
                       </button>
-                    ) : !h.instantBook ? (
-                      <a
-                        className="tc-add-btn request"
-                        href={requestHref(h)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {dict.tc_request_btn} ↗
-                      </a>
                     ) : (
                       <button
-                        className="tc-add-btn"
+                        className={`tc-add-btn${h.instantBook ? "" : " request"}`}
                         disabled={!canAdd}
                         title={!canAdd ? dict.tc_pick_dates : undefined}
                         onClick={() => {
                           if (q) addStay(h, q);
                         }}
                       >
-                        {dict.tc_add}
+                        {h.instantBook ? dict.tc_add : dict.tc_request_btn}
                       </button>
                     )}
                     <button className="tc-view-btn" onClick={() => setOpen(isOpen ? null : h.slug)}>
@@ -315,15 +305,6 @@ export default function TutcasaHomes({
                       {dict.tc_view_cart}
                     </button>
                   </>
-                ) : !openHome.instantBook ? (
-                  <a
-                    className="tc-book-btn tc-book-cta"
-                    href={requestHref(openHome)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {dict.tc_request_btn} ↗
-                  </a>
                 ) : (
                   <button
                     className="tc-book-btn tc-book-cta"
@@ -334,7 +315,7 @@ export default function TutcasaHomes({
                       if (q) addStay(openHome, q);
                     }}
                   >
-                    {dict.tc_add}
+                    {openHome.instantBook ? dict.tc_add : dict.tc_request_btn}
                   </button>
                 )}
               </div>

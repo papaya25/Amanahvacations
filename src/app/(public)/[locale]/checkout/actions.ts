@@ -17,8 +17,8 @@ import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { getTourLineTotal } from "@/lib/content/tours";
 import { getActivityLineTotal, getPackageLineTotal } from "@/lib/content/packages";
 import { getPublicContent } from "@/lib/content/site";
-import { createTutcasaHold, releaseTutcasaHold } from "@/lib/tutcasa";
-import { releaseTutcasaStays } from "@/lib/tutcasaBooking";
+import { createTutcasaHold, createTutcasaRequest, releaseTutcasaHold } from "@/lib/tutcasa";
+import { notifyStayRequests, releaseTutcasaStays } from "@/lib/tutcasaBooking";
 import type { CartItem } from "@/lib/cart";
 
 export type PlaceOrderInput = {
@@ -73,13 +73,27 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           "Accommodation is part of a vacation package — please add a package to your order along with your stay.",
       };
     }
-    const candidateId = newOrderId(); // partnerRef for holds + first insert attempt
+    const candidateId = newOrderId(); // partnerRef for holds/requests + first insert attempt
+    // Instant-book stays get a paid HOLD; request-to-book stays get a free
+    // 72h REQUEST (owner approves first — we email a payment link after).
     const holdByLine: Record<string, { holdId: string; usd: number }> = {};
+    const requestByLine: Record<string, { requestId: string; usd: number; expiresAt: string }> = {};
     const releaseHeld = () =>
-      Promise.all(Object.values(holdByLine).map((h) => releaseTutcasaHold(h.holdId))).then(
+      Promise.all(
+        [
+          ...Object.values(holdByLine).map((h) => h.holdId),
+          ...Object.values(requestByLine).map((r) => r.requestId),
+        ].map((id) => releaseTutcasaHold(id))
+      ).then(
         () => {},
         () => {}
       );
+    const stayFailure = (title: string, code: string) =>
+      code === "DATES_TAKEN"
+        ? `"${title}" was just booked for those dates. Please choose different dates or another home.`
+        : code === "MIN_STAY_NOT_MET" || code === "INVALID_DATES" || code === "MAX_GUESTS_EXCEEDED" || code === "INVALID_CONTACT"
+          ? `The details for "${title}" no longer fit this home — please re-select your stay.`
+          : "We couldn't reach our accommodation partner. Please try again in a moment.";
     let rateUSD = 16.5;
     if (stayInputs.length) {
       const cur = await getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 16.5, rateEUR: 19.5 });
@@ -93,20 +107,44 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           return { ok: false, error: "Your accommodation selection is incomplete — please re-add the stay." };
         }
         const guests = Math.max(1, Number(it.meta?.guests) || it.people || 1);
-        const hold = await createTutcasaHold(slug, ci, co, guests, candidateId);
-        if (!hold.ok) {
-          await releaseHeld();
-          const msg =
-            hold.error === "DATES_TAKEN"
-              ? `"${it.title}" was just booked for those dates. Please choose different dates or another home.`
-              : hold.error === "REQUEST_TO_BOOK"
-                ? `"${it.title}" needs the owner's approval and can't be booked instantly — please remove it and send a request from the home's card instead.`
-                : hold.error === "MIN_STAY_NOT_MET" || hold.error === "INVALID_DATES" || hold.error === "MAX_GUESTS_EXCEEDED"
-                  ? `The dates or group size for "${it.title}" no longer fit this home — please re-select your stay.`
-                  : "We couldn't reach our accommodation partner. Please try again in a moment.";
-          return { ok: false, error: msg };
+
+        const submitRequest = async (): Promise<string | null> => {
+          const req = await createTutcasaRequest({
+            slug,
+            checkIn: ci,
+            checkOut: co,
+            guests,
+            partnerRef: candidateId,
+            guestName: input.name.trim(),
+            guestEmail: input.email.trim(),
+            guestWhatsapp: input.whatsapp?.trim() || undefined,
+            notes: input.notes?.trim() || undefined,
+          });
+          if (!req.ok) {
+            await releaseHeld();
+            return stayFailure(it.title, req.error);
+          }
+          requestByLine[it.id] = { requestId: req.requestId, usd: req.quote.total, expiresAt: req.expiresAt };
+          return null;
+        };
+
+        if (it.meta?.instant === "0") {
+          const err = await submitRequest();
+          if (err) return { ok: false, error: err };
+        } else {
+          const hold = await createTutcasaHold(slug, ci, co, guests, candidateId);
+          if (hold.ok) {
+            holdByLine[it.id] = { holdId: hold.holdId, usd: hold.quote.total };
+          } else if (hold.error === "REQUEST_TO_BOOK") {
+            // Defense in depth: the home switched to owner-approval since the
+            // page loaded — fall back to the request flow instead of erroring.
+            const err = await submitRequest();
+            if (err) return { ok: false, error: err };
+          } else {
+            await releaseHeld();
+            return { ok: false, error: stayFailure(it.title, hold.error) };
+          }
         }
-        holdByLine[it.id] = { holdId: hold.holdId, usd: hold.quote.total };
       }
     }
 
@@ -143,7 +181,23 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
             return {
               ...it,
               total: Math.round(held.usd * rateUSD),
-              meta: { ...it.meta, tutcasa_hold_id: held.holdId, usd_total: String(held.usd) },
+              meta: { ...it.meta, tutcasa_hold_id: held.holdId, usd_total: String(held.usd), instant: "1" },
+            };
+          const requested = requestByLine[it.id];
+          if (requested)
+            // Request-to-book: NOTHING charged now — payment link goes out
+            // once the owner confirms (72h window).
+            return {
+              ...it,
+              total: 0,
+              meta: {
+                ...it.meta,
+                tutcasa_request_id: requested.requestId,
+                request_expires: requested.expiresAt,
+                usd_total: String(requested.usd),
+                stay_status: "requested",
+                instant: "0",
+              },
             };
         }
         return it;
@@ -181,9 +235,10 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         (input.paymentMethodId === "paypal" && paypalConfigured) ||
         (input.paymentMethodId === "mercadopago" && mercadoPagoConfigured));
 
-    // A stay must be paid online NOW — the hold only lives 60 minutes, so a
-    // "team will confirm later" order would lose the dates.
-    if (stayInputs.length && !onlinePayment) {
+    // An INSTANT stay must be paid online NOW — the hold only lives 60
+    // minutes, so a "team will confirm later" order would lose the dates.
+    // (Request stays charge nothing today, so they don't need this.)
+    if (Object.keys(holdByLine).length && !onlinePayment) {
       await releaseHeld();
       return {
         ok: false,
@@ -221,6 +276,15 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       }
     }
     if (!orderId) return { ok: false, error: "We couldn't save your booking. Please try again." };
+
+    // Request-to-book stays: tell guest/Amanah/TutCasa a request is pending
+    // (nothing charged for it — payment link follows owner approval).
+    if (Object.keys(requestByLine).length) {
+      await notifyStayRequests(
+        { id: orderId, customer_name: input.name.trim(), customer_email: input.email.trim() },
+        items
+      ).catch(() => {});
+    }
 
     // Notify customer + Amanah (best-effort; never blocks the booking).
     await notifyNewOrder({

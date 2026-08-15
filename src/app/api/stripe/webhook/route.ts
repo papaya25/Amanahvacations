@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { notifyOrderPaid } from "@/lib/orderEmails";
 import { PAID_STATUS } from "@/lib/payments";
-import { confirmTutcasaStays } from "@/lib/tutcasaBooking";
+import { confirmTutcasaStays, handleStayBalancePaid } from "@/lib/tutcasaBooking";
 
 /* Stripe webhook: marks an order paid even if the customer never returns to
    the thank-you page (closed tab, lost connection). Safe to run alongside the
@@ -35,6 +35,14 @@ export async function POST(request: NextRequest) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const orderId = session.metadata?.order_id;
+    // A stay payment link (owner-approved request) — NOT the main order
+    // payment: never touch the order status, just finalize the stay.
+    if (session.metadata?.purpose === "stay_balance") {
+      if (orderId && session.metadata.request_id && session.payment_status === "paid") {
+        await handleStayBalancePaid(orderId, session.metadata.request_id).catch(() => {});
+      }
+      return NextResponse.json({ received: true });
+    }
     if (orderId && session.payment_status === "paid") {
       const supabase = createAdminClient();
       const { data } = await supabase

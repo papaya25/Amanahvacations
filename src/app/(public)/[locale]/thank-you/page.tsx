@@ -7,7 +7,7 @@ import { capturePayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { mercadoPagoConfigured, verifyMercadoPagoPayment } from "@/lib/mercadopago";
 import { notifyOrderPaid } from "@/lib/orderEmails";
 import { PAID_STATUS } from "@/lib/payments";
-import { confirmTutcasaStays } from "@/lib/tutcasaBooking";
+import { confirmTutcasaStays, handleStayBalancePaid, syncStayRequests } from "@/lib/tutcasaBooking";
 
 export const metadata: Metadata = {
   title: "Thank You",
@@ -45,6 +45,14 @@ async function verifyStripe(orderId: string, sessionId: string): Promise<boolean
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status !== "paid") return false;
     if (session.metadata?.order_id !== orderId) return false;
+    // A stay payment link (owner-approved request): finalize only the stay —
+    // the order itself was settled earlier.
+    if (session.metadata?.purpose === "stay_balance") {
+      if (session.metadata.request_id) {
+        await handleStayBalancePaid(orderId, session.metadata.request_id).catch(() => {});
+      }
+      return true;
+    }
     await markPaid(orderId);
     return true;
   } catch (e) {
@@ -96,6 +104,8 @@ export default async function ThankYouPage({
   if (id && session_id) paid = await verifyStripe(id, session_id);
   else if (id && pp === "1" && token) paid = await verifyPayPal(id, token);
   else if (id && mp === "1" && payment_id) paid = await verifyMercadoPago(id, payment_id);
+  // Opportunistic check of any pending owner-approval stay on this order.
+  if (id) await syncStayRequests(id).catch(() => {});
   return (
     <Suspense>
       <ThankYouClient paid={paid} paidStatus={PAID_STATUS} />
