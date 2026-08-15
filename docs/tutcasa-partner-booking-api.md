@@ -75,14 +75,36 @@ by another live hold), or `422` with `"MIN_STAY_NOT_MET" | "INVALID_DATES" |
 "MAX_GUESTS_EXCEEDED"`, or `404 "NOT_FOUND"`.
 
 **Request-to-book homes (added after v1):** homes with `instantBook: false`
-in the catalog need the owner's approval before any money moves — they can
-NEVER be sold instantly through the partner flow. A hold attempt returns
-`403 {"ok":false,"error":"REQUEST_TO_BOOK","requestUrl":"/stays/<slug>"}`.
-Amanah's UI should gate these up front using the catalog's `instantBook`
-flag (never show its own checkout for them) and send the guest to
-`<base><requestUrl>` to request the stay on TutCasa; the 403 is defense in
-depth for stale UIs. The owner-approval-with-delayed-capture variant for
-partner bookings is a possible later addition.
+need the owner's approval before any money moves — they can NEVER be sold
+through the instant hold→confirm flow (a hold attempt returns
+`403 {"ok":false,"error":"REQUEST_TO_BOOK","requestUrl":"/stays/<slug>"}`).
+Instead, use the request flow below — the guest books on Amanah WITHOUT
+paying, and Amanah collects payment only after the owner approves.
+
+## 1b. `POST /api/partner/requests` — request-to-book (no payment yet)
+
+Body: same fields as a hold PLUS the guest up front —
+`{slug, checkIn, checkOut, guests, partnerRef, guestName, guestEmail,
+guestWhatsapp?, notes?}`.
+
+Creates a **pending request that holds the dates for 72 hours** while the
+owner decides in TutCasa's admin (Confirm = approved, Cancel = declined;
+no decision in 72h = expires and the dates free up).
+
+`201 {"ok":true,"requestId":"…","status":"pending","expiresAt":"…",
+"quote":{"nights":5,"currency":"USD","total":2134}}` — same failure codes
+as holds, plus `422 INVALID_CONTACT`. Works for instant-book homes too.
+
+## 1c. `GET /api/partner/bookings/{id}` — poll any hold/request/booking
+
+`200 {"ok":true,"bookingId":"…","status":"pending|confirmed|cancelled|completed",
+"partnerRef":"…","total":2134,"currency":"USD","amountPaid":0,"expiresAt":…}`.
+
+Amanah's flow for requests: poll (or check on a schedule) → `confirmed`
+means the owner approved → collect the full `total` from the guest and
+record it (a payment-marking endpoint can be added when needed; until
+then Maher reconciles amountPaid manually) → `cancelled` means declined
+or expired → tell the guest. Amanah owns all guest emails in this flow.
 
 While a hold is live, the public `/api/accommodation/{slug}` endpoint must
 report those dates inside `unavailable` (so both websites show them blocked).
