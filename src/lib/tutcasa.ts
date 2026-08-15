@@ -100,3 +100,75 @@ export function withBookingParams(bookUrl: string, ci?: string, co?: string, gue
   const params = new URLSearchParams({ ci, co, guests: String(Math.max(1, guests ?? 1)) });
   return `${bookUrl}?${params}`;
 }
+
+/* ── Partner booking API (hold → confirm → release) ──────────────────────
+   Server-to-server only, authenticated with the shared TUTCASA_PARTNER_KEY.
+   TutCasa is the calendar source of truth: a hold locks the dates for 60
+   minutes while the guest pays on Amanah; confirm turns it into a real,
+   paid-in-full TutCasa booking; release (or expiry) frees the dates. */
+
+const PARTNER_KEY = process.env.TUTCASA_PARTNER_KEY || "";
+
+export type TutcasaHold =
+  | {
+      ok: true;
+      holdId: string;
+      expiresAt: string;
+      quote: { nights: number; currency: string; total: number };
+    }
+  | { ok: false; error: string };
+
+async function partnerPost(path: string, body?: unknown): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "content-type": "application/json", "x-partner-key": PARTNER_KEY },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    return (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createTutcasaHold(
+  slug: string,
+  checkIn: string,
+  checkOut: string,
+  guests: number,
+  partnerRef: string
+): Promise<TutcasaHold> {
+  const data = await partnerPost("/api/partner/holds", {
+    slug,
+    checkIn,
+    checkOut,
+    guests: Math.max(1, guests),
+    partnerRef,
+  });
+  if (data?.ok && typeof data.holdId === "string") return data as unknown as TutcasaHold;
+  const error = typeof data?.error === "string" ? data.error : "UNAVAILABLE";
+  return { ok: false, error };
+}
+
+export async function confirmTutcasaHold(
+  holdId: string,
+  payload: {
+    partnerRef: string;
+    guestName: string;
+    guestEmail: string;
+    guestWhatsapp?: string;
+    amountPaid: number;
+    currency: string;
+    notes?: string;
+  }
+): Promise<{ ok: boolean; bookingId?: string; error?: string }> {
+  const data = await partnerPost(`/api/partner/holds/${encodeURIComponent(holdId)}/confirm`, payload);
+  if (data?.ok) return { ok: true, bookingId: typeof data.bookingId === "string" ? data.bookingId : undefined };
+  return { ok: false, error: typeof data?.error === "string" ? data.error : "CONFIRM_FAILED" };
+}
+
+/** Best-effort and idempotent on the TutCasa side — safe to call repeatedly. */
+export async function releaseTutcasaHold(holdId: string): Promise<void> {
+  await partnerPost(`/api/partner/holds/${encodeURIComponent(holdId)}/release`);
+}

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { notifyOrderPaid } from "@/lib/orderEmails";
 import { PAID_STATUS } from "@/lib/payments";
+import { confirmTutcasaStays } from "@/lib/tutcasaBooking";
 
 /* Stripe webhook: marks an order paid even if the customer never returns to
    the thank-you page (closed tab, lost connection). Safe to run alongside the
@@ -42,7 +43,12 @@ export async function POST(request: NextRequest) {
         .eq("id", orderId)
         .in("status", ["Pending payment", "Pending confirmation"])
         .select("id");
-      if (data?.length) await notifyOrderPaid(orderId).catch(() => {});
+      if (data?.length) {
+        // Payment is in: turn any TutCasa holds into confirmed bookings
+        // BEFORE anything else — the hold has a 60-minute lifetime.
+        await confirmTutcasaStays(orderId).catch(() => {});
+        await notifyOrderPaid(orderId).catch(() => {});
+      }
     }
   }
 

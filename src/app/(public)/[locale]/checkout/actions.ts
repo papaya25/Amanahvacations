@@ -16,6 +16,9 @@ import { notifyNewOrder } from "@/lib/orderEmails";
 import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { getTourLineTotal } from "@/lib/content/tours";
 import { getActivityLineTotal, getPackageLineTotal } from "@/lib/content/packages";
+import { getPublicContent } from "@/lib/content/site";
+import { createTutcasaHold, releaseTutcasaHold } from "@/lib/tutcasa";
+import { releaseTutcasaStays } from "@/lib/tutcasaBooking";
 import type { CartItem } from "@/lib/cart";
 
 export type PlaceOrderInput = {
@@ -54,12 +57,54 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     if (!input.consent)
       return { ok: false, error: "Please accept the terms to place your booking." };
 
+    // TutCasa partner stays: lock the dates on TutCasa BEFORE any money moves.
+    // The hold both prevents cross-bookings (TutCasa's calendar is the single
+    // source of truth) and returns the authoritative USD total we charge —
+    // converted to MXN at the admin-configured rate. If a home was grabbed in
+    // the meantime, the guest finds out HERE, before paying.
+    const stayInputs = input.items.filter((it) => it.kind === "stay");
+    const candidateId = newOrderId(); // partnerRef for holds + first insert attempt
+    const holdByLine: Record<string, { holdId: string; usd: number }> = {};
+    const releaseHeld = () =>
+      Promise.all(Object.values(holdByLine).map((h) => releaseTutcasaHold(h.holdId))).then(
+        () => {},
+        () => {}
+      );
+    let rateUSD = 16.5;
+    if (stayInputs.length) {
+      const cur = await getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 16.5, rateEUR: 19.5 });
+      if (cur.rateUSD > 0) rateUSD = cur.rateUSD;
+      for (const it of stayInputs) {
+        const slug = it.meta?.stay_slug;
+        const ci = it.meta?.ci;
+        const co = it.meta?.co;
+        if (!slug || !ci || !co) {
+          await releaseHeld();
+          return { ok: false, error: "Your accommodation selection is incomplete — please re-add the stay." };
+        }
+        const guests = Math.max(1, Number(it.meta?.guests) || it.people || 1);
+        const hold = await createTutcasaHold(slug, ci, co, guests, candidateId);
+        if (!hold.ok) {
+          await releaseHeld();
+          const msg =
+            hold.error === "DATES_TAKEN"
+              ? `"${it.title}" was just booked for those dates. Please choose different dates or another home.`
+              : hold.error === "MIN_STAY_NOT_MET" || hold.error === "INVALID_DATES" || hold.error === "MAX_GUESTS_EXCEEDED"
+                ? `The dates or group size for "${it.title}" no longer fit this home — please re-select your stay.`
+                : "We couldn't reach our accommodation partner. Please try again in a moment.";
+          return { ok: false, error: msg };
+        }
+        holdByLine[it.id] = { holdId: hold.holdId, usd: hold.quote.total };
+      }
+    }
+
     // Server-side pricing: every line total is recomputed from OUR authoritative
     // prices, so the browser can never state the amount we charge. Tours use the
     // tour price list; packages are re-derived from the packages table + add-on
-    // catalogue with the exact configurator math. Airport-transfer lines stay 0
-    // (confirmed and charged by the team). Anything we can't price on the server
-    // keeps the client value (harmless — those are "on request", not charged now).
+    // catalogue with the exact configurator math. Stays take the USD total from
+    // the TutCasa hold just created. Airport-transfer lines stay 0 (confirmed
+    // and charged by the team). Anything we can't price on the server keeps the
+    // client value (harmless — those are "on request", not charged now).
     const items = await Promise.all(
       input.items.map(async (it) => {
         const people = Math.max(1, it.people || 1);
@@ -80,6 +125,14 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           // re-priced from the catalogue the same way.
           const serverTotal = await getActivityLineTotal(it.meta.activity_id, people);
           if (serverTotal !== null) return { ...it, total: serverTotal };
+        } else if (it.kind === "stay") {
+          const held = holdByLine[it.id];
+          if (held)
+            return {
+              ...it,
+              total: Math.round(held.usd * rateUSD),
+              meta: { ...it.meta, tutcasa_hold_id: held.holdId, usd_total: String(held.usd) },
+            };
         }
         return it;
       })
@@ -116,10 +169,21 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         (input.paymentMethodId === "paypal" && paypalConfigured) ||
         (input.paymentMethodId === "mercadopago" && mercadoPagoConfigured));
 
-    // Insert with a fresh id; regenerate on the (rare) id collision.
+    // A stay must be paid online NOW — the hold only lives 60 minutes, so a
+    // "team will confirm later" order would lose the dates.
+    if (stayInputs.length && !onlinePayment) {
+      await releaseHeld();
+      return {
+        ok: false,
+        error: "Accommodation must be paid online — please choose card, PayPal or Mercado Pago.",
+      };
+    }
+
+    // Insert with a fresh id; regenerate on the (rare) id collision. The first
+    // attempt reuses the id already sent to TutCasa as partnerRef.
     let orderId: string | null = null;
     for (let attempt = 0; attempt < 5 && !orderId; attempt++) {
-      const id = newOrderId();
+      const id = attempt === 0 ? candidateId : newOrderId();
       const { error } = await supabase.from("orders").insert({
         id,
         user_id: sessionUser?.id ?? null,
@@ -211,11 +275,24 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       return { ok: true, id: orderId, subtotal, discount, discountLabel, total, checkoutUrl };
     } catch (e) {
       console.error(`placeOrder ${input.paymentMethodId}:`, e instanceof Error ? e.message : e);
-      // Keep the order (team can collect payment manually) but tell the customer.
-      await supabase
-        .from("orders")
-        .update({ status: "Pending confirmation" })
-        .eq("id", orderId);
+      // Payment couldn't start. Keep the order (team can collect payment
+      // manually) but free any TutCasa holds — the dates must not stay locked
+      // for a payment that isn't happening; the team re-books the stay by hand.
+      if (stayInputs.length) {
+        await releaseTutcasaStays(items).catch(() => {});
+        await supabase
+          .from("orders")
+          .update({
+            status: "Pending confirmation",
+            notes: `${input.notes?.trim() ? input.notes.trim() + "\n\n" : ""}⚠ Payment failed to start — TutCasa hold(s) released; re-arrange the stay manually.`,
+          })
+          .eq("id", orderId);
+      } else {
+        await supabase
+          .from("orders")
+          .update({ status: "Pending confirmation" })
+          .eq("id", orderId);
+      }
       return { ok: true, id: orderId, subtotal, discount, discountLabel, total };
     }
   } catch (e) {

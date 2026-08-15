@@ -47,6 +47,9 @@ type CurrencyContextValue = {
   setCurrency: (c: Currency) => void;
   /** Format an MXN amount in the current display currency, e.g. "$271 USD". */
   format: (mxn: number) => string;
+  /** MXN per 1 USD (admin-configured) — for turning partner USD prices into
+      cart MXN. Display only; the server re-derives every charged amount. */
+  rateUSD: number;
 };
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
@@ -101,6 +104,7 @@ export function CurrencyProvider({
       setCurrency,
       format: (mxn: number) =>
         `${SYMBOLS[currency]}${Math.round(mxn / rates[currency]).toLocaleString("en-US")} ${currency}`,
+      rateUSD: rates.USD,
     }),
     [currency, setCurrency, rates]
   );

@@ -748,6 +748,8 @@
   text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
 }
 .tc-book-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(200,105,58,0.35); }
+button.tc-book-btn { border: none; cursor: pointer; }
+.tc-book-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 .tc-book-note { font-size: 11px; color: #9aa79b; margin-top: 8px; }
 
 @media (max-width: 900px) {

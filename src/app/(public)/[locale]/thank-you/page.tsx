@@ -7,6 +7,7 @@ import { capturePayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { mercadoPagoConfigured, verifyMercadoPagoPayment } from "@/lib/mercadopago";
 import { notifyOrderPaid } from "@/lib/orderEmails";
 import { PAID_STATUS } from "@/lib/payments";
+import { confirmTutcasaStays } from "@/lib/tutcasaBooking";
 
 export const metadata: Metadata = {
   title: "Thank You",
@@ -25,8 +26,13 @@ async function markPaid(orderId: string) {
     .eq("id", orderId)
     .in("status", ["Pending payment", "Pending confirmation"])
     .select("id");
-  // Notify only on the actual transition (not when the page is refreshed).
-  if (data?.length) await notifyOrderPaid(orderId).catch(() => {});
+  // Only on the actual transition (not when the page is refreshed): confirm
+  // any TutCasa stay holds into real bookings first (60-minute hold window),
+  // then send the paid notification.
+  if (data?.length) {
+    await confirmTutcasaStays(orderId).catch(() => {});
+    await notifyOrderPaid(orderId).catch(() => {});
+  }
 }
 
 /* Each provider sends the customer back with its own reference; we always

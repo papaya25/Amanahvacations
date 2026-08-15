@@ -7,14 +7,21 @@
    chosen in the configurator. Only the final booking leaves the site —
    in a new tab, deep-linked to the same home/dates on TutCasa. */
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useCart } from "@/lib/cart";
+import { useCurrency } from "@/lib/currency";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
 import { fetchTutcasaHomes, fetchTutcasaQuote } from "./tutcasa-actions";
 import type { TutcasaListing, TutcasaQuote } from "@/lib/tutcasa";
 
 export type ChosenHome = { slug: string; title: string };
 
 const fmtUsd = (n: number) => `$${Math.round(n).toLocaleString("en-US")} USD`;
+
+const fmtDate = (v: string) =>
+  v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "";
 
 /* Neutral line-art placeholder until TutCasa's photo import lands. */
 function PhotoFallback() {
@@ -43,10 +50,18 @@ export default function TutcasaHomes({
   chosen: ChosenHome | null;
   onChoose: (h: ChosenHome | null) => void;
 }) {
-  const { dict } = useI18n();
+  const { locale, dict } = useI18n();
+  const { add, items } = useCart();
+  const { rateUSD } = useCurrency();
   const [homes, setHomes] = useState<TutcasaListing[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [quote, setQuote] = useState<TutcasaQuote | "loading" | null>(null);
+
+  // A stay for this home + these exact dates already sits in the cart.
+  const inCart = (slug: string) =>
+    items.some(
+      (i) => i.kind === "stay" && i.meta?.stay_slug === slug && i.meta?.ci === checkin && i.meta?.co === checkout
+    );
 
   // Lazy catalog load — this component only mounts once the tier is picked.
   useEffect(() => {
@@ -77,10 +92,33 @@ export default function TutcasaHomes({
 
   const openHome = homes?.find((h) => h.slug === open) ?? null;
 
-  const bookHref = (h: TutcasaListing) =>
-    checkin && checkout
-      ? `${h.bookUrl}?${new URLSearchParams({ ci: checkin, co: checkout, guests: String(Math.max(1, guests)) })}`
-      : h.bookUrl;
+  /* Put the stay in the cart as its own paid line. The MXN total shown is the
+     TutCasa USD quote at the site's configured rate — display only; checkout
+     re-derives the real amount from a fresh TutCasa hold. */
+  const addStay = (h: TutcasaListing, q: Extract<TutcasaQuote, { ok: true }>) => {
+    add({
+      kind: "stay",
+      title: h.title,
+      subtitle: `${h.city} · ${h.propertyType}`,
+      image: h.photos[0]?.url,
+      details: [
+        `${fmtDate(checkin)} → ${fmtDate(checkout)}`,
+        `${q.nights} ${dict.tc_quote_nights} · ${Math.max(1, guests)} ${dict.tc_guests}`,
+        "TutCasa",
+      ],
+      total: Math.round(q.total * rateUSD),
+      people: Math.max(1, guests),
+      meta: {
+        stay_slug: h.slug,
+        ci: checkin,
+        co: checkout,
+        guests: String(Math.max(1, guests)),
+        usd_total: String(q.total),
+        currency: "MXN",
+      },
+    });
+    onChoose({ slug: h.slug, title: h.title });
+  };
 
   return (
     <div className="tc-panel">
@@ -195,36 +233,41 @@ export default function TutcasaHomes({
               </div>
 
               <div className="tc-actions">
-                {/* Choosing requires trip dates AND a quote confirming the home
-                    is actually available for them; un-choosing is always allowed. */}
+                {/* Booking requires trip dates AND a live quote confirming the
+                    home is available for them — the button stays locked (and
+                    explains why via the quote box above) until both hold. */}
                 {(() => {
-                  const isChosen = chosen?.slug === openHome.slug;
-                  const datesOk = Boolean(checkin && checkout);
+                  const added = inCart(openHome.slug);
                   const quoteOk = quote !== null && quote !== "loading" && quote.ok;
-                  const canChoose = isChosen || (datesOk && quoteOk);
+                  const canAdd =
+                    !added && Boolean(checkin && checkout) && quoteOk && guests <= openHome.maxGuests;
+                  if (added) {
+                    return (
+                      <>
+                        <button className="tc-choose-btn chosen" disabled>
+                          ✓ {dict.tc_added}
+                        </button>
+                        <Link className="tc-book-btn" href={localizeHref("/cart", locale)}>
+                          {dict.tc_view_cart}
+                        </Link>
+                      </>
+                    );
+                  }
                   return (
                     <button
-                      className={`tc-choose-btn${isChosen ? " chosen" : ""}`}
-                      disabled={!canChoose}
-                      title={!canChoose ? dict.tc_pick_dates : undefined}
-                      onClick={() =>
-                        onChoose(isChosen ? null : { slug: openHome.slug, title: openHome.title })
-                      }
+                      className="tc-book-btn tc-book-cta"
+                      disabled={!canAdd}
+                      title={!canAdd ? dict.tc_pick_dates : undefined}
+                      onClick={() => {
+                        if (quote !== null && quote !== "loading" && quote.ok) addStay(openHome, quote);
+                      }}
                     >
-                      {isChosen ? `✓ ${dict.tc_chosen}` : dict.tc_choose}
+                      {dict.tc_add}
                     </button>
                   );
                 })()}
-                <a
-                  className="tc-book-btn"
-                  href={bookHref(openHome)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {dict.tc_book} ↗
-                </a>
               </div>
-              <div className="tc-book-note">{dict.tc_book_note}</div>
+              <div className="tc-book-note">{dict.tc_pay_note}</div>
             </div>
           )}
         </>

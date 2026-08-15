@@ -19,7 +19,10 @@ export const USD_RATE = 17;
 const STORAGE_KEY = "amanah_cart_v1";
 
 export type CartItemInput = {
-  kind: "package" | "tour" | "activity";
+  /* "stay" = TutCasa partner accommodation, paid in full on Amanah. Stay lines
+     are excluded from promo categories and re-priced at checkout from a live
+     TutCasa hold, never from this client value. */
+  kind: "package" | "tour" | "activity" | "stay";
   title: string;
   subtitle?: string;
   image?: string;
