@@ -74,6 +74,16 @@ Failures — `409` with `{"ok":false,"error":"DATES_TAKEN"}` (also when blocked
 by another live hold), or `422` with `"MIN_STAY_NOT_MET" | "INVALID_DATES" |
 "MAX_GUESTS_EXCEEDED"`, or `404 "NOT_FOUND"`.
 
+**Request-to-book homes (added after v1):** homes with `instantBook: false`
+in the catalog need the owner's approval before any money moves — they can
+NEVER be sold instantly through the partner flow. A hold attempt returns
+`403 {"ok":false,"error":"REQUEST_TO_BOOK","requestUrl":"/stays/<slug>"}`.
+Amanah's UI should gate these up front using the catalog's `instantBook`
+flag (never show its own checkout for them) and send the guest to
+`<base><requestUrl>` to request the stay on TutCasa; the 403 is defense in
+depth for stale UIs. The owner-approval-with-delayed-capture variant for
+partner bookings is a possible later addition.
+
 While a hold is live, the public `/api/accommodation/{slug}` endpoint must
 report those dates inside `unavailable` (so both websites show them blocked).
 
