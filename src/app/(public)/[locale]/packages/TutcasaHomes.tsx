@@ -216,7 +216,7 @@ export default function TutcasaHomes({
                       <span className="tc-quote-total">{fmtUsd(quote.total)}</span>
                     </div>
                     <div className="tc-quote-sub">
-                      {fmtUsd(quote.dueNow)} {dict.tc_quote_due} · {fmtUsd(quote.securityDeposit)} {dict.tc_quote_deposit}
+                      {dict.tc_quote_paid_full} {fmtUsd(quote.securityDeposit)} {dict.tc_quote_deposit}
                     </div>
                   </>
                 ) : quote && !quote.ok ? (
