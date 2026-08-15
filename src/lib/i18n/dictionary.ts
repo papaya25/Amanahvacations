@@ -262,7 +262,14 @@ export const EN_DICT = {
   tc_added: "Added to your package",
   tc_view_cart: "View cart",
   tc_pay_note: "Your stay is paid together with your package — the reservation is locked with our partner TutCasa the moment you pay.",
-  tc_request_note: "This home is confirmed by its owner — after you book, we'll get back to you shortly with the final confirmation.",
+  tc_request_note: "This home is booked on request — the owner approves each stay. Send your request on our partner TutCasa (opens in a new tab) and we'll take it from there.",
+  tc_request_btn: "Request this home",
+
+  /* Side cart (packages page) */
+  sc_title: "Your trip",
+  sc_empty: "Your trip is empty — add a package or a stay to get started.",
+  sc_checkout: "Proceed to checkout",
+  sc_continue: "Keep planning",
   tc_no_homes: "No partner homes fit these dates and group size — try different dates, or ask your concierge for options.",
   tc_total_for_stay: "for your stay",
   tc_pick_dates: "Pick your dates above to see the exact all-in price for your stay.",

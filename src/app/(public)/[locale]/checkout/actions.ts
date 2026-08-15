@@ -99,9 +99,11 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           const msg =
             hold.error === "DATES_TAKEN"
               ? `"${it.title}" was just booked for those dates. Please choose different dates or another home.`
-              : hold.error === "MIN_STAY_NOT_MET" || hold.error === "INVALID_DATES" || hold.error === "MAX_GUESTS_EXCEEDED"
-                ? `The dates or group size for "${it.title}" no longer fit this home — please re-select your stay.`
-                : "We couldn't reach our accommodation partner. Please try again in a moment.";
+              : hold.error === "REQUEST_TO_BOOK"
+                ? `"${it.title}" needs the owner's approval and can't be booked instantly — please remove it and send a request from the home's card instead.`
+                : hold.error === "MIN_STAY_NOT_MET" || hold.error === "INVALID_DATES" || hold.error === "MAX_GUESTS_EXCEEDED"
+                  ? `The dates or group size for "${it.title}" no longer fit this home — please re-select your stay.`
+                  : "We couldn't reach our accommodation partner. Please try again in a moment.";
           return { ok: false, error: msg };
         }
         holdByLine[it.id] = { holdId: hold.holdId, usd: hold.quote.total };

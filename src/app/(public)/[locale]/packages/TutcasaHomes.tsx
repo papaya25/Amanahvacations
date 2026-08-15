@@ -11,12 +11,11 @@
    owner-confirmation notice. Checkout re-derives every price from a fresh
    TutCasa hold — nothing here is price authority. */
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import { localizeHref } from "@/lib/i18n/config";
+import SideCart from "@/components/SideCart";
 import { fetchTutcasaHomes, fetchTutcasaQuote } from "./tutcasa-actions";
 import type { TutcasaListing, TutcasaQuote } from "@/lib/tutcasa";
 
@@ -56,12 +55,21 @@ export default function TutcasaHomes({
   chosen: ChosenHome | null;
   onChoose: (h: ChosenHome | null) => void;
 }) {
-  const { locale, dict } = useI18n();
+  const { dict } = useI18n();
   const { add, items } = useCart();
   const { rateUSD } = useCurrency();
   const [homes, setHomes] = useState<TutcasaListing[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [quotes, setQuotes] = useState<Record<string, QuoteState>>({});
+  // Slide-in cart: review the trip without ever leaving this page.
+  const [sideOpen, setSideOpen] = useState(false);
+
+  // Owner-approved homes can't be sold instantly (TutCasa partner API refuses
+  // holds for them) — the guest sends a request on TutCasa instead.
+  const requestHref = (h: TutcasaListing) =>
+    hasDates
+      ? `${h.bookUrl}?${new URLSearchParams({ ci: checkin, co: checkout, guests: String(Math.max(1, guests)) })}`
+      : h.bookUrl;
 
   const hasDates = Boolean(checkin && checkout);
 
@@ -202,11 +210,22 @@ export default function TutcasaHomes({
                         </>
                       )}
                     </div>
-                    {/* Primary shortcut: book straight from the card */}
+                    {/* Primary shortcut: book straight from the card.
+                        Owner-approved homes route to a TutCasa request instead
+                        (the partner API refuses instant holds for them). */}
                     {added ? (
-                      <Link className="tc-add-btn added" href={localizeHref("/cart", locale)}>
+                      <button className="tc-add-btn added" onClick={() => setSideOpen(true)}>
                         ✓ {dict.tc_added} — {dict.tc_view_cart}
-                      </Link>
+                      </button>
+                    ) : !h.instantBook ? (
+                      <a
+                        className="tc-add-btn request"
+                        href={requestHref(h)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {dict.tc_request_btn} ↗
+                      </a>
                     ) : (
                       <button
                         className="tc-add-btn"
@@ -292,10 +311,19 @@ export default function TutcasaHomes({
                     <button className="tc-choose-btn chosen" disabled>
                       ✓ {dict.tc_added}
                     </button>
-                    <Link className="tc-book-btn" href={localizeHref("/cart", locale)}>
+                    <button className="tc-book-btn" onClick={() => setSideOpen(true)}>
                       {dict.tc_view_cart}
-                    </Link>
+                    </button>
                   </>
+                ) : !openHome.instantBook ? (
+                  <a
+                    className="tc-book-btn tc-book-cta"
+                    href={requestHref(openHome)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {dict.tc_request_btn} ↗
+                  </a>
                 ) : (
                   <button
                     className="tc-book-btn tc-book-cta"
@@ -310,11 +338,15 @@ export default function TutcasaHomes({
                   </button>
                 )}
               </div>
-              <div className="tc-book-note">{dict.tc_pay_note}</div>
+              <div className="tc-book-note">
+                {openHome.instantBook ? dict.tc_pay_note : dict.tc_request_note}
+              </div>
             </div>
           )}
         </>
       )}
+
+      <SideCart open={sideOpen} onClose={() => setSideOpen(false)} />
     </div>
   );
 }
