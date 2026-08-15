@@ -7,7 +7,7 @@ import { capturePayPalOrder, paypalConfigured } from "@/lib/paypal";
 import { mercadoPagoConfigured, verifyMercadoPagoPayment } from "@/lib/mercadopago";
 import { notifyOrderPaid } from "@/lib/orderEmails";
 import { PAID_STATUS } from "@/lib/payments";
-import { confirmTutcasaStays, handleStayBalancePaid, syncStayRequests } from "@/lib/tutcasaBooking";
+import { confirmTutcasaStays, handleStayBalancePaid, saveStayCardRef, syncStayRequests } from "@/lib/tutcasaBooking";
 
 export const metadata: Metadata = {
   title: "Thank You",
@@ -54,6 +54,13 @@ async function verifyStripe(orderId: string, sessionId: string): Promise<boolean
       return true;
     }
     await markPaid(orderId);
+    // Remember the card (Stripe refs only) for any pending request stay, so
+    // the owner's approval can charge it automatically as consented.
+    await saveStayCardRef(
+      orderId,
+      typeof session.customer === "string" ? session.customer : session.customer?.id,
+      typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
+    ).catch(() => {});
     return true;
   } catch (e) {
     console.error("verifyStripe:", e instanceof Error ? e.message : e);

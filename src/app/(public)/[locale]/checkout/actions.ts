@@ -324,10 +324,20 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           .map((it) => `${it.title}${it.people ? ` (${it.people}p)` : ""}`)
           .join(" · ")
           .slice(0, 480);
+        // With a request-to-book stay in the order, the card is saved (with
+        // explicit notice at checkout) so we can charge the stay off-session
+        // the moment the owner confirms — no second checkout for the guest.
+        const hasRequestStay = Object.keys(requestByLine).length > 0;
         const session = await stripe.checkout.sessions.create({
           mode: "payment",
           currency: "mxn",
           customer_email: input.email.trim(),
+          ...(hasRequestStay
+            ? {
+                customer_creation: "always" as const,
+                payment_intent_data: { setup_future_usage: "off_session" as const },
+              }
+            : {}),
           line_items: [
             {
               quantity: 1,

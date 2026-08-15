@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { notifyOrderPaid } from "@/lib/orderEmails";
 import { PAID_STATUS } from "@/lib/payments";
-import { confirmTutcasaStays, handleStayBalancePaid } from "@/lib/tutcasaBooking";
+import { confirmTutcasaStays, handleStayBalancePaid, saveStayCardRef } from "@/lib/tutcasaBooking";
 
 /* Stripe webhook: marks an order paid even if the customer never returns to
    the thank-you page (closed tab, lost connection). Safe to run alongside the
@@ -55,6 +55,13 @@ export async function POST(request: NextRequest) {
         // Payment is in: turn any TutCasa holds into confirmed bookings
         // BEFORE anything else — the hold has a 60-minute lifetime.
         await confirmTutcasaStays(orderId).catch(() => {});
+        // Remember the card (Stripe refs only) for any pending request stay,
+        // so the owner's approval can charge it automatically as consented.
+        await saveStayCardRef(
+          orderId,
+          typeof session.customer === "string" ? session.customer : session.customer?.id,
+          typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id
+        ).catch(() => {});
         await notifyOrderPaid(orderId).catch(() => {});
       }
     }

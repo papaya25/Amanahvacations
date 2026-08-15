@@ -280,8 +280,8 @@ async function sendStayPaymentLink(order: OrderRow, stay: CartItem): Promise<boo
 /** Owner declined / request expired → tell the guest (no charge happened). */
 async function sendStayDeclined(order: OrderRow, stay: CartItem) {
   const guestBody =
-    `Hi ${order.customer_name.split(" ")[0]},\n\nUnfortunately the owner of ${stay.title} couldn't confirm your dates, so that stay was not booked — and nothing was charged for it.\n\n` +
-    `The rest of your booking ${order.id} is unaffected. Reply to this email or message us on WhatsApp and your concierge will help you pick another beautiful home for the same dates.`;
+    `Hi ${order.customer_name.split(" ")[0]},\n\nUnfortunately this house is not available for your dates — the owner of ${stay.title} couldn't confirm your stay, and nothing was charged for it.\n\n` +
+    `Please choose another option: reply to this email or message us on WhatsApp and your concierge will help you pick another beautiful home for the same dates. The rest of your booking ${order.id} is unaffected.`;
   await Promise.all(
     [
       sendEmail({
@@ -329,9 +329,17 @@ export async function syncStayRequests(orderId?: string): Promise<void> {
         const status = await getTutcasaBookingStatus(stay.meta!.tutcasa_request_id);
         if (!status?.ok) continue;
         if (status.status === "confirmed") {
-          const sent = await sendStayPaymentLink(order, stay);
-          stay.meta!.stay_status = sent ? "approved" : "approved_link_failed";
-          note = `TutCasa: owner APPROVED ${stay.title}${sent ? " — payment link emailed to guest" : " — ⚠ payment link could not be sent, follow up manually"}`;
+          // Fast lane: charge the card saved at checkout (guest consented);
+          // any failure falls back to the payment-link email.
+          const charged = await chargeStaySaved(order, stay);
+          if (charged) {
+            stay.meta!.stay_status = "paid";
+            note = `TutCasa: owner APPROVED ${stay.title} — saved card charged automatically, confirmations sent`;
+          } else {
+            const sent = await sendStayPaymentLink(order, stay);
+            stay.meta!.stay_status = sent ? "approved" : "approved_link_failed";
+            note = `TutCasa: owner APPROVED ${stay.title}${sent ? " — payment link emailed to guest" : " — ⚠ payment link could not be sent, follow up manually"}`;
+          }
           changed = true;
         } else if (status.status === "cancelled") {
           stay.meta!.stay_status = "cancelled";
@@ -365,5 +373,89 @@ export async function handleStayBalancePaid(orderId: string, requestId: string):
     await sendStayEmails(order as OrderRow, { ...stay, meta: { ...stay.meta!, instant: "1" } });
   } catch (e) {
     console.error("handleStayBalancePaid:", e instanceof Error ? e.message : e);
+  }
+}
+
+/* ── Saved-card auto-charge for approved requests ──────────────────────────
+   When a card-paying order contains a request stay, checkout saves the card
+   (Stripe customer + payment method — never numbers, and with explicit
+   notice to the guest). On owner approval we charge it off-session; any
+   failure (authentication needed, decline, no saved card / PayPal / MP)
+   falls back to the payment-link email. */
+
+/** Remember the Stripe customer + payment method after the main payment.
+    No-op unless the order actually has a pending request stay. */
+export async function saveStayCardRef(
+  orderId: string,
+  stripeCustomer: string | null | undefined,
+  paymentIntentId: string | null | undefined
+): Promise<void> {
+  try {
+    if (!stripeCustomer || !paymentIntentId || !stripeConfigured) return;
+    const supabase = createAdminClient();
+    const { data: order } = await supabase
+      .from("orders")
+      .select("id, items")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+    const hasRequestStay = ((order.items ?? []) as CartItem[]).some(
+      (it) => isRequestedStay(it) && it.meta?.stay_status === "requested"
+    );
+    if (!hasRequestStay) return;
+    const pi = await getStripe().paymentIntents.retrieve(paymentIntentId);
+    const pm = typeof pi.payment_method === "string" ? pi.payment_method : pi.payment_method?.id;
+    if (!pm) return;
+    await supabase
+      .from("orders")
+      .update({ stripe_customer: stripeCustomer, stripe_payment_method: pm })
+      .eq("id", orderId);
+  } catch (e) {
+    console.error("saveStayCardRef:", e instanceof Error ? e.message : e);
+  }
+}
+
+/** Try to charge the saved card for an approved stay. True = charged and
+    finalized; false = caller should fall back to the payment-link email. */
+async function chargeStaySaved(order: OrderRow, stay: CartItem): Promise<boolean> {
+  if (!stripeConfigured) return false;
+  try {
+    const supabase = createAdminClient();
+    const { data: row } = await supabase
+      .from("orders")
+      .select("stripe_customer, stripe_payment_method")
+      .eq("id", order.id)
+      .maybeSingle();
+    if (!row?.stripe_customer || !row.stripe_payment_method) return false;
+
+    const usd = Number(stay.meta?.usd_total) || 0;
+    const cur = await getPublicContent("currency", { defaultCurrency: "USD", rateUSD: 16.5, rateEUR: 19.5 });
+    const rate = cur.rateUSD > 0 ? cur.rateUSD : 16.5;
+    const mxn = Math.round(usd * rate);
+    if (mxn <= 0) return false;
+
+    const intent = await getStripe().paymentIntents.create({
+      amount: mxn * 100,
+      currency: "mxn",
+      customer: row.stripe_customer,
+      payment_method: row.stripe_payment_method,
+      off_session: true,
+      confirm: true,
+      description: `${stay.title} — approved stay for booking ${order.id}`,
+      metadata: {
+        order_id: order.id,
+        purpose: "stay_balance",
+        request_id: stay.meta?.tutcasa_request_id ?? "",
+      },
+    });
+    if (intent.status !== "succeeded") return false;
+
+    // Same finalization as a paid payment link: mark + three-way emails.
+    await handleStayBalancePaid(order.id, stay.meta!.tutcasa_request_id);
+    return true;
+  } catch (e) {
+    // authentication_required / card_declined / anything → payment link.
+    console.error("chargeStaySaved:", e instanceof Error ? e.message : e);
+    return false;
   }
 }

@@ -424,6 +424,18 @@ export default function CheckoutClient({
             </div>
           </div>
 
+          {/* Request-to-book stay: explicit save-card / delayed-charge notice
+              (required disclosure — the charge happens only on owner approval) */}
+          {items
+            .filter((i) => i.kind === "stay" && i.meta?.instant === "0")
+            .map((i) => (
+              <p key={i.id} className="mt-4 rounded-xl bg-cream px-4 py-3 text-[11.5px] leading-[1.6] text-sage">
+                <strong className="text-forest">{i.title}:</strong> {dict.co_stay_card_1}{" "}
+                <strong className="text-ink">${i.meta?.usd_total} USD</strong> {dict.co_stay_card_2} {i.title}{" "}
+                {dict.co_stay_card_3}
+              </p>
+            ))}
+
           {/* Legal consent — required before payment */}
           <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-xl bg-cream px-4 py-3.5">
             <input
