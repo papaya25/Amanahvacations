@@ -13,7 +13,64 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { confirmTutcasaHold, releaseTutcasaHold } from "@/lib/tutcasa";
+import { sendEmail, renderBrandedEmail, NOTIFY_BOOKING, FROM_BOOKING } from "@/lib/email";
 import type { CartItem } from "@/lib/cart";
+
+/* Partner inbox for the sync copy of every confirmed stay (set in env). */
+const TUTCASA_NOTIFY = process.env.TUTCASA_NOTIFY_EMAIL || "";
+
+/* Confirmation emails for a confirmed stay: guest + Amanah + TutCasa stay in
+   sync. Best-effort — a failed email never blocks the booking. */
+async function sendStayEmails(
+  order: { id: string; customer_name: string; customer_email: string },
+  stay: CartItem
+) {
+  const instant = stay.meta?.instant !== "0";
+  const lines = stay.details.join("\n");
+  const guestBody =
+    `Great news, ${order.customer_name.split(" ")[0]} — your stay is booked!\n\n` +
+    `${stay.title} (${stay.subtitle ?? "TutCasa partner home"})\n${lines}\n\nBooking reference: ${order.id}\n\n` +
+    (instant
+      ? "Your reservation is confirmed and the dates are locked. Check-in details will follow closer to your arrival."
+      : "Your reservation is being finalized with the home's owner — we'll email you the final confirmation shortly.") +
+    "\n\nYour stay is paid in full; only the home's refundable security deposit is handled at check-in.";
+  const opsBody =
+    `Accommodation booked & paid via Amanah.\n\n${stay.title}\n${lines}\n` +
+    `Guest: ${order.customer_name} <${order.customer_email}>\nOrder: ${order.id}\n` +
+    `Amount: $${stay.meta?.usd_total ?? "?"} USD (paid in full on Amanah)\n` +
+    `Mode: ${instant ? "instant booking" : "REQUEST TO BOOK — owner confirmation needed, follow up!"}`;
+
+  await Promise.all(
+    [
+      sendEmail({
+        to: order.customer_email,
+        subject: `Your stay at ${stay.title} — booking ${order.id}`,
+        text: guestBody,
+        html: renderBrandedEmail({ heading: "Your stay is booked 🏡", bodyText: guestBody }),
+        from: FROM_BOOKING,
+      }),
+      sendEmail({
+        to: NOTIFY_BOOKING,
+        subject: `Stay booked: ${stay.title} — ${order.id}`,
+        text: opsBody,
+        html: renderBrandedEmail({ heading: "Accommodation booking", bodyText: opsBody }),
+        from: FROM_BOOKING,
+        replyTo: order.customer_email,
+      }),
+      ...(TUTCASA_NOTIFY
+        ? [
+            sendEmail({
+              to: TUTCASA_NOTIFY,
+              subject: `[Amanah partner booking] ${stay.title} — ${order.id}`,
+              text: opsBody,
+              html: renderBrandedEmail({ heading: "Partner booking via Amanah", bodyText: opsBody }),
+              from: FROM_BOOKING,
+            }),
+          ]
+        : []),
+    ].map((p) => p.catch(() => ({ ok: false })))
+  );
+}
 
 export async function releaseTutcasaStays(items: CartItem[]): Promise<void> {
   await Promise.all(
@@ -51,6 +108,9 @@ export async function confirmTutcasaStays(orderId: string): Promise<void> {
       if (!res.ok) {
         console.error(`confirmTutcasaStays ${orderId} ${stay.title}:`, res.error);
         failures.push(`${stay.title} (${res.error})`);
+      } else {
+        // Keep everyone in sync: guest + Amanah + TutCasa notification.
+        await sendStayEmails(order, stay);
       }
     }
 

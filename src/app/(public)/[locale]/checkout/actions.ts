@@ -63,6 +63,16 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     // converted to MXN at the admin-configured rate. If a home was grabbed in
     // the meantime, the guest finds out HERE, before paying.
     const stayInputs = input.items.filter((it) => it.kind === "stay");
+    // Amanah is a tour operator: accommodation is an OPTION on a vacation
+    // package, never a standalone product. A stay in the cart requires a
+    // package in the same order.
+    if (stayInputs.length && !input.items.some((it) => it.kind === "package")) {
+      return {
+        ok: false,
+        error:
+          "Accommodation is part of a vacation package — please add a package to your order along with your stay.",
+      };
+    }
     const candidateId = newOrderId(); // partnerRef for holds + first insert attempt
     const holdByLine: Record<string, { holdId: string; usd: number }> = {};
     const releaseHeld = () =>

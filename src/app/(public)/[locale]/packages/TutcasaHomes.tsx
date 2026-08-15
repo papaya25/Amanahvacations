@@ -1,11 +1,15 @@
 "use client";
 
-/* Inline TutCasa partner-homes panel, shown when the guest picks the
-   "Airbnb / Villa" accommodation tier. Everything happens on this page:
-   the catalog loads lazily into a scrollable card row, a tapped card expands
-   in place with full details and a LIVE quote for the trip dates already
-   chosen in the configurator. Only the final booking leaves the site —
-   in a new tab, deep-linked to the same home/dates on TutCasa. */
+/* Inline TutCasa partner-homes panel — the accommodation OPTION inside the
+   package configurator (Amanah is a tour operator: a stay is added to a
+   package, never sold alone; checkout enforces that too).
+
+   With trip dates chosen, every home is quoted live against TutCasa and only
+   the homes that actually FIT (available, min-stay satisfied) are shown, each
+   card carrying the exact all-in total and its own "Add to your package"
+   button. "View details" is optional. Request-to-book homes carry an
+   owner-confirmation notice. Checkout re-derives every price from a fresh
+   TutCasa hold — nothing here is price authority. */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -37,6 +41,8 @@ function PhotoFallback() {
   );
 }
 
+type QuoteState = TutcasaQuote | "loading";
+
 export default function TutcasaHomes({
   checkin,
   checkout,
@@ -55,7 +61,9 @@ export default function TutcasaHomes({
   const { rateUSD } = useCurrency();
   const [homes, setHomes] = useState<TutcasaListing[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  const [quote, setQuote] = useState<TutcasaQuote | "loading" | null>(null);
+  const [quotes, setQuotes] = useState<Record<string, QuoteState>>({});
+
+  const hasDates = Boolean(checkin && checkout);
 
   // A stay for this home + these exact dates already sits in the cart.
   const inCart = (slug: string) =>
@@ -72,40 +80,58 @@ export default function TutcasaHomes({
     };
   }, []);
 
-  // Live quote for the expanded home whenever the trip inputs change.
+  /* Quote EVERY home for the chosen dates (debounced): powers per-card exact
+     totals, per-card booking, and hiding the homes that don't fit. */
   useEffect(() => {
-    if (!open || !checkin || !checkout) {
-      setQuote(null);
+    if (!hasDates || !homes?.length) {
+      setQuotes({});
       return;
     }
     let alive = true;
-    setQuote("loading");
-    fetchTutcasaQuote(open, checkin, checkout, guests).then((q) => alive && setQuote(q));
+    const t = setTimeout(() => {
+      setQuotes(Object.fromEntries(homes.map((h) => [h.slug, "loading" as const])));
+      homes.forEach((h) => {
+        fetchTutcasaQuote(h.slug, checkin, checkout, guests).then((q) => {
+          if (alive) setQuotes((prev) => ({ ...prev, [h.slug]: q ?? { ok: false, error: "UNAVAILABLE" } }));
+        });
+      });
+    }, 350);
     return () => {
       alive = false;
+      clearTimeout(t);
     };
-  }, [open, checkin, checkout, guests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasDates, homes, checkin, checkout, guests]);
 
   if (homes !== null && homes.length === 0) {
     return <div className="tc-panel tc-empty">{dict.tc_none}</div>;
   }
 
-  const openHome = homes?.find((h) => h.slug === open) ?? null;
+  const okQuote = (slug: string): Extract<TutcasaQuote, { ok: true }> | null => {
+    const q = quotes[slug];
+    return q && q !== "loading" && q.ok ? q : null;
+  };
 
-  /* Put the stay in the cart as its own paid line. The MXN total shown is the
-     TutCasa USD quote at the site's configured rate — display only; checkout
-     re-derives the real amount from a fresh TutCasa hold. */
+  /* With dates: hide homes whose quote came back as a hard no (taken dates,
+     min stay, …). While loading, cards stay visible with a loading price. */
+  const visibleHomes = (homes ?? []).filter((h) => {
+    if (!hasDates) return true;
+    const q = quotes[h.slug];
+    return !(q && q !== "loading" && !q.ok);
+  });
+
   const addStay = (h: TutcasaListing, q: Extract<TutcasaQuote, { ok: true }>) => {
+    const details = [
+      `${fmtDate(checkin)} → ${fmtDate(checkout)}`,
+      `${q.nights} ${dict.tc_quote_nights} · ${Math.max(1, guests)} ${dict.tc_guests}`,
+      h.instantBook ? "TutCasa · instant booking" : "TutCasa · owner confirmation pending",
+    ];
     add({
       kind: "stay",
       title: h.title,
       subtitle: `${h.city} · ${h.propertyType}`,
       image: h.photos[0]?.url,
-      details: [
-        `${fmtDate(checkin)} → ${fmtDate(checkout)}`,
-        `${q.nights} ${dict.tc_quote_nights} · ${Math.max(1, guests)} ${dict.tc_guests}`,
-        "TutCasa",
-      ],
+      details,
       total: Math.round(q.total * rateUSD),
       people: Math.max(1, guests),
       meta: {
@@ -114,11 +140,14 @@ export default function TutcasaHomes({
         co: checkout,
         guests: String(Math.max(1, guests)),
         usd_total: String(q.total),
+        instant: h.instantBook ? "1" : "0",
         currency: "MXN",
       },
     });
     onChoose({ slug: h.slug, title: h.title });
   };
+
+  const openHome = visibleHomes.find((h) => h.slug === open) ?? null;
 
   return (
     <div className="tc-panel">
@@ -126,26 +155,30 @@ export default function TutcasaHomes({
 
       {homes === null ? (
         <div className="tc-loading">{dict.tc_loading}</div>
+      ) : visibleHomes.length === 0 ? (
+        <div className="tc-empty-note">{dict.tc_no_homes}</div>
       ) : (
         <>
           <div className="tc-row">
-            {homes.map((h) => {
+            {visibleHomes.map((h) => {
               const isOpen = open === h.slug;
               const isChosen = chosen?.slug === h.slug;
+              const added = inCart(h.slug);
+              const q = okQuote(h.slug);
+              const loading = hasDates && quotes[h.slug] === "loading";
+              const canAdd = !added && Boolean(q) && guests <= h.maxGuests;
               return (
-                <div key={h.slug} className={`tc-card${isChosen ? " chosen" : ""}${isOpen ? " open" : ""}`}>
+                <div key={h.slug} className={`tc-card${isChosen || added ? " chosen" : ""}${isOpen ? " open" : ""}`}>
                   {h.photos[0]?.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img className="tc-photo" src={h.photos[0].url} alt={h.photos[0].alt || h.title} />
+                    <img className="tc-photo" src={h.photos[0].url} alt={h.title} loading="lazy" />
                   ) : (
                     <PhotoFallback />
                   )}
                   <div className="tc-card-body">
                     <div className="tc-card-top">
                       <span className="tc-title">{h.title}</span>
-                      {h.rating != null && (
-                        <span className="tc-rating">★ {h.rating}</span>
-                      )}
+                      {h.rating != null && <span className="tc-rating">★ {h.rating}</span>}
                     </div>
                     <div className="tc-city">
                       {h.city} · {h.propertyType}
@@ -154,14 +187,39 @@ export default function TutcasaHomes({
                       {dict.tc_up_to} {h.maxGuests} {dict.tc_guests} · {h.bedrooms} {dict.tc_bedrooms} · {h.bathrooms} {dict.tc_bathrooms}
                     </div>
                     <div className="tc-price-line">
-                      <span className="tc-from">{dict.tc_from}</span>{" "}
-                      <span className="tc-price">{fmtUsd(h.pricing.allInNightly)}</span>
-                      <span className="tc-per">{dict.tc_night_allin}</span>
+                      {q ? (
+                        <>
+                          <span className="tc-price">{fmtUsd(q.total)}</span>
+                          <span className="tc-per"> {dict.tc_total_for_stay} · {q.nights} {dict.tc_quote_nights}</span>
+                        </>
+                      ) : loading ? (
+                        <span className="tc-per">{dict.tc_loading}</span>
+                      ) : (
+                        <>
+                          <span className="tc-from">{dict.tc_from}</span>{" "}
+                          <span className="tc-price">{fmtUsd(h.pricing.allInNightly)}</span>
+                          <span className="tc-per">{dict.tc_night_allin}</span>
+                        </>
+                      )}
                     </div>
-                    <button
-                      className="tc-view-btn"
-                      onClick={() => setOpen(isOpen ? null : h.slug)}
-                    >
+                    {/* Primary shortcut: book straight from the card */}
+                    {added ? (
+                      <Link className="tc-add-btn added" href={localizeHref("/cart", locale)}>
+                        ✓ {dict.tc_added} — {dict.tc_view_cart}
+                      </Link>
+                    ) : (
+                      <button
+                        className="tc-add-btn"
+                        disabled={!canAdd}
+                        title={!canAdd ? dict.tc_pick_dates : undefined}
+                        onClick={() => {
+                          if (q) addStay(h, q);
+                        }}
+                      >
+                        {dict.tc_add}
+                      </button>
+                    )}
+                    <button className="tc-view-btn" onClick={() => setOpen(isOpen ? null : h.slug)}>
                       {isOpen ? dict.tc_hide : dict.tc_view}
                     </button>
                   </div>
@@ -197,75 +255,60 @@ export default function TutcasaHomes({
                 {openHome.reviewCount > 0 && <> · ★ {openHome.rating} ({openHome.reviewCount} {dict.tc_reviews})</>}
               </div>
 
-              {guests > openHome.maxGuests && (
-                <div className="tc-warn">{dict.tc_too_small}</div>
-              )}
+              {!openHome.instantBook && <div className="tc-warn">{dict.tc_request_note}</div>}
+              {guests > openHome.maxGuests && <div className="tc-warn">{dict.tc_too_small}</div>}
 
-              {/* Live all-in quote for the dates picked above */}
+              {/* All-in price for the chosen dates */}
               <div className="tc-quote">
-                {!checkin || !checkout ? (
+                {!hasDates ? (
                   <span className="tc-quote-hint">{dict.tc_pick_dates}</span>
-                ) : quote === "loading" ? (
+                ) : quotes[openHome.slug] === "loading" ? (
                   <span className="tc-quote-hint">{dict.tc_loading}</span>
-                ) : quote && quote.ok ? (
-                  <>
-                    <div className="tc-quote-main">
-                      <span className="tc-quote-label">
-                        {dict.tc_quote_total} · {quote.nights} {dict.tc_quote_nights}
-                      </span>
-                      <span className="tc-quote-total">{fmtUsd(quote.total)}</span>
-                    </div>
-                    <div className="tc-quote-sub">
-                      {dict.tc_quote_paid_full} {fmtUsd(quote.securityDeposit)} {dict.tc_quote_deposit}
-                    </div>
-                  </>
-                ) : quote && !quote.ok ? (
-                  <span className="tc-quote-warn">
-                    {quote.error === "DATES_TAKEN"
-                      ? dict.tc_quote_taken
-                      : quote.error === "MIN_STAY_NOT_MET"
-                        ? dict.tc_quote_minstay
-                        : dict.tc_pick_dates}
-                  </span>
+                ) : okQuote(openHome.slug) ? (
+                  (() => {
+                    const q = okQuote(openHome.slug)!;
+                    return (
+                      <>
+                        <div className="tc-quote-main">
+                          <span className="tc-quote-label">
+                            {dict.tc_quote_total} · {q.nights} {dict.tc_quote_nights}
+                          </span>
+                          <span className="tc-quote-total">{fmtUsd(q.total)}</span>
+                        </div>
+                        <div className="tc-quote-sub">
+                          {dict.tc_quote_paid_full} {fmtUsd(q.securityDeposit)} {dict.tc_quote_deposit}
+                        </div>
+                      </>
+                    );
+                  })()
                 ) : (
                   <span className="tc-quote-hint">{dict.tc_pick_dates}</span>
                 )}
               </div>
 
               <div className="tc-actions">
-                {/* Booking requires trip dates AND a live quote confirming the
-                    home is available for them — the button stays locked (and
-                    explains why via the quote box above) until both hold. */}
-                {(() => {
-                  const added = inCart(openHome.slug);
-                  const quoteOk = quote !== null && quote !== "loading" && quote.ok;
-                  const canAdd =
-                    !added && Boolean(checkin && checkout) && quoteOk && guests <= openHome.maxGuests;
-                  if (added) {
-                    return (
-                      <>
-                        <button className="tc-choose-btn chosen" disabled>
-                          ✓ {dict.tc_added}
-                        </button>
-                        <Link className="tc-book-btn" href={localizeHref("/cart", locale)}>
-                          {dict.tc_view_cart}
-                        </Link>
-                      </>
-                    );
-                  }
-                  return (
-                    <button
-                      className="tc-book-btn tc-book-cta"
-                      disabled={!canAdd}
-                      title={!canAdd ? dict.tc_pick_dates : undefined}
-                      onClick={() => {
-                        if (quote !== null && quote !== "loading" && quote.ok) addStay(openHome, quote);
-                      }}
-                    >
-                      {dict.tc_add}
+                {inCart(openHome.slug) ? (
+                  <>
+                    <button className="tc-choose-btn chosen" disabled>
+                      ✓ {dict.tc_added}
                     </button>
-                  );
-                })()}
+                    <Link className="tc-book-btn" href={localizeHref("/cart", locale)}>
+                      {dict.tc_view_cart}
+                    </Link>
+                  </>
+                ) : (
+                  <button
+                    className="tc-book-btn tc-book-cta"
+                    disabled={!okQuote(openHome.slug) || guests > openHome.maxGuests}
+                    title={!okQuote(openHome.slug) ? dict.tc_pick_dates : undefined}
+                    onClick={() => {
+                      const q = okQuote(openHome.slug);
+                      if (q) addStay(openHome, q);
+                    }}
+                  >
+                    {dict.tc_add}
+                  </button>
+                )}
               </div>
               <div className="tc-book-note">{dict.tc_pay_note}</div>
             </div>
