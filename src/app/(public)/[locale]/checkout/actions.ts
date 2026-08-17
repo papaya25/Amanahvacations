@@ -6,7 +6,7 @@
    required. Tour AND package prices are re-derived server-side, so the amount
    charged never comes from the browser. */
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { applyPromo } from "@/lib/content/promo-actions";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
@@ -228,6 +228,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     // Attach the customer's account when they're logged in (guests stay null).
     const sessionUser = await getSessionUser();
 
+    // Partner referral (?ref=tutcasa 30-day cookie) → commission tracking.
+    const referrer = (await cookies()).get("amanah_ref")?.value?.toLowerCase() ?? null;
+
     const supabase = createAdminClient();
     const onlinePayment =
       total > 0 &&
@@ -268,6 +271,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         notes: input.notes?.trim() || null,
         consent: true,
         consent_at: new Date().toISOString(),
+        referrer: referrer === "tutcasa" ? referrer : null,
       });
       if (!error) orderId = id;
       else if (error.code !== "23505") {

@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import SiteFrame from "@/components/SiteFrame";
 import VisitTracker from "@/components/VisitTracker";
+import RefTracker from "@/components/RefTracker";
 import JsonLd from "@/components/JsonLd";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { CartProvider } from "@/lib/cart";
@@ -99,6 +100,7 @@ export default async function LocaleRootLayout({
         <SpeedInsights />
         <Analytics />
         <VisitTracker />
+        <RefTracker />
         <I18nProvider locale={locale} dict={dict}>
           <CurrencyProvider settings={currencySettings}>
             <CartProvider>
