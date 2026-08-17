@@ -215,6 +215,38 @@ export type TutcasaBookingStatus = {
   amountPaid?: number;
 };
 
+/* ── Airport-transfer status callbacks (TutCasa's free arrival transfers,
+      fulfilled by Amanah — see docs/tutcasa-transfers.md) ────────────────── */
+
+export type TransferStatusUpdate =
+  | { status: "confirmed" }
+  | { status: "need_details"; note: string }
+  | { status: "done" };
+
+/** Report a transfer job's status back to TutCasa. "gone" = 404 there —
+    the job vanished on their side; treat it as closed. */
+export async function updateTutcasaTransferStatus(
+  transferId: string,
+  update: TransferStatusUpdate
+): Promise<"ok" | "gone" | "error"> {
+  try {
+    const res = await fetch(
+      `${BASE}/api/partner/transfers/${encodeURIComponent(transferId)}/status`,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: { "content-type": "application/json", "x-partner-key": PARTNER_KEY },
+        body: JSON.stringify(update),
+      }
+    );
+    if (res.status === 404) return "gone";
+    const data = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+    return data?.ok ? "ok" : "error";
+  } catch {
+    return "error";
+  }
+}
+
 /** Poll a hold/request/booking's current state. */
 export async function getTutcasaBookingStatus(id: string): Promise<TutcasaBookingStatus | null> {
   try {
