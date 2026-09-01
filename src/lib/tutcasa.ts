@@ -247,6 +247,27 @@ export async function updateTutcasaTransferStatus(
   }
 }
 
+/** Amanah's decision on a TOUR booking (accept / deny / need_details). */
+export async function updateTutcasaTourStatus(
+  bookingId: string,
+  action: "accept" | "deny" | "need_details",
+  note?: string
+): Promise<"ok" | "gone" | "error"> {
+  try {
+    const res = await fetch(`${BASE}/api/partner/tour-status`, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "content-type": "application/json", "x-partner-key": PARTNER_KEY },
+      body: JSON.stringify({ bookingId, action, note: note ?? null }),
+    });
+    if (res.status === 404) return "gone";
+    const data = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+    return data?.ok ? "ok" : "error";
+  } catch {
+    return "error";
+  }
+}
+
 /** Poll a hold/request/booking's current state. */
 export async function getTutcasaBookingStatus(id: string): Promise<TutcasaBookingStatus | null> {
   try {

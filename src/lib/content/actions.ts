@@ -51,7 +51,7 @@ export async function saveContent(key: string, data: unknown): Promise<SaveResul
 
     // Tour/park/activity edits mirror to TutCasa the moment they're saved —
     // fire-and-forget, never blocks the admin's save.
-    if (/^admin_(tours|activities|addons|packages)/.test(key)) {
+    if (/^(tours|activities|addons|packages)$/.test(key)) {
       const base = "https://tutcasa-platform.vercel.app";
       const partnerKey = process.env.TUTCASA_PARTNER_KEY;
       if (partnerKey) {

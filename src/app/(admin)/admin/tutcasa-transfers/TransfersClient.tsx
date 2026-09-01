@@ -13,6 +13,7 @@ import {
   requestTransferDetails,
   type TransferJob,
 } from "./actions";
+import { deleteTransferJob } from "../tutcasa-tours/actions";
 
 const STATUS_STYLE: Record<string, string> = {
   requested: "bg-amber-100 text-amber-800",
@@ -128,8 +129,15 @@ function JobCard({ job }: { job: TransferJob }) {
           >
             Need more details…
           </button>
-        </div>
+</div>
       )}
+
+      <div className="mt-2">
+        <button disabled={busy} onClick={() => { if (confirm("Delete this transfer from the queue? (Removes it here only.)")) run(() => deleteTransferJob(job.transfer_id)); }}
+          className="rounded-full border border-gray-300 px-3 py-1 text-[12px] font-semibold text-gray-500 transition hover:border-red-400 hover:text-red-600 disabled:opacity-40">
+          🗑 Delete from queue
+        </button>
+      </div>
 
       {noteOpen && active && (
         <div className="mt-3 flex gap-2">
