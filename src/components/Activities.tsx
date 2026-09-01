@@ -18,8 +18,10 @@ export default async function Activities({ locale }: { locale: Locale }) {
   const picked = [...featured, ...fillers].slice(0, 8);
   const titles = await translateMany(picked.map((d) => d.title), locale);
   const ACTIVITIES = picked.map((d, i) => ({ title: titles[i], href: `/destinations/${d.slug}`, img: d.card, alt: d.alt }));
+  // Framed as regional DISCOVERY (not a bookable catalog — that confusion
+  // cost bookings): the title explains what the section is.
   const [handpicked, exploreWord1, activitiesWord, exploreAllLabel, exploreLabel2] = await translateMany(
-    ["Handpicked Experiences", "Explore", "Activities", "Explore All Activities →", "Explore"],
+    ["Handpicked Experiences", "Discover all the activities", "the Riviera Maya has to offer", "Explore All Activities →", "Explore"],
     locale
   );
   return (

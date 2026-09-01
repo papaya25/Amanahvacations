@@ -86,6 +86,21 @@ export default async function DestinationPage({ params }: Props) {
 
   const paragraphs = await translateMany(dest.paragraphs, locale);
 
+  /* Destinations we actually sell deep-link straight to that tour/park card;
+     the rest get the generic tours button (plus the existing contact CTA —
+     "we'll arrange it" is the concierge model for unlisted experiences). */
+  const DEST_TOUR_LINKS: Record<string, string> = {
+    chichenitza: "/tours#tour-chichen",
+    valladolid: "/tours#tour-chichen",
+    coba: "/tours#tour-cobacenotes",
+    cozumel: "/tours#tour-cozumel",
+    holbox: "/tours#tour-holbox",
+    cenotes: "/tours#tour-rutacenotes",
+    snorkeling: "/tours#tour-akumalcenotes",
+    xcaret: "/parks#park-xcaret",
+  };
+  const tourLink = DEST_TOUR_LINKS[dest.slug];
+
   const staticLabels = await translateMany(
     [
       "Description",
@@ -93,6 +108,8 @@ export default async function DestinationPage({ params }: Props) {
       "Private · Family Safe · Halal Friendly",
       "Contact Us to Book It",
       "Check Our Packages",
+      "We Run This One — See the Tour",
+      "Check Our Tours",
       "Next",
       "More",
       "experiences",
@@ -108,6 +125,8 @@ export default async function DestinationPage({ params }: Props) {
     labelPrivateTags,
     labelContactBook,
     labelCheckPackages,
+    labelSeeThisTour,
+    labelCheckTours,
     labelNextWord,
     labelMore,
     labelExperiences,
@@ -210,6 +229,13 @@ export default async function DestinationPage({ params }: Props) {
                 >
                   {labelCheckPackages}
                   <span aria-hidden>←</span>
+                </Link>
+                <Link
+                  href={tourLink ?? "/tours"}
+                  className="flex items-center justify-between rounded-full border-[1.5px] border-forest bg-white/80 px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[1px] text-forest transition hover:bg-forest hover:text-white"
+                >
+                  {tourLink ? labelSeeThisTour : labelCheckTours}
+                  <span aria-hidden>→</span>
                 </Link>
               </div>
             </div>

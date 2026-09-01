@@ -6,7 +6,7 @@
    time, Buy Now handoff to checkout, and the WhatsApp/email request flow for
    on-request tours are preserved. */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
@@ -86,6 +86,24 @@ export default function ToursClient({
   const [singlesDate, setSinglesDate] = useState("");
   const [singlesPeople, setSinglesPeople] = useState(2);
   const [toast, setToast] = useState("");
+
+  /* Deep links from destination pages (#tour-<key>): the router's own hash
+     scroll doesn't fire reliably on this dynamic page, so land on the card
+     ourselves (second pass once images/layout settle). */
+  useEffect(() => {
+    const goto = () => {
+      const id = window.location.hash.slice(1);
+      if (id) document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    };
+    if (window.location.hash) {
+      const t1 = window.setTimeout(goto, 150);
+      const t2 = window.setTimeout(goto, 800);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, []);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // earliest bookable date = tomorrow (24h lead time)
@@ -233,7 +251,9 @@ export default function ToursClient({
             const offerTotal = hasOffer ? (t.offer as number) * ppl : 0;
             const offerPct = hasOffer ? Math.round((1 - (t.offer as number) / (t.price as number)) * 100) : 0;
             return (
-              <div key={t.name} className="at-card">
+              // The id anchors deep links from the destination guide pages
+              // ("We run this one — see the tour" → /tours#tour-<key>).
+              <div key={t.name} id={t.key ? `tour-${t.key}` : undefined} className="at-card">
                 <div className="at-card-img">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={t.img} alt={t.name} loading="lazy" />

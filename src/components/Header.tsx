@@ -11,9 +11,12 @@ import { CURRENCIES, SYMBOLS, useCurrency } from "@/lib/currency";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { LOCALES, LOCALE_LABELS, localizeHref, stripLocale, type Locale } from "@/lib/i18n/config";
 
+/* "Activities" is deliberately NOT in the menu: /activities is a regional
+   discovery guide (kept for SEO + the homepage section), not a bookable
+   catalog — having it next to Packages/Tours made visitors try to book
+   from it. It stays linked from the homepage section and the footer. */
 const NAV_KEYS = [
   { key: "nav_home", href: "/" },
-  { key: "nav_activities", href: "/activities" },
   { key: "nav_packages", href: "/packages" },
   { key: "nav_tours", href: "/tours" },
   { key: "nav_vip", href: "/vip" },

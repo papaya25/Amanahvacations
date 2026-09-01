@@ -6,7 +6,7 @@
    price server-side from the add-on catalogue by activity id, so the amount
    charged never comes from the browser. */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
@@ -30,6 +30,23 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
   const [dates, setDates] = useState<Record<string, string>>({});
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Deep links from destination pages (#park-<id>) — same manual hash-scroll
+     as the tours page. */
+  useEffect(() => {
+    const goto = () => {
+      const id = window.location.hash.slice(1);
+      if (id) document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    };
+    if (window.location.hash) {
+      const t1 = window.setTimeout(goto, 150);
+      const t2 = window.setTimeout(goto, 800);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, []);
 
   // earliest bookable date = tomorrow (24h lead time, same as tours)
   const minDate = useMemo(() => {
@@ -93,7 +110,7 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
             const ppl = paxOf(park.id);
             const total = park.price * ppl;
             return (
-              <div key={park.id} className="at-card">
+              <div key={park.id} id={`park-${park.id}`} className="at-card">
                 <div
                   className={`at-card-img${park.imgFit === "contain" ? " pk-contain" : ""}`}
                   style={park.imgFit === "contain" ? { background: park.imgBg } : undefined}
