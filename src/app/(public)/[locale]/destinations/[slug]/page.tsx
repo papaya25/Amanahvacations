@@ -98,6 +98,8 @@ export default async function DestinationPage({ params }: Props) {
     cenotes: "/tours#tour-rutacenotes",
     snorkeling: "/tours#tour-akumalcenotes",
     contoy: "/tours#tour-isla-contoy-national-park",
+    tulum: "/tours#tour-tulumcenotes",
+    zipline: "/parks#park-xplor",
     xcaret: "/parks#park-xcaret",
   };
   const tourLink = DEST_TOUR_LINKS[dest.slug];

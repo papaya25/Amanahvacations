@@ -429,24 +429,26 @@ export const DESTINATIONS: Destination[] = [
     ]
   },
   {
-    "slug": "tennis-lessons",
-    "title": "Tennis Lessons",
-    "alt": "Tennis lessons in Playa del Carmen",
-    "card": "/images/dest/tennis-lessons.jpg",
-    "hero": "/images/dest/tennis-lessons-hero.jpg",
-    "paragraphs": [
-      "Tennis lessons in Playa del Carmen offer a perfect blend of sport, fun, and relaxation in a beautiful tropical setting. Whether you’re a complete beginner or an experienced player looking to refine your technique, this experience is tailored to all levels, with professional coaches guiding you every step of the way.",
-      "Set in high-quality courts surrounded by palm trees and warm Caribbean weather, each session combines skill development with an enjoyable and energizing atmosphere. From improving your serve and footwork to mastering strategy and consistency, lessons are designed to help you progress while having a great time on the court.",
-      "This experience can be enjoyed individually, as a couple, or even as a group, making it a great addition to your stay for those who want to stay active while on vacation. Tennis lessons in the Riviera Maya bring together sport and lifestyle, offering a unique way to enjoy your time under the sun while learning or perfecting a new skill."
-    ],
-    "tags": [
-      "couples",
-      "family",
-      "Playa del Carmen",
-      "Fun",
-      "Tennis",
-      "Sport"
-    ]
+      "slug": "tulum",
+      "title": "Tulum",
+      "alt": "Tulum archaeological site \u2014 El Castillo pyramid above the Caribbean Sea",
+      "card": "/images/dest/tulum.jpg",
+      "hero": "/images/dest/tulum-hero.jpg",
+      "paragraphs": [
+          "Tulum is the only Maya city ever built facing the open sea \u2014 a walled clifftop settlement whose grey stone temples still stand guard over some of the most beautiful turquoise water in the Caribbean. Walking its paths, you move between iguanas sunning on ancient walls, palm trees leaning into the sea breeze, and the great El Castillo pyramid rising against the horizon. It is at once an archaeological treasure and one of the most breathtaking viewpoints in Mexico, which is why Tulum has become an essential stop on any Riviera Maya journey.",
+          "A visit typically begins in the morning, before the heat and the crowds, with a guided walk through the ruins to hear the stories of the traders and astronomers who lived here seven centuries ago. Afterwards, the experience pairs naturally with a swim \u2014 either on the beach below the cliffs or in one of the crystal-clear cenotes hidden in the jungle just minutes away. With private transportation, a knowledgeable guide, and a pace set entirely by your group, Tulum rewards every kind of traveler: families, couples, photographers, and history lovers alike."
+      ],
+      "tags": [
+          "Tulum",
+          "Maya ruins",
+          "History",
+          "Beach",
+          "Culture",
+          "family",
+          "couples",
+          "Photography",
+          "Caribbean"
+      ]
   },
   {
     "slug": "private-yacht",
