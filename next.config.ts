@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   // language-by-language, so give static generation ample time before the
   // cache is populated; subsequent builds and requests are fast.
   staticPageGenerationTimeout: 300,
+  // Admin photo uploads go through a server action; Next's default request cap
+  // is 1 MB, which rejected every normal photo with a 500 before our own 8 MB
+  // check could run. 10 MB = our limit + form encoding overhead.
+  experimental: {
+    serverActions: { bodySizeLimit: "10mb" },
+  },
   images: {
     // Admin-uploaded photos live in Supabase Storage.
     remotePatterns: [
