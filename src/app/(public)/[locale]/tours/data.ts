@@ -59,7 +59,7 @@ export function tourTotalFor(t: Pick<Tour, "groupPrices" | "price">, pax: number
 
 export const TOURS: Tour[] = [
   {
-    key: "akumalcenotes", name: "Cenotes, Coral & Sea Turtles", sub: "Dos Ojos Cenote + Akumal Snorkeling",
+    key: "akumalcenotes", name: "Akumal Sea Turtles, Snorkeling & Cenotes", sub: "Dos Ojos Cenote + Akumal Snorkeling",
     dur: "6 hours", price: 3000,
     groupPrices: { 2: 6000, 3: 7850, 4: 9850, 5: 11650, 6: 13300 },
     img: "/images/tours/akumalcenotes.jpg",
@@ -73,7 +73,7 @@ export const TOURS: Tour[] = [
     ],
   },
   {
-    key: "tulumcenotes", name: "Cenotes & the Ruins of Tulum", sub: "Dos Ojos Cenote + Tulum Archaeological Site",
+    key: "tulumcenotes", name: "Tulum Ruins & Cenotes", sub: "Dos Ojos Cenote + Tulum Archaeological Site",
     dur: "6–8 hours", price: 2650,
     groupPrices: { 2: 5300, 3: 6850, 4: 8000, 5: 9650, 6: 11150 },
     img: "/images/tours/tulumcenotes.jpg",

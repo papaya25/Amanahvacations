@@ -34,8 +34,8 @@ const DEFAULT: { rows: CostRow[]; taxRate: number } = {
     ),
     ...seed(
       [
-        ["akumalcenotes", "Cenotes, Coral & Sea Turtles"],
-        ["tulumcenotes", "Cenotes & the Ruins of Tulum"],
+        ["akumalcenotes", "Akumal Sea Turtles, Snorkeling & Cenotes"],
+        ["tulumcenotes", "Tulum Ruins & Cenotes"],
         ["cobacenotes", "Coba Ruins & Jungle Cenotes"],
         ["cozumel", "Cozumel Private Boat Snorkeling"],
         ["akumaltulum", "Tulum & Akumal"],

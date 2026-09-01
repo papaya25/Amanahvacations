@@ -53,8 +53,8 @@ export async function generateMetadata({
 // Lightweight summary for structured data (MXN, per person "from" — the
 // per-person rate at the largest group size, where the group discount peaks).
 const TOUR_SUMMARY = [
-  { name: "Cenotes, Coral & Sea Turtles (Akumal)", price: 2483, img: "/images/tours/akumalcenotes.jpg" },
-  { name: "Cenotes & the Ruins of Tulum", price: 3325, img: "/images/tours/tulumcenotes.jpg" },
+  { name: "Akumal Sea Turtles, Snorkeling & Cenotes", price: 2483, img: "/images/tours/akumalcenotes.jpg" },
+  { name: "Tulum Ruins & Cenotes", price: 3325, img: "/images/tours/tulumcenotes.jpg" },
   { name: "Coba Ruins & Jungle Cenotes", price: 2950, img: "/images/tours/cobacenotes.jpg" },
   { name: "Cozumel Private Boat Snorkeling", price: 2150, img: "/images/tours/cozumel.jpg" },
   { name: "Tulum & Akumal", price: 3660, img: "/images/tours/akumaltulum.jpg" },
