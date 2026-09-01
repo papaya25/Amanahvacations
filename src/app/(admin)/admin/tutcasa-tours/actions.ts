@@ -16,6 +16,7 @@ export type TourBookingJob = {
   guest_email: string | null;
   guest_phone: string | null;
   notes: string | null;
+  last_answer: string | null;
   status: string;
   received_at: string;
 };
@@ -53,7 +54,11 @@ async function decide(
     .update(
       result === "gone"
         ? { status: "closed", updated_at: new Date().toISOString() }
-        : { status: localStatus, updated_at: new Date().toISOString() }
+        : {
+            status: localStatus,
+            ...(action === "need_details" ? { last_answer: null } : {}),
+            updated_at: new Date().toISOString(),
+          }
     )
     .eq("booking_id", bookingId);
   revalidatePath("/admin/tutcasa-tours");

@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       guest_email: str(body.guestEmail),
       guest_phone: str(body.guestPhone),
       notes: str(body.notes),
+      last_answer: str(body.lastAnswer),
       status: str(body.status) ?? "new",
       updated_at: new Date().toISOString(),
     },

@@ -19,6 +19,7 @@ const STATUS_STYLE: Record<string, string> = {
   accepted: "bg-emerald-100 text-emerald-800",
   denied: "bg-red-100 text-red-700",
   asked_details: "bg-orange-100 text-orange-800",
+  answered: "bg-sky-100 text-sky-800",
   closed: "bg-gray-200 text-gray-500",
 };
 
@@ -43,7 +44,7 @@ function JobCard({ job }: { job: TourBookingJob }) {
     router.refresh();
   };
 
-  const open = job.status === "new" || job.status === "asked_details";
+  const open = job.status === "new" || job.status === "asked_details" || job.status === "answered";
 
   return (
     <div className="rounded-xl border border-sand bg-cream/40 p-4">
@@ -60,6 +61,9 @@ function JobCard({ job }: { job: TourBookingJob }) {
         <div>📅 {fmtDate(job.tour_date)} · {job.group_size ?? "?"} people · <b>{job.total_label ?? "—"}</b></div>
         <div>👤 {job.guest_name ?? "—"} · {job.guest_email ?? ""}{job.guest_phone ? ` · ${job.guest_phone}` : ""}</div>
         {job.notes && <div className="sm:col-span-2">📝 {job.notes}</div>}
+        {job.last_answer && (
+          <div className="sm:col-span-2 font-semibold text-emerald-800">✅ TutCasa answered: “{job.last_answer}”</div>
+        )}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {open && (
