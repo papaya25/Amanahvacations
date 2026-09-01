@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
       // when TutCasa answers our question, keep the reply front and centre
       last_answer: str(body.lastAnswer),
       guest_phone: str(body.guestPhone),
+      whatsapp: str(body.whatsapp),
+      address: str(body.address),
       home: str(body.home),
       check_in: str(body.checkIn),
       // A resend replaces the job and reopens it in the queue.

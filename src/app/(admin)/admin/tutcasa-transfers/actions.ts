@@ -15,6 +15,8 @@ export type TransferJob = {
   baby_seat: boolean;
   note: string | null;
   guest_phone: string | null;
+  whatsapp: string | null;
+  address: string | null;
   home: string | null;
   check_in: string | null;
   status: string;

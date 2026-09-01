@@ -48,6 +48,20 @@ export async function saveContent(key: string, data: unknown): Promise<SaveResul
 
     // Content can appear anywhere (footer, legal, pages), so refresh everything.
     revalidatePath("/", "layout");
+
+    // Tour/park/activity edits mirror to TutCasa the moment they're saved —
+    // fire-and-forget, never blocks the admin's save.
+    if (/^admin_(tours|activities|addons|packages)/.test(key)) {
+      const base = "https://tutcasa-platform.vercel.app";
+      const partnerKey = process.env.TUTCASA_PARTNER_KEY;
+      if (partnerKey) {
+        void fetch(`${base}/api/partner/sync-tours`, {
+          method: "POST",
+          headers: { "x-partner-key": partnerKey },
+          signal: AbortSignal.timeout(20_000),
+        }).catch(() => {});
+      }
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error saving content" };

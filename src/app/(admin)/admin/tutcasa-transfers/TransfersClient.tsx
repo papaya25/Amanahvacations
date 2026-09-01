@@ -90,6 +90,8 @@ function JobCard({ job }: { job: TransferJob }) {
             "—"
           )}
         </div>
+        {job.address && <div className="sm:col-span-2">📍 Address & unit: {job.address}</div>}
+        {job.whatsapp && <div>💬 WhatsApp: {job.whatsapp}</div>}
         {job.note && <div className="sm:col-span-2">📝 Note: {job.note}</div>}
         {job.amanah_note && (
           <div className="sm:col-span-2 text-orange-800">↳ We asked: “{job.amanah_note}”</div>

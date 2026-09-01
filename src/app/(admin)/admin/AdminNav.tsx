@@ -10,6 +10,7 @@ const GROUPS: { heading: string; links: { href: string; label: string }[] }[] = 
       { href: "/admin", label: "Dashboard" },
       { href: "/admin/orders", label: "Orders & Bookings" },
       { href: "/admin/tutcasa-transfers", label: "TutCasa Transfers" },
+      { href: "/admin/tutcasa-tours", label: "TutCasa Tour Bookings" },
       { href: "/admin/customers", label: "Customers" },
       { href: "/admin/commissions", label: "Commissions" },
       { href: "/admin/profits", label: "Profits 🔒" },
