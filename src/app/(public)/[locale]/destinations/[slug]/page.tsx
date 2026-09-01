@@ -97,6 +97,7 @@ export default async function DestinationPage({ params }: Props) {
     holbox: "/tours#tour-holbox",
     cenotes: "/tours#tour-rutacenotes",
     snorkeling: "/tours#tour-akumalcenotes",
+    contoy: "/tours#tour-isla-contoy-national-park",
     xcaret: "/parks#park-xcaret",
   };
   const tourLink = DEST_TOUR_LINKS[dest.slug];

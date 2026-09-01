@@ -32,20 +32,22 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* Deep links from destination pages (#park-<id>) — same manual hash-scroll
-     as the tours page. */
+     + state-driven landing glow as the tours page. */
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   useEffect(() => {
-    const goto = () => {
-      const id = window.location.hash.slice(1);
-      if (id) document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    setHighlightId(id);
+    const goto = () =>
+      document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    const t1 = window.setTimeout(goto, 150);
+    const t2 = window.setTimeout(goto, 800);
+    const t3 = window.setTimeout(() => setHighlightId(null), 8000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
     };
-    if (window.location.hash) {
-      const t1 = window.setTimeout(goto, 150);
-      const t2 = window.setTimeout(goto, 800);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    }
   }, []);
 
   // earliest bookable date = tomorrow (24h lead time, same as tours)
@@ -110,7 +112,11 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
             const ppl = paxOf(park.id);
             const total = park.price * ppl;
             return (
-              <div key={park.id} id={`park-${park.id}`} className="at-card">
+              <div
+                key={park.id}
+                id={`park-${park.id}`}
+                className={`at-card${highlightId === `park-${park.id}` ? " at-highlight" : ""}`}
+              >
                 <div
                   className={`at-card-img${park.imgFit === "contain" ? " pk-contain" : ""}`}
                   style={park.imgFit === "contain" ? { background: park.imgBg } : undefined}

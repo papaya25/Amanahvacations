@@ -79,6 +79,17 @@
 /* Card */
 #amanah-tours .at-card { background: #fff; border: 1px solid var(--at-line); border-radius: 18px; display: flex; flex-direction: column; transition: transform 0.3s, box-shadow 0.3s; scroll-margin-top: 120px; /* deep links from destination pages land below the sticky header */ }
 #amanah-tours .at-card:hover { transform: translateY(-6px); box-shadow: 0 22px 48px rgba(21, 44, 30, 0.14); }
+/* Deep-link landing glow ("We run this one" from a destination page): the
+   target card pulses gold so the visitor instantly sees which one it is. */
+#amanah-tours .at-card.at-highlight {
+  border-color: #c8693a;
+  box-shadow: 0 0 0 3px rgba(200, 105, 58, 0.4), 0 18px 44px rgba(200, 105, 58, 0.22);
+  animation: at-glow 1.6s ease-in-out 2;
+}
+@keyframes at-glow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(200, 105, 58, 0.4), 0 18px 44px rgba(200, 105, 58, 0.22); }
+  50% { box-shadow: 0 0 0 7px rgba(217, 154, 63, 0.55), 0 18px 44px rgba(200, 105, 58, 0.3); }
+}
 #amanah-tours .at-card-img { position: relative; height: 190px; overflow: hidden; border-radius: 18px 18px 0 0; }
 #amanah-tours .at-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
 #amanah-tours .at-card:hover .at-card-img img { transform: scale(1.06); }

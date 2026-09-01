@@ -89,20 +89,24 @@ export default function ToursClient({
 
   /* Deep links from destination pages (#tour-<key>): the router's own hash
      scroll doesn't fire reliably on this dynamic page, so land on the card
-     ourselves (second pass once images/layout settle). */
+     ourselves (second pass once images/layout settle) and glow it so the
+     visitor sees exactly which tour "we run this one" meant. The glow is
+     React STATE (not a classList poke) so re-renders can't wipe it. */
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   useEffect(() => {
-    const goto = () => {
-      const id = window.location.hash.slice(1);
-      if (id) document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    setHighlightId(id);
+    const goto = () =>
+      document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    const t1 = window.setTimeout(goto, 150);
+    const t2 = window.setTimeout(goto, 800);
+    const t3 = window.setTimeout(() => setHighlightId(null), 8000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
     };
-    if (window.location.hash) {
-      const t1 = window.setTimeout(goto, 150);
-      const t2 = window.setTimeout(goto, 800);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    }
   }, []);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -253,7 +257,11 @@ export default function ToursClient({
             return (
               // The id anchors deep links from the destination guide pages
               // ("We run this one — see the tour" → /tours#tour-<key>).
-              <div key={t.name} id={t.key ? `tour-${t.key}` : undefined} className="at-card">
+              <div
+                key={t.name}
+                id={t.key ? `tour-${t.key}` : undefined}
+                className={`at-card${t.key && highlightId === `tour-${t.key}` ? " at-highlight" : ""}`}
+              >
                 <div className="at-card-img">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={t.img} alt={t.name} loading="lazy" />
