@@ -19,6 +19,8 @@ export type TransferJob = {
   check_in: string | null;
   status: string;
   amanah_note: string | null;
+  kind: "pickup" | "dropoff" | null;
+  last_answer: string | null;
   received_at: string;
   updated_at: string;
 };
@@ -81,6 +83,6 @@ export async function requestTransferDetails(transferId: string, note: string) {
   return applyStatus(
     transferId,
     { status: "need_details", note: trimmed },
-    { status: "need_details", amanah_note: trimmed }
+    { status: "need_details", amanah_note: trimmed, last_answer: null }
   );
 }

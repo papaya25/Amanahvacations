@@ -58,6 +58,9 @@ function JobCard({ job }: { job: TransferJob }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <span className="font-serif text-[19px] font-semibold text-ink">{job.full_name}</span>
+          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-800">
+            {job.kind === "dropoff" ? "🛫 Drop-off" : "🛬 Pickup"}
+          </span>
           <span className="rounded-full border border-sand bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-forest">
             {job.ref}
           </span>
@@ -88,8 +91,11 @@ function JobCard({ job }: { job: TransferJob }) {
           )}
         </div>
         {job.note && <div className="sm:col-span-2">📝 Note: {job.note}</div>}
-        {job.amanah_note && job.status === "need_details" && (
+        {job.amanah_note && (
           <div className="sm:col-span-2 text-orange-800">↳ We asked: “{job.amanah_note}”</div>
+        )}
+        {job.last_answer && (
+          <div className="sm:col-span-2 font-semibold text-emerald-800">✅ TutCasa answered: “{job.last_answer}”</div>
         )}
       </div>
 

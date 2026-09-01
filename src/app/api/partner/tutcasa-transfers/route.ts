@@ -51,6 +51,9 @@ export async function POST(request: NextRequest) {
       passengers: Number(body.passengers) || null,
       baby_seat: body.babySeat === true,
       note: str(body.note),
+      kind: body.kind === "dropoff" ? "dropoff" : "pickup",
+      // when TutCasa answers our question, keep the reply front and centre
+      last_answer: str(body.lastAnswer),
       guest_phone: str(body.guestPhone),
       home: str(body.home),
       check_in: str(body.checkIn),
