@@ -145,6 +145,16 @@ export type DbPackage = {
   includes: string; // one item per line
 };
 
+
+/** After picking check-in, suggest the next day so the check-out
+    calendar opens on the right month (guest adjusts freely). */
+function suggestCheckout(ci: string, co: string): string {
+  if (!ci || (co && co > ci)) return co;
+  const d = new Date(`${ci}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function PackagesClient({
   dbPackages,
   dbAddons,
@@ -1029,11 +1039,11 @@ export default function PackagesClient({
       <div className="input-bar">
         <div className="input-group">
           <label>{dict.pkgc_checkin}</label>
-          <input type="date" value={checkin} onChange={(e) => setCheckin(e.target.value)} />
+          <input type="date" value={checkin} onChange={(e) => { setCheckin(e.target.value); setCheckout(suggestCheckout(e.target.value, checkout)); }} />
         </div>
         <div className="input-group">
           <label>{dict.pkgc_checkout}</label>
-          <input type="date" value={checkout} onChange={(e) => setCheckout(e.target.value)} />
+          <input type="date" min={checkin || undefined} value={checkout} onChange={(e) => setCheckout(e.target.value)} />
         </div>
         {counters}
         {kidsAgesBlock}
@@ -1293,11 +1303,11 @@ export default function PackagesClient({
                 <div className="byo-ctrl-row">
                   <div className="input-group">
                     <label>{dict.pkgc_checkin}</label>
-                    <input type="date" value={checkin} onChange={(e) => setCheckin(e.target.value)} />
+                    <input type="date" value={checkin} onChange={(e) => { setCheckin(e.target.value); setCheckout(suggestCheckout(e.target.value, checkout)); }} />
                   </div>
                   <div className="input-group">
                     <label>{dict.pkgc_checkout}</label>
-                    <input type="date" value={checkout} onChange={(e) => setCheckout(e.target.value)} />
+                    <input type="date" min={checkin || undefined} value={checkout} onChange={(e) => setCheckout(e.target.value)} />
                   </div>
                 </div>
                 <div className="byo-ctrl-row">
