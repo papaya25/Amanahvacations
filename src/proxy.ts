@@ -19,6 +19,11 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    // TEMPORARY kill-switch (Maher's explicit request, 2026-09-05): with
+    // ADMIN_OPEN=1 in the environment, /admin needs NO login. Remove the env
+    // var + redeploy to re-lock. Must NEVER stay on for long — /admin exposes
+    // customer contact data and every price/content editor.
+    if (process.env.ADMIN_OPEN === "1") return NextResponse.next();
     const token = request.cookies.get(ADMIN_COOKIE)?.value;
     if (await verifyAdminToken(token)) return NextResponse.next();
     const loginUrl = new URL("/admin-login", request.url);
