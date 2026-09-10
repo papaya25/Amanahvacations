@@ -21,12 +21,12 @@ import { deleteTransferJob } from "../tutcasa-tours/actions";
 /* One form, two jobs: "add manually" (blank) and per-card "Edit" (prefilled). */
 export type TransferFields = {
   fullName: string; travelDate: string; kind: "pickup" | "dropoff";
-  flightNumber: string; passengers: number; babySeat: boolean;
+  flightNumber: string; adults: number; kids: number; kidsAges: string; babySeat: boolean;
   guestPhone: string; home: string; note: string; provider: string; price: number;
 };
 
 const BLANK: TransferFields = {
-  fullName: "", travelDate: "", kind: "pickup", flightNumber: "", passengers: 2,
+  fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: "",
   babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0,
 };
 
@@ -67,7 +67,11 @@ function TransferForm({
         </select>
       </div>
       <div><span className={labelCls}>Flight</span><input className={inputCls} value={f.flightNumber} onChange={(e) => set("flightNumber", e.target.value)} placeholder="AM 512" /></div>
-      <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers === 0 ? "" : f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
+      <div><span className={labelCls}>Adults</span><input type="number" min={1} className={inputCls} value={f.adults === 0 ? "" : f.adults} onChange={(e) => set("adults", Number(e.target.value) || 0)} /></div>
+      <div><span className={labelCls}>Kids / babies</span><input type="number" min={0} className={inputCls} value={f.kids === 0 ? "" : f.kids} onChange={(e) => set("kids", Number(e.target.value) || 0)} placeholder="0" /></div>
+      {f.kids > 0 && (
+        <div><span className={labelCls}>Kids\u2019 ages</span><input className={inputCls} value={f.kidsAges} onChange={(e) => set("kidsAges", e.target.value)} placeholder="e.g. 6 months, 4, 9" /></div>
+      )}
       <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
       <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" /></div>
       <div><span className={labelCls}>Price</span><input type="number" min={0} className={inputCls} value={f.price === 0 ? "" : f.price} onChange={(e) => set("price", Number(e.target.value) || 0)} placeholder="MXN" /></div>
@@ -158,7 +162,13 @@ function JobCard({ job }: { job: TransferJob }) {
 
       <div className="mt-3 grid gap-x-6 gap-y-1.5 text-[13px] text-ink/85 sm:grid-cols-2 lg:grid-cols-3">
         <div>✈️ Flight: <strong>{job.flight_number ?? "—"}</strong></div>
-        <div>👥 Passengers: <strong>{job.passengers ?? "—"}</strong>{job.baby_seat && <span className="ml-2 rounded-full bg-forest/10 px-2 py-0.5 text-[10.5px] font-bold text-forest">BABY SEAT</span>}</div>
+        <div>👥 Passengers:{" "}
+          <strong>
+            {job.adults != null || job.kids != null
+              ? `${job.adults ?? 0} adult${(job.adults ?? 0) !== 1 ? "s" : ""}${job.kids ? ` + ${job.kids} kid${job.kids !== 1 ? "s" : ""}` : ""}`
+              : job.passengers ?? "—"}
+          </strong>
+          {job.kids_ages && <span className="text-sage"> (ages: {job.kids_ages})</span>}{job.baby_seat && <span className="ml-2 rounded-full bg-forest/10 px-2 py-0.5 text-[10.5px] font-bold text-forest">BABY SEAT</span>}</div>
         <div>🏡 Drop-off: <strong>{job.home ?? "—"}</strong></div>
         <div>
           📞 Guest:{" "}
@@ -271,7 +281,9 @@ function JobCard({ job }: { job: TransferJob }) {
             travelDate: job.travel_date ?? "",
             kind: job.kind === "dropoff" ? "dropoff" : "pickup",
             flightNumber: job.flight_number ?? "",
-            passengers: job.passengers ?? 2,
+            adults: job.adults ?? job.passengers ?? 2,
+            kids: job.kids ?? 0,
+            kidsAges: job.kids_ages ?? "",
             babySeat: job.baby_seat,
             guestPhone: job.guest_phone ?? "",
             home: job.home ?? "",

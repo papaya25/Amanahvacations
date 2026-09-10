@@ -12,6 +12,9 @@ export type TransferJob = {
   travel_date: string | null;
   flight_number: string | null;
   passengers: number | null;
+  adults: number | null;
+  kids: number | null;
+  kids_ages: string | null;
   baby_seat: boolean;
   note: string | null;
   guest_phone: string | null;
@@ -93,7 +96,9 @@ export async function updateTransfer(
     travelDate: string;
     kind: "pickup" | "dropoff";
     flightNumber?: string;
-    passengers?: number;
+    adults?: number;
+    kids?: number;
+    kidsAges?: string;
     babySeat?: boolean;
     guestPhone?: string;
     home?: string;
@@ -114,7 +119,10 @@ export async function updateTransfer(
       travel_date: input.travelDate,
       kind: input.kind === "dropoff" ? "dropoff" : "pickup",
       flight_number: input.flightNumber?.trim() || null,
-      passengers: input.passengers || null,
+      adults: input.adults || null,
+      kids: input.kids ?? null,
+      kids_ages: input.kidsAges?.trim() || null,
+      passengers: (input.adults || 0) + (input.kids || 0) || null,
       baby_seat: Boolean(input.babySeat),
       guest_phone: input.guestPhone?.trim() || null,
       home: input.home?.trim() || null,
@@ -152,7 +160,9 @@ export async function addManualTransfer(input: {
   travelDate: string;
   kind: "pickup" | "dropoff";
   flightNumber?: string;
-  passengers?: number;
+  adults?: number;
+  kids?: number;
+  kidsAges?: string;
   babySeat?: boolean;
   guestPhone?: string;
   home?: string;
@@ -172,7 +182,10 @@ export async function addManualTransfer(input: {
     travel_date: input.travelDate,
     kind: input.kind === "dropoff" ? "dropoff" : "pickup",
     flight_number: input.flightNumber?.trim() || null,
-    passengers: input.passengers || null,
+    adults: input.adults || null,
+    kids: input.kids ?? null,
+    kids_ages: input.kidsAges?.trim() || null,
+    passengers: (input.adults || 0) + (input.kids || 0) || null,
     baby_seat: Boolean(input.babySeat),
     guest_phone: input.guestPhone?.trim() || null,
     home: input.home?.trim() || null,
