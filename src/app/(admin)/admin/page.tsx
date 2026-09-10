@@ -41,7 +41,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
     <div className="rounded-[16px] border border-sand bg-white p-5">
       <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-sage">{label}</div>
       <div className="mt-1.5 font-serif text-[26px] font-semibold leading-none text-ink">{value}</div>
-      {sub && <div className="mt-1.5 text-[12px] text-sage">{sub}</div>}
+      {sub && <div className="mt-1.5 whitespace-pre-line text-[12px] text-sage">{sub}</div>}
     </div>
   );
 }
@@ -110,9 +110,9 @@ export default async function AdminDashboard({
 
       {/* Stats */}
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        <StatCard label="Packages" value={String(split.package.web + split.package.man)} sub={`${split.package.web} website · ${split.package.man} manual`} />
-        <StatCard label="Tours" value={String(split.tour.web + split.tour.man)} sub={`${split.tour.web} website · ${split.tour.man} manual`} />
-        <StatCard label="Transfers" value={String(transfers.count)} sub={`${transfers.count - transfers.manual} TutCasa · ${transfers.manual} manual`} />
+        <StatCard label="Packages" value={String(split.package.web + split.package.man)} sub={`${split.package.web} website\n${split.package.man} manual`} />
+        <StatCard label="Tours" value={String(split.tour.web + split.tour.man)} sub={`${split.tour.web} website\n${split.tour.man} manual`} />
+        <StatCard label="Transfers" value={String(transfers.count)} sub={`${transfers.count - transfers.manual} TutCasa\n${transfers.manual} manual`} />
         <StatCard label="Revenue" value={fmtMXN(revenue + transfers.revenue)} sub="all bookings, excl. cancelled" />
         <StatCard label="Paid orders" value={String(paid.length)} sub={`${pending.length} pending`} />
         <StatCard label="Customers" value={String(customers.length)} sub="registered accounts" />
