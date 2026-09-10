@@ -9,6 +9,7 @@ import {
   getCosts,
   getServiceMargins,
   getTransferJobsLedger,
+  isRealizedSale,
   type TransferJobsLedger,
   type CostRow,
   type MarginRow,
@@ -102,7 +103,7 @@ export default async function ProfitsPage({
 
       {tab === "overview" && <OverviewTab orders={orders} costRows={costs.rows} taxRate={costs.taxRate} />}
       {tab === "margins" && <MarginsTab />}
-      {tab === "sales" && <SalesTab orders={orders} />}
+      {tab === "sales" && <SalesTab orders={orders} costRows={costs.rows} />}
     </>
   );
 }
@@ -303,9 +304,25 @@ function MarginTr({ r }: { r: MarginRow }) {
 
 /* ── Tab 3 — Sales statistics ──────────────────────────────────────────── */
 
-async function SalesTab({ orders }: { orders: OrderRow[] }) {
+async function SalesTab({ orders, costRows }: { orders: OrderRow[]; costRows: CostRow[] }) {
   const stats: SalesStats = buildSalesStats(orders);
   const transfers: TransferJobsLedger = await getTransferJobsLedger();
+
+  /* Overall number / revenue / profit per category (same cost matching as
+     the Overview tab). */
+  const cat = {
+    package: { n: 0, revenue: 0, cost: 0 },
+    tour: { n: 0, revenue: 0, cost: 0 },
+  };
+  for (const o of orders.filter(isRealizedSale)) {
+    for (const it of o.items) {
+      if (it.kind !== "package" && it.kind !== "tour") continue;
+      const c = cat[it.kind];
+      c.n += 1;
+      c.revenue += Number(it.total) || 0;
+      c.cost += itemCost(it, costRows) ?? 0;
+    }
+  }
   const abandoned = abandonedCheckouts(orders);
 
   return (
@@ -322,17 +339,15 @@ async function SalesTab({ orders }: { orders: OrderRow[] }) {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <SoldTable title="Packages sold" lines={stats.packages} />
-        <SoldTable title="Tours sold" lines={stats.tours} />
-        <SoldTable
-          title="Airport transfers made"
-          lines={
-            transfers.count === 0
-              ? []
-              : [{ name: "Confirmed + completed transfers", units: transfers.count, revenue: transfers.revenue, people: transfers.people }]
-          }
-          note={`From the Airport Transfers queue. Cost ${fmtMXN(transfers.cost)} → profit ${fmtMXN(transfers.profit)}. TutCasa's free arrival transfers count too (0 revenue, real cost).`}
+      <div className="mt-6 grid gap-3.5 sm:grid-cols-3">
+        <SummaryCard title="Packages sold" n={cat.package.n} revenue={cat.package.revenue} profit={cat.package.revenue - cat.package.cost} />
+        <SummaryCard title="Tours sold" n={cat.tour.n} revenue={cat.tour.revenue} profit={cat.tour.revenue - cat.tour.cost} />
+        <SummaryCard
+          title="Airport transfers"
+          n={transfers.count}
+          revenue={transfers.revenue}
+          profit={transfers.profit}
+          sub="scheduled + completed rides (incl. TutCasa's free arrivals at 0 revenue)"
         />
       </div>
 
@@ -468,6 +483,32 @@ function StatCard({ label, value, hint, warn }: { label: string; value: string; 
         {value}
       </div>
       {hint && <div className="mt-1.5 text-[11.5px] leading-snug text-sage">{hint}</div>}
+    </div>
+  );
+}
+
+function SummaryCard({
+  title,
+  n,
+  revenue,
+  profit,
+  sub,
+}: {
+  title: string;
+  n: number;
+  revenue: number;
+  profit: number;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-[16px] border border-sand bg-white p-5">
+      <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-sage">{title}</div>
+      <div className="mt-1.5 font-serif text-[30px] font-semibold leading-none text-ink">{n}</div>
+      <div className="mt-2.5 space-y-1 text-[13px]">
+        <div className="flex justify-between"><span className="text-sage">Revenue</span><span className="font-semibold text-ink">{fmtMXN(revenue)}</span></div>
+        <div className="flex justify-between"><span className="text-sage">Profit</span><span className={`font-semibold ${profit >= 0 ? "text-forest" : "text-terracotta"}`}>{fmtMXN(profit)}</span></div>
+      </div>
+      {sub && <p className="mt-2 text-[11px] leading-snug text-sage">{sub}</p>}
     </div>
   );
 }
