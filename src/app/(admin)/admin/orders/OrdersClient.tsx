@@ -31,7 +31,7 @@ function ManualOrderForm({ tourOptions, packageOptions }: { tourOptions: Catalog
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [f, setF] = useState({ kind: "tour" as "tour" | "package", catalogId: "", customerName: "", customerPhone: "", people: 2, date: "", totalMXN: 0 });
+  const [f, setF] = useState({ kind: "tour" as "tour" | "package", catalogId: "", customerName: "", customerPhone: "", people: 2, date: "", totalMXN: 0, paymentMethod: "Cash" });
   const options = f.kind === "tour" ? tourOptions : packageOptions;
   const set = (k: string, v: string | number) => setF((p) => ({ ...p, [k]: v }));
   const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
@@ -79,6 +79,12 @@ function ManualOrderForm({ tourOptions, packageOptions }: { tourOptions: Catalog
           <div><span className={labelCls}>{f.kind === "tour" ? "Tour date *" : "Check-in *"}</span><input type="date" className={inputCls} value={f.date} onChange={(e) => set("date", e.target.value)} /></div>
           <div><span className={labelCls}>People</span><input type="number" min={1} className={inputCls} value={f.people === 0 ? "" : f.people} onChange={(e) => set("people", Number(e.target.value) || 1)} /></div>
           <div><span className={labelCls}>Total charged</span><input type="number" min={0} className={inputCls} value={f.totalMXN === 0 ? "" : f.totalMXN} onChange={(e) => set("totalMXN", Number(e.target.value) || 0)} placeholder="MXN" /></div>
+          <div>
+            <span className={labelCls}>Payment method</span>
+            <select className={inputCls} value={f.paymentMethod} onChange={(e) => set("paymentMethod", e.target.value)}>
+              {["Cash", "Card", "Bank transfer", "PayPal", "Other"].map((m) => (<option key={m} value={m}>{m}</option>))}
+            </select>
+          </div>
           <div className="flex items-end">
             <button
               onClick={submit}

@@ -22,12 +22,12 @@ import { deleteTransferJob } from "../tutcasa-tours/actions";
 export type TransferFields = {
   fullName: string; travelDate: string; kind: "pickup" | "dropoff";
   flightNumber: string; adults: number; kids: number; kidsAges: string[]; babySeat: boolean;
-  guestPhone: string; home: string; note: string; provider: string; price: number;
+  guestPhone: string; home: string; note: string; provider: string; price: number; paymentMethod: string;
 };
 
 const BLANK: TransferFields = {
   fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: [],
-  babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0,
+  babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0, paymentMethod: "",
 };
 
 function TransferForm({
@@ -91,6 +91,13 @@ function TransferForm({
       )}
       <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
       <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" /></div>
+      <div>
+        <span className={labelCls}>Payment method</span>
+        <select className={inputCls} value={f.paymentMethod} onChange={(e) => set("paymentMethod", e.target.value)}>
+          <option value="">Not paid yet / unknown</option>
+          {["Cash", "Card", "Bank transfer", "PayPal", "Other"].map((m) => (<option key={m} value={m}>{m}</option>))}
+        </select>
+      </div>
       <div><span className={labelCls}>Price</span><input type="number" min={0} className={inputCls} value={f.price === 0 ? "" : f.price} onChange={(e) => set("price", Number(e.target.value) || 0)} placeholder="MXN" /></div>
       <div className="lg:col-span-2"><span className={labelCls}>Drop-off / pickup place</span><input className={inputCls} value={f.home} onChange={(e) => set("home", e.target.value)} placeholder="Hotel or villa name & area" /></div>
       <div><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
@@ -232,7 +239,7 @@ function JobCard({ job }: { job: TransferJob }) {
           )}
         </div>
         {job.price != null && job.price > 0 && (
-          <div>💰 Price: <strong>${Math.round(job.price).toLocaleString("en-US")} MXN</strong></div>
+          <div>💰 Price: <strong>${Math.round(job.price).toLocaleString("en-US")} MXN</strong>{job.payment_method && <span className="text-sage"> · {job.payment_method}</span>}</div>
         )}
         {job.address && <div className="sm:col-span-2">📍 Address & unit: {job.address}</div>}
         {job.whatsapp && <div>💬 WhatsApp: {job.whatsapp}</div>}
@@ -307,6 +314,7 @@ function JobCard({ job }: { job: TransferJob }) {
             note: job.note ?? "",
             provider: job.provider ?? "",
             price: job.price ?? 0,
+            paymentMethod: job.payment_method ?? "",
           }}
           submitLabel="Save changes"
           onSubmit={async (f) => {

@@ -25,6 +25,7 @@ export type TransferJob = {
   status: string;
   provider: string | null;
   price: number | null;
+  payment_method: string | null;
   amanah_note: string | null;
   kind: "pickup" | "dropoff" | null;
   last_answer: string | null;
@@ -105,6 +106,7 @@ export async function updateTransfer(
     note?: string;
     provider?: string;
     price?: number;
+    paymentMethod?: string;
   }
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
@@ -129,6 +131,7 @@ export async function updateTransfer(
       note: input.note?.trim() || null,
       provider: input.provider?.trim() || null,
       price: input.price || null,
+      payment_method: input.paymentMethod?.trim() || null,
       updated_at: new Date().toISOString(),
     })
     .eq("transfer_id", transferId);
@@ -169,6 +172,7 @@ export async function addManualTransfer(input: {
   note?: string;
   provider?: string;
   price?: number;
+  paymentMethod?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.fullName?.trim() || !input.travelDate) {
@@ -192,6 +196,7 @@ export async function addManualTransfer(input: {
     note: input.note?.trim() || null,
     provider: input.provider?.trim() || null,
     price: input.price || null,
+    payment_method: input.paymentMethod?.trim() || null,
     status: "confirmed",
   });
   if (error) {

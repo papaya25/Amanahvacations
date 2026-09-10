@@ -347,10 +347,19 @@ async function SalesTab({ orders, costRows }: { orders: OrderRow[]; costRows: Co
   }
   const abandoned = abandonedCheckouts(orders);
 
+  // Payment split across orders AND transfers (methods set on manual jobs).
+  const paySplit = new Map(stats.paymentSplit.map((p) => [p.method, p.count]));
+  for (const [m, n] of Object.entries(transfers.methods)) {
+    paySplit.set(m, (paySplit.get(m) ?? 0) + n);
+  }
+  const paymentSplit = [...paySplit.entries()]
+    .map(([method, count]) => ({ method, count }))
+    .sort((a, b) => b.count - a.count);
+
   return (
     <>
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Orders" value={String(stats.totalOrders)} />
+        <StatCard label="Bookings" value={String(stats.totalOrders + transfers.count)} hint="orders + airport transfers" />
         <StatCard label="Revenue" value={fmtMXN(stats.totalRevenue + transfers.revenue)} hint="orders + airport transfers" />
         <StatCard label="Avg order value" value={fmtMXN(stats.avgOrderValue)} />
         <StatCard label="Avg group size" value={stats.avgGroupSize ? `${stats.avgGroupSize} people` : "—"} />
@@ -384,11 +393,11 @@ async function SalesTab({ orders, costRows }: { orders: OrderRow[]; costRows: Co
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="rounded-[18px] border border-sand bg-white p-5">
           <h2 className="mb-3 font-serif text-[18px] font-semibold text-ink">Payment methods</h2>
-          {stats.paymentSplit.length === 0 ? (
+          {paymentSplit.length === 0 ? (
             <p className="text-[13px] text-sage">No sales yet.</p>
           ) : (
             <div className="space-y-2">
-              {stats.paymentSplit.map((p) => (
+              {paymentSplit.map((p) => (
                 <div key={p.method} className="flex items-center justify-between text-[13px]">
                   <span className="text-ink">{p.method}</span>
                   <span className="font-semibold text-forest">{p.count}</span>

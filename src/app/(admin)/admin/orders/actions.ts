@@ -48,6 +48,7 @@ export async function createManualOrder(input: {
   people: number;
   date: string; // YYYY-MM-DD (tour date / package check-in)
   totalMXN: number;
+  paymentMethod?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.customerName?.trim() || !input.date || !input.title?.trim()) {
@@ -81,7 +82,7 @@ export async function createManualOrder(input: {
       subtotal: item.total,
       discount: 0,
       total: item.total,
-      payment_method: "Manual (offline)",
+      payment_method: input.paymentMethod?.trim() || "Manual (offline)",
       customer_name: input.customerName.trim(),
       customer_email: "",
       customer_whatsapp: input.customerPhone?.trim() || null,
