@@ -459,3 +459,59 @@ async function chargeStaySaved(order: OrderRow, stay: CartItem): Promise<boolean
     return false;
   }
 }
+
+/* ── Day-before transfer reminders ────────────────────────────────────────
+   Runs with the daily /api/tutcasa/sync cron (9am Cancún). One digest email
+   to booking@ listing every confirmed transfer scheduled for TOMORROW, each
+   with a one-tap WhatsApp link to the guest (prefilled reminder message).
+   reminder_sent guards against duplicates when the route is hit again. */
+
+export async function sendTransferReminders(): Promise<void> {
+  try {
+    const supabase = createAdminClient();
+    // Cancún is UTC-5 year-round (no DST in Quintana Roo).
+    const tomorrow = new Date(Date.now() - 5 * 3600e3 + 24 * 3600e3).toISOString().slice(0, 10);
+    const { data } = await supabase
+      .from("tutcasa_transfers")
+      .select("transfer_id, ref, full_name, travel_date, flight_number, passengers, baby_seat, guest_phone, home, note, kind")
+      .eq("status", "confirmed")
+      .eq("reminder_sent", false)
+      .eq("travel_date", tomorrow);
+    if (!data?.length) return;
+
+    const lines = data.map((t) => {
+      const dir = t.kind === "dropoff" ? "Drop-off (to airport)" : "Pickup (from airport)";
+      const wa = t.guest_phone
+        ? `https://wa.me/${t.guest_phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+            `Hello ${t.full_name.split(" ")[0]}! This is Amanah Vacations with a reminder about your airport transfer tomorrow (${t.travel_date}${t.flight_number ? `, flight ${t.flight_number}` : ""}). Your private driver will be ready for you. See you soon! 🚐`
+          )}`
+        : null;
+      return (
+        `• ${t.full_name} — ${dir} [${t.ref}]\n` +
+        `  Flight: ${t.flight_number ?? "—"} · ${t.passengers ?? "?"} pax${t.baby_seat ? " · BABY SEAT" : ""}\n` +
+        `  Place: ${t.home ?? "—"}${t.note ? `\n  Note: ${t.note}` : ""}\n` +
+        (wa ? `  WhatsApp the guest: ${wa}` : `  (no guest phone on file)`)
+      );
+    });
+
+    const body =
+      `${data.length} airport transfer${data.length > 1 ? "s" : ""} scheduled for TOMORROW (${tomorrow}):\n\n` +
+      lines.join("\n\n") +
+      `\n\nFull queue: https://amanahvacations.com/admin/tutcasa-transfers`;
+    const res = await sendEmail({
+      to: NOTIFY_BOOKING,
+      subject: `🚐 Tomorrow's airport transfers (${data.length}) — ${tomorrow}`,
+      text: body,
+      html: renderBrandedEmail({ heading: "Transfers tomorrow", bodyText: body }),
+      from: FROM_BOOKING,
+    });
+    if (res.ok) {
+      await supabase
+        .from("tutcasa_transfers")
+        .update({ reminder_sent: true })
+        .in("transfer_id", data.map((t) => t.transfer_id));
+    }
+  } catch (e) {
+    console.error("sendTransferReminders:", e instanceof Error ? e.message : e);
+  }
+}

@@ -69,6 +69,21 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 /** Calendar events parsed from order items: tour dates and package check-ins. */
 export type BookingEvent = { date: string; orderId: string; label: string }; // date = YYYY-MM-DD
 
+/** Confirmed airport transfers (TutCasa + manual) as calendar events. */
+export async function getTransferEvents(): Promise<BookingEvent[]> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("tutcasa_transfers")
+    .select("ref, full_name, travel_date, kind")
+    .eq("status", "confirmed")
+    .not("travel_date", "is", null);
+  return (data ?? []).map((t) => ({
+    date: t.travel_date as string,
+    orderId: t.ref as string,
+    label: `${t.kind === "dropoff" ? "🛫" : "🛬"} Transfer — ${t.full_name}`,
+  }));
+}
+
 export function extractBookingEvents(orders: OrderRow[]): BookingEvent[] {
   const events: BookingEvent[] = [];
   const toKey = (raw: string | undefined): string | null => {

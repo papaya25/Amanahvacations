@@ -51,7 +51,10 @@ async function applyStatus(
   localPatch: Record<string, unknown>
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
-  const result = await updateTutcasaTransferStatus(transferId, update);
+  // Manually added transfers have no TutCasa counterpart — local only.
+  const result = transferId.startsWith("manual-")
+    ? "ok"
+    : await updateTutcasaTransferStatus(transferId, update);
   if (result === "error") {
     return { ok: false, error: "TutCasa didn't accept the update — try again in a moment." };
   }
@@ -77,6 +80,47 @@ export async function confirmTransfer(transferId: string) {
 
 export async function completeTransfer(transferId: string) {
   return applyStatus(transferId, { status: "done" }, { status: "done" });
+}
+
+/** Manually add a transfer (phone/WhatsApp-arranged, or an Amanah booking).
+    Created directly as "confirmed" — the admin adding it IS the acceptance —
+    so it lands on the dashboard calendar and in the day-before reminders. */
+export async function addManualTransfer(input: {
+  fullName: string;
+  travelDate: string;
+  kind: "pickup" | "dropoff";
+  flightNumber?: string;
+  passengers?: number;
+  babySeat?: boolean;
+  guestPhone?: string;
+  home?: string;
+  note?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
+  if (!input.fullName?.trim() || !input.travelDate) {
+    return { ok: false, error: "Name and travel date are required." };
+  }
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("tutcasa_transfers").insert({
+    transfer_id: `manual-${Date.now()}`,
+    ref: `MAN-${String(Date.now()).slice(-4)}`,
+    full_name: input.fullName.trim(),
+    travel_date: input.travelDate,
+    kind: input.kind === "dropoff" ? "dropoff" : "pickup",
+    flight_number: input.flightNumber?.trim() || null,
+    passengers: input.passengers || null,
+    baby_seat: Boolean(input.babySeat),
+    guest_phone: input.guestPhone?.trim() || null,
+    home: input.home?.trim() || null,
+    note: input.note?.trim() || null,
+    status: "confirmed",
+  });
+  if (error) {
+    console.error("addManualTransfer:", error.message);
+    return { ok: false, error: "Couldn't save the transfer. Please try again." };
+  }
+  revalidatePath("/admin/tutcasa-transfers");
+  return { ok: true };
 }
 
 export async function requestTransferDetails(transferId: string, note: string) {

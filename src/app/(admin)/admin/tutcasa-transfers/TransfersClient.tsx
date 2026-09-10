@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "../AdminUI";
 import {
+  addManualTransfer,
   confirmTransfer,
   completeTransfer,
   requestTransferDetails,
@@ -53,6 +54,8 @@ function JobCard({ job }: { job: TransferJob }) {
   };
 
   const active = job.status === "requested" || job.status === "need_details" || job.status === "confirmed";
+  // Manual transfers have no TutCasa side: only Done + delete apply.
+  const isManual = job.transfer_id.startsWith("manual-");
 
   return (
     <div className="rounded-xl border border-sand bg-cream/40 p-4">
@@ -62,6 +65,9 @@ function JobCard({ job }: { job: TransferJob }) {
           <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-800">
             {job.kind === "dropoff" ? "🛫 Drop-off" : "🛬 Pickup"}
           </span>
+          {isManual && (
+            <span className="rounded-full bg-forest/10 px-2 py-0.5 text-[11px] font-bold text-forest">✍️ Manual</span>
+          )}
           <span className="rounded-full border border-sand bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-forest">
             {job.ref}
           </span>
@@ -104,7 +110,7 @@ function JobCard({ job }: { job: TransferJob }) {
 
       {active && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {job.status !== "confirmed" && (
+          {job.status !== "confirmed" && !isManual && (
             <button
               onClick={() => run(() => confirmTransfer(job.transfer_id))}
               disabled={busy}
@@ -122,13 +128,15 @@ function JobCard({ job }: { job: TransferJob }) {
               Done (picked up)
             </button>
           )}
-          <button
-            onClick={() => setNoteOpen((o) => !o)}
-            disabled={busy}
-            className="rounded-full border-[1.5px] border-sand bg-white px-4 py-2 text-[12.5px] font-semibold text-ink transition hover:border-forest disabled:opacity-40"
-          >
-            Need more details…
-          </button>
+          {!isManual && (
+            <button
+              onClick={() => setNoteOpen((o) => !o)}
+              disabled={busy}
+              className="rounded-full border-[1.5px] border-sand bg-white px-4 py-2 text-[12.5px] font-semibold text-ink transition hover:border-forest disabled:opacity-40"
+            >
+              Need more details…
+            </button>
+          )}
 </div>
       )}
 
@@ -162,12 +170,82 @@ function JobCard({ job }: { job: TransferJob }) {
   );
 }
 
+function ManualAddForm() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [f, setF] = useState({
+    fullName: "", travelDate: "", kind: "pickup" as "pickup" | "dropoff",
+    flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "",
+  });
+  const set = (k: string, v: string | number | boolean) => setF((p) => ({ ...p, [k]: v }));
+  const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
+  const labelCls = "mb-1 block text-[11px] font-semibold uppercase tracking-[1.2px] text-forest";
+
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    const res = await addManualTransfer(f);
+    setBusy(false);
+    if (!res.ok) { setError(res.error ?? "Something went wrong."); return; }
+    setOpen(false);
+    setF({ fullName: "", travelDate: "", kind: "pickup", flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "" });
+    router.refresh();
+  };
+
+  return (
+    <Card>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full border-[1.5px] border-forest px-5 py-2 text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white"
+      >
+        {open ? "− Close" : "+ Add a transfer manually"}
+      </button>
+      {open && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div><span className={labelCls}>Guest name *</span><input className={inputCls} value={f.fullName} onChange={(e) => set("fullName", e.target.value)} /></div>
+          <div><span className={labelCls}>Travel date *</span><input type="date" className={inputCls} value={f.travelDate} onChange={(e) => set("travelDate", e.target.value)} /></div>
+          <div>
+            <span className={labelCls}>Direction</span>
+            <select className={inputCls} value={f.kind} onChange={(e) => set("kind", e.target.value)}>
+              <option value="pickup">🛬 Pickup (airport → hotel)</option>
+              <option value="dropoff">🛫 Drop-off (hotel → airport)</option>
+            </select>
+          </div>
+          <div><span className={labelCls}>Flight</span><input className={inputCls} value={f.flightNumber} onChange={(e) => set("flightNumber", e.target.value)} placeholder="AM 512" /></div>
+          <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
+          <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
+          <div className="lg:col-span-2"><span className={labelCls}>Drop-off / pickup place</span><input className={inputCls} value={f.home} onChange={(e) => set("home", e.target.value)} placeholder="Hotel or villa name & area" /></div>
+          <div className="lg:col-span-3"><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
+          <div className="flex items-end gap-3">
+            <label className="flex h-[42px] items-center gap-2 text-[12.5px] text-ink">
+              <input type="checkbox" checked={f.babySeat} onChange={(e) => set("babySeat", e.target.checked)} className="h-4 w-4 accent-forest" />
+              Baby seat
+            </label>
+            <button
+              onClick={submit}
+              disabled={busy || !f.fullName.trim() || !f.travelDate}
+              className="h-[42px] rounded-full bg-forest px-5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              {busy ? "Saving…" : "Add transfer"}
+            </button>
+          </div>
+          {error && <p className="text-[12.5px] font-medium text-terracotta lg:col-span-4">{error}</p>}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export default function TransfersClient({ initialJobs }: { initialJobs: TransferJob[] }) {
   const active = initialJobs.filter((j) => j.status !== "done" && j.status !== "closed");
   const finished = initialJobs.filter((j) => j.status === "done" || j.status === "closed");
 
   return (
     <>
+      <ManualAddForm />
       <Card>
         {active.length === 0 ? (
           <p className="text-[13.5px] italic text-sage">

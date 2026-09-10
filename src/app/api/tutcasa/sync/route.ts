@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { syncStayRequests } from "@/lib/tutcasaBooking";
+import { sendTransferReminders, syncStayRequests } from "@/lib/tutcasaBooking";
 
 /* Polls TutCasa for every pending owner-approval stay request and acts on
    decisions (approved → payment link email; declined → guest informed).
@@ -19,5 +19,7 @@ export async function GET(request: NextRequest) {
     }
   }
   await syncStayRequests();
+  // Day-before airport-transfer reminder digest (reminder_sent-guarded).
+  await sendTransferReminders();
   return NextResponse.json({ ok: true });
 }

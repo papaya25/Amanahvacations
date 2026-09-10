@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHead } from "./AdminUI";
 import {
   extractBookingEvents,
+  getTransferEvents,
   flagEmoji,
   fmtMXN,
   getAllOrders,
@@ -73,7 +74,8 @@ export default async function AdminDashboard({
   const daysInMonth = new Date(y, mo, 0).getDate();
   const firstWeekday = (new Date(y, mo - 1, 1).getDay() + 6) % 7; // Monday-first
 
-  const events = extractBookingEvents(orders);
+  // Orders + confirmed airport transfers share the calendar.
+  const events = [...extractBookingEvents(orders), ...(await getTransferEvents())];
   const byDay = new Map<number, { orderId: string; label: string }[]>();
   for (const e of events) {
     if (!e.date.startsWith(monthKey)) continue;

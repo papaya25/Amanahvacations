@@ -11,8 +11,8 @@ export default async function TutcasaTransfersPage() {
     <>
       <PageHead
         eyebrow="Partner"
-        title="TutCasa Transfers"
-        desc="Free arrival transfers included with TutCasa bookings, fulfilled by Amanah. TutCasa pushes each job here (and emails a fallback copy). Work the queue: Confirm when scheduled, ask for details when something's missing (the guest sees your note and re-submits), and mark Done after pickup. Guests message us only via their prefilled WhatsApp link with the TC reference."
+        title="Airport Transfers"
+        desc="Every airport transfer in one queue: TutCasa pushes its jobs here automatically, and you can add any other transfer manually. Confirmed transfers appear on the dashboard calendar, and the day before each one you get a reminder email with a one-tap WhatsApp button. Mark Done after the ride."
       />
       <TransfersClient initialJobs={jobs} />
     </>
