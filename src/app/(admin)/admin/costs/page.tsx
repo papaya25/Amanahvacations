@@ -106,7 +106,7 @@ export default function CostsAdmin() {
               label="Corporate tax"
               type="number"
               suffix="%"
-              value={value.taxRate}
+              value={value.taxRate === 0 ? "" : value.taxRate}
               onChange={(v) => setValue({ ...value, taxRate: Number(v) || 0 })}
             />
           </div>
@@ -143,7 +143,7 @@ export default function CostsAdmin() {
                             label={`${pax} people`}
                             type="number"
                             prefix="$"
-                            value={Number(r.tiers?.[String(pax)]) || 0}
+                            value={Number(r.tiers?.[String(pax)]) || ""}
                             onChange={(v) =>
                               patch(i, {
                                 tiers: { ...(r.tiers ?? {}), [String(pax)]: Number(v) || 0 },
@@ -167,7 +167,7 @@ export default function CostsAdmin() {
                         type="number"
                         prefix="$"
                         suffix="MXN"
-                        value={r.cost}
+                        value={r.cost === 0 ? "" : r.cost}
                         onChange={(v) => patch(i, { cost: Number(v) || 0 })}
                       />
                       <button

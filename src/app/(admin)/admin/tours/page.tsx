@@ -132,7 +132,7 @@ export default function ToursAdmin() {
                               label={`${pax} people`}
                               type="number"
                               prefix="$"
-                              value={total}
+                              value={total === 0 ? "" : total}
                               onChange={(v) =>
                                 patch(i, {
                                   prices: { ...(t.prices ?? {}), [String(pax)]: Number(v) || 0 },

@@ -123,7 +123,7 @@ export default function PackagesAdminClient({ initial }: { initial: Pkg[] }) {
                             label={`${pax} people`}
                             type="number"
                             prefix="$"
-                            value={total}
+                            value={total === 0 ? "" : total}
                             onChange={(v) =>
                               patch(i, {
                                 prices: { ...(p.prices ?? {}), [String(pax)]: Number(v) || 0 },

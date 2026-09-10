@@ -59,7 +59,7 @@ export default function TransfersAdmin() {
               type="number"
               prefix="$"
               suffix="MXN"
-              value={value.perPerson}
+              value={value.perPerson === 0 ? "" : value.perPerson}
               onChange={(v) => setValue({ ...value, perPerson: Number(v) || 0 })}
             />
           </div>

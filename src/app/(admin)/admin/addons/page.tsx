@@ -89,14 +89,14 @@ export default function AddonsAdmin() {
                 label="Price"
                 type="number"
                 prefix="$"
-                value={a.price}
+                value={a.price === 0 ? "" : a.price}
                 onChange={(v) => setAddon(i, "price", Number(v) || 0)}
               />
               <Field
                 label="Offer"
                 type="number"
                 prefix="$"
-                value={a.offer ?? 0}
+                value={a.offer || ""}
                 onChange={(v) => setAddon(i, "offer", Number(v) || 0)}
               />
               <Field label="Unit" value={a.unit} onChange={(v) => setAddon(i, "unit", v)} placeholder="/person" />

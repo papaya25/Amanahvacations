@@ -51,8 +51,10 @@ export function Field({
         {prefix && <span className="text-[13px] text-sage">{prefix}</span>}
         <input
           type={type}
-          value={value}
-          placeholder={placeholder}
+          // Number fields show 0 as EMPTY so you can type straight in — no
+          // select-the-zero-first dance; clearing the field stores 0 again.
+          value={type === "number" && (value === 0 || value === "0") ? "" : value}
+          placeholder={placeholder ?? (type === "number" ? "0" : undefined)}
           onChange={(e) => onChange(e.target.value)}
           className="w-full bg-transparent py-2.5 text-[14px] text-ink outline-none"
         />

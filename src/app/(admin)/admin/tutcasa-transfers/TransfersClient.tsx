@@ -67,10 +67,10 @@ function TransferForm({
         </select>
       </div>
       <div><span className={labelCls}>Flight</span><input className={inputCls} value={f.flightNumber} onChange={(e) => set("flightNumber", e.target.value)} placeholder="AM 512" /></div>
-      <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
+      <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers === 0 ? "" : f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
       <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
       <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" /></div>
-      <div><span className={labelCls}>Price</span><input type="number" min={0} className={inputCls} value={f.price} onChange={(e) => set("price", Number(e.target.value) || 0)} placeholder="MXN" /></div>
+      <div><span className={labelCls}>Price</span><input type="number" min={0} className={inputCls} value={f.price === 0 ? "" : f.price} onChange={(e) => set("price", Number(e.target.value) || 0)} placeholder="MXN" /></div>
       <div className="lg:col-span-2"><span className={labelCls}>Drop-off / pickup place</span><input className={inputCls} value={f.home} onChange={(e) => set("home", e.target.value)} placeholder="Hotel or villa name & area" /></div>
       <div><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
       <div className="flex items-end gap-3">
