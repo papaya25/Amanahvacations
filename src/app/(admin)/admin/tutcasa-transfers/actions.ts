@@ -21,6 +21,7 @@ export type TransferJob = {
   check_in: string | null;
   status: string;
   provider: string | null;
+  price: number | null;
   amanah_note: string | null;
   kind: "pickup" | "dropoff" | null;
   last_answer: string | null;
@@ -83,6 +84,54 @@ export async function completeTransfer(transferId: string) {
   return applyStatus(transferId, { status: "done" }, { status: "done" });
 }
 
+/** Edit a transfer's details (works on TutCasa jobs too — local only; a
+    TutCasa resend replaces the pushed fields but keeps provider/price). */
+export async function updateTransfer(
+  transferId: string,
+  input: {
+    fullName: string;
+    travelDate: string;
+    kind: "pickup" | "dropoff";
+    flightNumber?: string;
+    passengers?: number;
+    babySeat?: boolean;
+    guestPhone?: string;
+    home?: string;
+    note?: string;
+    provider?: string;
+    price?: number;
+  }
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
+  if (!input.fullName?.trim() || !input.travelDate) {
+    return { ok: false, error: "Name and travel date are required." };
+  }
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("tutcasa_transfers")
+    .update({
+      full_name: input.fullName.trim(),
+      travel_date: input.travelDate,
+      kind: input.kind === "dropoff" ? "dropoff" : "pickup",
+      flight_number: input.flightNumber?.trim() || null,
+      passengers: input.passengers || null,
+      baby_seat: Boolean(input.babySeat),
+      guest_phone: input.guestPhone?.trim() || null,
+      home: input.home?.trim() || null,
+      note: input.note?.trim() || null,
+      provider: input.provider?.trim() || null,
+      price: input.price || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("transfer_id", transferId);
+  if (error) {
+    console.error("updateTransfer:", error.message);
+    return { ok: false, error: "Couldn't save. Please try again." };
+  }
+  revalidatePath("/admin/tutcasa-transfers");
+  return { ok: true };
+}
+
 /** Assign/change who performs the ride (local field, no TutCasa callback). */
 export async function setTransferProvider(transferId: string, provider: string) {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
@@ -109,6 +158,7 @@ export async function addManualTransfer(input: {
   home?: string;
   note?: string;
   provider?: string;
+  price?: number;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.fullName?.trim() || !input.travelDate) {
@@ -128,6 +178,7 @@ export async function addManualTransfer(input: {
     home: input.home?.trim() || null,
     note: input.note?.trim() || null,
     provider: input.provider?.trim() || null,
+    price: input.price || null,
     status: "confirmed",
   });
   if (error) {

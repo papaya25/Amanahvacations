@@ -76,12 +76,12 @@ export default async function AdminDashboard({
 
   // Orders + confirmed airport transfers share the calendar.
   const events = [...extractBookingEvents(orders), ...(await getTransferEvents())];
-  const byDay = new Map<number, { orderId: string; label: string }[]>();
+  const byDay = new Map<number, { orderId: string; label: string; href?: string }[]>();
   for (const e of events) {
     if (!e.date.startsWith(monthKey)) continue;
     const day = Number(e.date.slice(8));
     if (!byDay.has(day)) byDay.set(day, []);
-    byDay.get(day)!.push({ orderId: e.orderId, label: e.label });
+    byDay.get(day)!.push({ orderId: e.orderId, label: e.label, href: e.href });
   }
   const todayKey = now.getFullYear() === y && now.getMonth() + 1 === mo ? now.getDate() : -1;
 
@@ -173,7 +173,7 @@ export default async function AdminDashboard({
                 {dayEvents.slice(0, 2).map((e, j) => (
                   <Link
                     key={`${e.orderId}-${j}`}
-                    href="/admin/orders"
+                    href={e.href ?? "/admin/orders"}
                     title={`${e.orderId} — ${e.label}`}
                     className="mt-0.5 block truncate rounded bg-terracotta/15 px-1 py-0.5 text-[10px] font-medium leading-tight text-terracotta hover:bg-terracotta/25"
                   >

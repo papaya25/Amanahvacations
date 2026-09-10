@@ -13,9 +13,83 @@ import {
   completeTransfer,
   requestTransferDetails,
   setTransferProvider,
+  updateTransfer,
   type TransferJob,
 } from "./actions";
 import { deleteTransferJob } from "../tutcasa-tours/actions";
+
+/* One form, two jobs: "add manually" (blank) and per-card "Edit" (prefilled). */
+export type TransferFields = {
+  fullName: string; travelDate: string; kind: "pickup" | "dropoff";
+  flightNumber: string; passengers: number; babySeat: boolean;
+  guestPhone: string; home: string; note: string; provider: string; price: number;
+};
+
+const BLANK: TransferFields = {
+  fullName: "", travelDate: "", kind: "pickup", flightNumber: "", passengers: 2,
+  babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0,
+};
+
+function TransferForm({
+  initial,
+  submitLabel,
+  onSubmit,
+}: {
+  initial: TransferFields;
+  submitLabel: string;
+  onSubmit: (f: TransferFields) => Promise<{ ok: boolean; error?: string }>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [f, setF] = useState(initial);
+  const set = (k: string, v: string | number | boolean) => setF((p) => ({ ...p, [k]: v }));
+  const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
+  const labelCls = "mb-1 block text-[11px] font-semibold uppercase tracking-[1.2px] text-forest";
+
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    const res = await onSubmit(f);
+    setBusy(false);
+    if (!res.ok) setError(res.error ?? "Something went wrong.");
+  };
+
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div><span className={labelCls}>Guest name *</span><input className={inputCls} value={f.fullName} onChange={(e) => set("fullName", e.target.value)} /></div>
+      <div><span className={labelCls}>Travel date *</span><input type="date" className={inputCls} value={f.travelDate} onChange={(e) => set("travelDate", e.target.value)} /></div>
+      <div>
+        <span className={labelCls}>Direction</span>
+        <select className={inputCls} value={f.kind} onChange={(e) => set("kind", e.target.value)}>
+          <option value="pickup">🛬 Pickup (airport → hotel)</option>
+          <option value="dropoff">🛫 Drop-off (hotel → airport)</option>
+        </select>
+      </div>
+      <div><span className={labelCls}>Flight</span><input className={inputCls} value={f.flightNumber} onChange={(e) => set("flightNumber", e.target.value)} placeholder="AM 512" /></div>
+      <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
+      <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
+      <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" /></div>
+      <div><span className={labelCls}>Price</span><input type="number" min={0} className={inputCls} value={f.price} onChange={(e) => set("price", Number(e.target.value) || 0)} placeholder="MXN" /></div>
+      <div className="lg:col-span-2"><span className={labelCls}>Drop-off / pickup place</span><input className={inputCls} value={f.home} onChange={(e) => set("home", e.target.value)} placeholder="Hotel or villa name & area" /></div>
+      <div><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
+      <div className="flex items-end gap-3">
+        <label className="flex h-[42px] items-center gap-2 text-[12.5px] text-ink">
+          <input type="checkbox" checked={f.babySeat} onChange={(e) => set("babySeat", e.target.checked)} className="h-4 w-4 accent-forest" />
+          Baby seat
+        </label>
+        <button
+          onClick={submit}
+          disabled={busy || !f.fullName.trim() || !f.travelDate}
+          className="h-[42px] rounded-full bg-forest px-5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+        >
+          {busy ? "Saving…" : submitLabel}
+        </button>
+      </div>
+      {error && <p className="text-[12.5px] font-medium text-terracotta lg:col-span-4">{error}</p>}
+    </div>
+  );
+}
 
 const STATUS_STYLE: Record<string, string> = {
   requested: "bg-amber-100 text-amber-800",
@@ -44,6 +118,7 @@ function JobCard({ job }: { job: TransferJob }) {
   const [note, setNote] = useState("");
   const [providerEdit, setProviderEdit] = useState(false);
   const [provider, setProvider] = useState(job.provider ?? "");
+  const [editOpen, setEditOpen] = useState(false);
 
   const run = async (fn: () => Promise<{ ok: boolean; error?: string }>) => {
     if (busy) return;
@@ -129,6 +204,9 @@ function JobCard({ job }: { job: TransferJob }) {
             </button>
           )}
         </div>
+        {job.price != null && job.price > 0 && (
+          <div>💰 Price: <strong>${Math.round(job.price).toLocaleString("en-US")} MXN</strong></div>
+        )}
         {job.address && <div className="sm:col-span-2">📍 Address & unit: {job.address}</div>}
         {job.whatsapp && <div>💬 WhatsApp: {job.whatsapp}</div>}
         {job.note && <div className="sm:col-span-2">📝 Note: {job.note}</div>}
@@ -172,12 +250,46 @@ function JobCard({ job }: { job: TransferJob }) {
 </div>
       )}
 
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          disabled={busy}
+          onClick={() => setEditOpen((o) => !o)}
+          className="rounded-full border border-sand bg-white px-3 py-1 text-[12px] font-semibold text-forest transition hover:border-forest disabled:opacity-40"
+        >
+          ✏️ {editOpen ? "Close edit" : "Edit"}
+        </button>
         <button disabled={busy} onClick={() => { if (confirm("Delete this transfer from the queue? (Removes it here only.)")) run(() => deleteTransferJob(job.transfer_id)); }}
           className="rounded-full border border-gray-300 px-3 py-1 text-[12px] font-semibold text-gray-500 transition hover:border-red-400 hover:text-red-600 disabled:opacity-40">
           🗑 Delete from queue
         </button>
       </div>
+
+      {editOpen && (
+        <TransferForm
+          initial={{
+            fullName: job.full_name,
+            travelDate: job.travel_date ?? "",
+            kind: job.kind === "dropoff" ? "dropoff" : "pickup",
+            flightNumber: job.flight_number ?? "",
+            passengers: job.passengers ?? 2,
+            babySeat: job.baby_seat,
+            guestPhone: job.guest_phone ?? "",
+            home: job.home ?? "",
+            note: job.note ?? "",
+            provider: job.provider ?? "",
+            price: job.price ?? 0,
+          }}
+          submitLabel="Save changes"
+          onSubmit={async (f) => {
+            const res = await updateTransfer(job.transfer_id, f);
+            if (res.ok) {
+              setEditOpen(false);
+              router.refresh();
+            }
+            return res;
+          }}
+        />
+      )}
 
       {noteOpen && active && (
         <div className="mt-3 flex gap-2">
@@ -205,28 +317,6 @@ function JobCard({ job }: { job: TransferJob }) {
 function ManualAddForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [f, setF] = useState({
-    fullName: "", travelDate: "", kind: "pickup" as "pickup" | "dropoff",
-    flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "", provider: "",
-  });
-  const set = (k: string, v: string | number | boolean) => setF((p) => ({ ...p, [k]: v }));
-  const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
-  const labelCls = "mb-1 block text-[11px] font-semibold uppercase tracking-[1.2px] text-forest";
-
-  const submit = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    const res = await addManualTransfer(f);
-    setBusy(false);
-    if (!res.ok) { setError(res.error ?? "Something went wrong."); return; }
-    setOpen(false);
-    setF({ fullName: "", travelDate: "", kind: "pickup", flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "", provider: "" });
-    router.refresh();
-  };
-
   return (
     <Card>
       <button
@@ -236,37 +326,18 @@ function ManualAddForm() {
         {open ? "− Close" : "+ Add a transfer manually"}
       </button>
       {open && (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div><span className={labelCls}>Guest name *</span><input className={inputCls} value={f.fullName} onChange={(e) => set("fullName", e.target.value)} /></div>
-          <div><span className={labelCls}>Travel date *</span><input type="date" className={inputCls} value={f.travelDate} onChange={(e) => set("travelDate", e.target.value)} /></div>
-          <div>
-            <span className={labelCls}>Direction</span>
-            <select className={inputCls} value={f.kind} onChange={(e) => set("kind", e.target.value)}>
-              <option value="pickup">🛬 Pickup (airport → hotel)</option>
-              <option value="dropoff">🛫 Drop-off (hotel → airport)</option>
-            </select>
-          </div>
-          <div><span className={labelCls}>Flight</span><input className={inputCls} value={f.flightNumber} onChange={(e) => set("flightNumber", e.target.value)} placeholder="AM 512" /></div>
-          <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
-          <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
-          <div className="lg:col-span-2"><span className={labelCls}>Drop-off / pickup place</span><input className={inputCls} value={f.home} onChange={(e) => set("home", e.target.value)} placeholder="Hotel or villa name & area" /></div>
-          <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company doing the ride" /></div>
-          <div className="lg:col-span-2"><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
-          <div className="flex items-end gap-3">
-            <label className="flex h-[42px] items-center gap-2 text-[12.5px] text-ink">
-              <input type="checkbox" checked={f.babySeat} onChange={(e) => set("babySeat", e.target.checked)} className="h-4 w-4 accent-forest" />
-              Baby seat
-            </label>
-            <button
-              onClick={submit}
-              disabled={busy || !f.fullName.trim() || !f.travelDate}
-              className="h-[42px] rounded-full bg-forest px-5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
-            >
-              {busy ? "Saving…" : "Add transfer"}
-            </button>
-          </div>
-          {error && <p className="text-[12.5px] font-medium text-terracotta lg:col-span-4">{error}</p>}
-        </div>
+        <TransferForm
+          initial={BLANK}
+          submitLabel="Add transfer"
+          onSubmit={async (f) => {
+            const res = await addManualTransfer(f);
+            if (res.ok) {
+              setOpen(false);
+              router.refresh();
+            }
+            return res;
+          }}
+        />
       )}
     </Card>
   );

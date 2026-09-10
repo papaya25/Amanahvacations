@@ -67,7 +67,8 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 }
 
 /** Calendar events parsed from order items: tour dates and package check-ins. */
-export type BookingEvent = { date: string; orderId: string; label: string }; // date = YYYY-MM-DD
+// date = YYYY-MM-DD; href = where clicking the event goes (default /admin/orders)
+export type BookingEvent = { date: string; orderId: string; label: string; href?: string };
 
 /** Confirmed airport transfers (TutCasa + manual) as calendar events. */
 export async function getTransferEvents(): Promise<BookingEvent[]> {
@@ -81,6 +82,7 @@ export async function getTransferEvents(): Promise<BookingEvent[]> {
     date: t.travel_date as string,
     orderId: t.ref as string,
     label: `${t.kind === "dropoff" ? "🛫" : "🛬"} Transfer — ${t.full_name}`,
+    href: "/admin/tutcasa-transfers",
   }));
 }
 

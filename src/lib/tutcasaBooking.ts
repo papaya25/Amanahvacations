@@ -473,7 +473,7 @@ export async function sendTransferReminders(): Promise<void> {
     const tomorrow = new Date(Date.now() - 5 * 3600e3 + 24 * 3600e3).toISOString().slice(0, 10);
     const { data } = await supabase
       .from("tutcasa_transfers")
-      .select("transfer_id, ref, full_name, travel_date, flight_number, passengers, baby_seat, guest_phone, home, note, kind, provider")
+      .select("transfer_id, ref, full_name, travel_date, flight_number, passengers, baby_seat, guest_phone, home, note, kind, provider, price")
       .eq("status", "confirmed")
       .eq("reminder_sent", false)
       .eq("travel_date", tomorrow);
