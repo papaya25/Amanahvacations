@@ -110,7 +110,7 @@ export default async function ProfitsPage({
 
 /* ── Tab 1 — Overview (unchanged numbers) ──────────────────────────────── */
 
-function OverviewTab({
+async function OverviewTab({
   orders,
   costRows,
   taxRate,
@@ -120,6 +120,8 @@ function OverviewTab({
   taxRate: number;
 }) {
   const sales = orders.filter(isSale);
+  // Airport-transfer jobs (the queue) are real business too.
+  const transferJobs = await getTransferJobsLedger();
 
   let revenue = 0;
   let totalCost = 0;
@@ -145,6 +147,16 @@ function OverviewTab({
     perMonth.set(key, m);
   }
 
+  // Fold the transfer jobs in: headline numbers + their travel-date months.
+  revenue += transferJobs.revenue;
+  totalCost += transferJobs.cost;
+  for (const [key, v] of Object.entries(transferJobs.perMonth)) {
+    const m = perMonth.get(key) ?? { revenue: 0, cost: 0 };
+    m.revenue += v.revenue;
+    m.cost += v.cost;
+    perMonth.set(key, m);
+  }
+
   const profit = revenue - totalCost;
   const tax = profit > 0 ? Math.round((profit * taxRate) / 100) : 0;
   const afterTax = profit - tax;
@@ -166,6 +178,16 @@ function OverviewTab({
           </div>
         ))}
       </div>
+
+      {transferJobs.count > 0 && (
+        <p className="mt-3 text-[12px] text-sage">
+          Includes {transferJobs.count} airport transfer{transferJobs.count !== 1 ? "s" : ""} from
+          the queue: {fmtMXN(transferJobs.revenue)} revenue · {fmtMXN(transferJobs.cost)} cost.
+          {transferJobs.unpriced > 0 && (
+            <strong className="text-terracotta"> {transferJobs.unpriced} of them have no price set — Edit them in the Airport Transfers queue so profit is accurate.</strong>
+          )}
+        </p>
+      )}
 
       {missing.size > 0 && (
         <div className="mt-4 rounded-[14px] border border-[#f0dfa0] bg-[#fffdf5] px-4 py-3 text-[12.5px] leading-[1.6] text-[#7a5a1e]">

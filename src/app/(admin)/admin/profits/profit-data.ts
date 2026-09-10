@@ -333,16 +333,19 @@ export type TransferJobsLedger = {
   revenue: number;
   cost: number;
   profit: number;
+  unpriced: number; // jobs with no price set (0 revenue, real cost)
+  /** YYYY-MM (travel date) → that month's transfer revenue/cost. */
+  perMonth: Record<string, { revenue: number; cost: number }>;
 };
 
 export async function getTransferJobsLedger(): Promise<TransferJobsLedger> {
-  const empty = { count: 0, people: 0, revenue: 0, cost: 0, profit: 0 };
+  const empty: TransferJobsLedger = { count: 0, people: 0, revenue: 0, cost: 0, profit: 0, unpriced: 0, perMonth: {} };
   if (!adminConfigured) return empty;
   const supabase = createAdminClient();
   const [{ data }, costs] = await Promise.all([
     supabase
       .from("tutcasa_transfers")
-      .select("passengers, price, status")
+      .select("passengers, price, status, travel_date")
       .in("status", ["confirmed", "done"]),
     getCosts(),
   ]);
@@ -351,12 +354,21 @@ export async function getTransferJobsLedger(): Promise<TransferJobsLedger> {
     const id = pax == null || pax <= 4 ? "transfer-1-4" : pax <= 8 ? "transfer-5-8" : "transfer-9plus";
     return costById.get(id) || 0;
   };
-  const out = { ...empty };
+  const out: TransferJobsLedger = { ...empty, perMonth: {} };
   for (const t of data ?? []) {
+    const rev = Number(t.price) || 0;
+    const cost = tierCost(t.passengers);
     out.count += 1;
     out.people += t.passengers ?? 0;
-    out.revenue += Number(t.price) || 0;
-    out.cost += tierCost(t.passengers);
+    out.revenue += rev;
+    out.cost += cost;
+    if (rev === 0) out.unpriced += 1;
+    const m = typeof t.travel_date === "string" ? t.travel_date.slice(0, 7) : null;
+    if (m) {
+      out.perMonth[m] ??= { revenue: 0, cost: 0 };
+      out.perMonth[m].revenue += rev;
+      out.perMonth[m].cost += cost;
+    }
   }
   out.profit = out.revenue - out.cost;
   return out;
