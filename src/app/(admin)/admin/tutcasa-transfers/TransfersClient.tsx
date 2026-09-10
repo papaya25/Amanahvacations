@@ -21,12 +21,12 @@ import { deleteTransferJob } from "../tutcasa-tours/actions";
 /* One form, two jobs: "add manually" (blank) and per-card "Edit" (prefilled). */
 export type TransferFields = {
   fullName: string; travelDate: string; kind: "pickup" | "dropoff";
-  flightNumber: string; adults: number; kids: number; kidsAges: string; babySeat: boolean;
+  flightNumber: string; adults: number; kids: number; kidsAges: string[]; babySeat: boolean;
   guestPhone: string; home: string; note: string; provider: string; price: number;
 };
 
 const BLANK: TransferFields = {
-  fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: "",
+  fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: [],
   babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0,
 };
 
@@ -50,7 +50,7 @@ function TransferForm({
     if (busy) return;
     setBusy(true);
     setError("");
-    const res = await onSubmit(f);
+    const res = await onSubmit({ ...f, kidsAges: f.kidsAges.slice(0, f.kids).map((a) => a.trim()).filter(Boolean) });
     setBusy(false);
     if (!res.ok) setError(res.error ?? "Something went wrong.");
   };
@@ -70,7 +70,24 @@ function TransferForm({
       <div><span className={labelCls}>Adults</span><input type="number" min={1} className={inputCls} value={f.adults === 0 ? "" : f.adults} onChange={(e) => set("adults", Number(e.target.value) || 0)} /></div>
       <div><span className={labelCls}>Kids / babies</span><input type="number" min={0} className={inputCls} value={f.kids === 0 ? "" : f.kids} onChange={(e) => set("kids", Number(e.target.value) || 0)} placeholder="0" /></div>
       {f.kids > 0 && (
-        <div><span className={labelCls}>Kids\u2019 ages</span><input className={inputCls} value={f.kidsAges} onChange={(e) => set("kidsAges", e.target.value)} placeholder="e.g. 6 months, 4, 9" /></div>
+        <div className="sm:col-span-2">
+          <span className={labelCls}>Age of each kid / baby</span>
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: f.kids }).map((_, i) => (
+              <input
+                key={i}
+                className={inputCls + " !w-28"}
+                value={f.kidsAges[i] ?? ""}
+                onChange={(e) => {
+                  const ages = [...f.kidsAges];
+                  ages[i] = e.target.value;
+                  setF((p) => ({ ...p, kidsAges: ages.slice(0, f.kids) }));
+                }}
+                placeholder={`Kid ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
       )}
       <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
       <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" /></div>
@@ -283,7 +300,7 @@ function JobCard({ job }: { job: TransferJob }) {
             flightNumber: job.flight_number ?? "",
             adults: job.adults ?? job.passengers ?? 2,
             kids: job.kids ?? 0,
-            kidsAges: job.kids_ages ?? "",
+            kidsAges: (job.kids_ages ?? "").split(",").map((a) => a.trim()).filter(Boolean),
             babySeat: job.baby_seat,
             guestPhone: job.guest_phone ?? "",
             home: job.home ?? "",
@@ -293,7 +310,7 @@ function JobCard({ job }: { job: TransferJob }) {
           }}
           submitLabel="Save changes"
           onSubmit={async (f) => {
-            const res = await updateTransfer(job.transfer_id, f);
+            const res = await updateTransfer(job.transfer_id, { ...f, kidsAges: f.kidsAges.join(", ") });
             if (res.ok) {
               setEditOpen(false);
               router.refresh();
@@ -342,7 +359,7 @@ function ManualAddForm() {
           initial={BLANK}
           submitLabel="Add transfer"
           onSubmit={async (f) => {
-            const res = await addManualTransfer(f);
+            const res = await addManualTransfer({ ...f, kidsAges: f.kidsAges.join(", ") });
             if (res.ok) {
               setOpen(false);
               router.refresh();
