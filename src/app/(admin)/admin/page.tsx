@@ -60,6 +60,17 @@ export default async function AdminDashboard({
   ]);
 
   const sales = orders.filter(isSale);
+  // Website vs manual splits per item kind.
+  const split = {
+    package: { web: 0, man: 0 },
+    tour: { web: 0, man: 0 },
+  };
+  for (const o of sales) {
+    for (const it of o.items) {
+      if (it.kind !== "package" && it.kind !== "tour") continue;
+      split[it.kind][o.source === "manual" ? "man" : "web"] += 1;
+    }
+  }
   const paid = orders.filter((o) => o.status.startsWith("Paid"));
   const pending = orders.filter((o) => o.status.startsWith("Pending"));
   const revenue = sales.reduce((s, o) => s + o.total, 0);
@@ -99,11 +110,11 @@ export default async function AdminDashboard({
 
       {/* Stats */}
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        <StatCard label="Orders" value={String(sales.length)} sub={`${pending.length} pending`} />
-        <StatCard label="Revenue" value={fmtMXN(revenue + transfers.revenue)} sub="orders + transfers, excl. cancelled" />
-        <StatCard label="Airport transfers" value={String(transfers.count)} sub={`${fmtMXN(transfers.revenue)} revenue`} />
-        <StatCard label="Paid orders" value={String(paid.length)} />
-        <StatCard label="Avg order" value={sales.length ? fmtMXN(avg) : "—"} />
+        <StatCard label="Packages" value={String(split.package.web + split.package.man)} sub={`${split.package.web} website · ${split.package.man} manual`} />
+        <StatCard label="Tours" value={String(split.tour.web + split.tour.man)} sub={`${split.tour.web} website · ${split.tour.man} manual`} />
+        <StatCard label="Transfers" value={String(transfers.count)} sub={`${transfers.count - transfers.manual} TutCasa · ${transfers.manual} manual`} />
+        <StatCard label="Revenue" value={fmtMXN(revenue + transfers.revenue)} sub="all bookings, excl. cancelled" />
+        <StatCard label="Paid orders" value={String(paid.length)} sub={`${pending.length} pending`} />
         <StatCard label="Customers" value={String(customers.length)} sub="registered accounts" />
         <StatCard
           label="Visitors today"

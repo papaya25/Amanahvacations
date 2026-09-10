@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PageHead } from "../AdminUI";
-import { updateOrderStatus } from "./actions";
+import { createManualOrder, updateOrderStatus } from "./actions";
 import { ORDER_STATUSES, type AdminOrder } from "./types";
 
 const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
@@ -25,7 +25,77 @@ const STATUS_STYLES: Record<string, string> = {
   Cancelled: "bg-terracotta/10 text-terracotta",
 };
 
-export default function OrdersClient({ initial }: { initial: AdminOrder[] }) {
+type CatalogOption = { id: string; name: string };
+
+function ManualOrderForm({ tourOptions, packageOptions }: { tourOptions: CatalogOption[]; packageOptions: CatalogOption[] }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [f, setF] = useState({ kind: "tour" as "tour" | "package", catalogId: "", customerName: "", customerPhone: "", people: 2, date: "", totalMXN: 0 });
+  const options = f.kind === "tour" ? tourOptions : packageOptions;
+  const set = (k: string, v: string | number) => setF((p) => ({ ...p, [k]: v }));
+  const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
+  const labelCls = "mb-1 block text-[11px] font-semibold uppercase tracking-[1.2px] text-forest";
+
+  const submit = async () => {
+    if (busy) return;
+    const title = options.find((o) => o.id === f.catalogId)?.name ?? "";
+    setBusy(true);
+    setError("");
+    const res = await createManualOrder({ ...f, title });
+    setBusy(false);
+    if (!res.ok) { setError(res.error ?? "Something went wrong."); return; }
+    window.location.reload(); // simplest way to show the fresh list
+  };
+
+  return (
+    <div className="mb-5 rounded-[18px] border border-sand bg-white p-5">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full border-[1.5px] border-forest px-5 py-2 text-[13px] font-semibold text-forest transition hover:bg-forest hover:text-white"
+      >
+        {open ? "− Close" : "+ Add a booking manually (phone / WhatsApp sale)"}
+      </button>
+      {open && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <span className={labelCls}>Type</span>
+            <select className={inputCls} value={f.kind} onChange={(e) => setF((p) => ({ ...p, kind: e.target.value as "tour" | "package", catalogId: "" }))}>
+              <option value="tour">Tour</option>
+              <option value="package">Package</option>
+            </select>
+          </div>
+          <div>
+            <span className={labelCls}>{f.kind === "tour" ? "Which tour" : "Which package"}</span>
+            <select className={inputCls} value={f.catalogId} onChange={(e) => set("catalogId", e.target.value)}>
+              <option value="">Choose…</option>
+              {options.map((o) => (
+                <option key={o.id} value={o.id}>{o.name}</option>
+              ))}
+            </select>
+          </div>
+          <div><span className={labelCls}>Customer name *</span><input className={inputCls} value={f.customerName} onChange={(e) => set("customerName", e.target.value)} /></div>
+          <div><span className={labelCls}>Customer phone</span><input className={inputCls} value={f.customerPhone} onChange={(e) => set("customerPhone", e.target.value)} placeholder="+1 ..." /></div>
+          <div><span className={labelCls}>{f.kind === "tour" ? "Tour date *" : "Check-in *"}</span><input type="date" className={inputCls} value={f.date} onChange={(e) => set("date", e.target.value)} /></div>
+          <div><span className={labelCls}>People</span><input type="number" min={1} className={inputCls} value={f.people === 0 ? "" : f.people} onChange={(e) => set("people", Number(e.target.value) || 1)} /></div>
+          <div><span className={labelCls}>Total charged</span><input type="number" min={0} className={inputCls} value={f.totalMXN === 0 ? "" : f.totalMXN} onChange={(e) => set("totalMXN", Number(e.target.value) || 0)} placeholder="MXN" /></div>
+          <div className="flex items-end">
+            <button
+              onClick={submit}
+              disabled={busy || !f.customerName.trim() || !f.catalogId || !f.date || !(f.totalMXN > 0)}
+              className="h-[42px] w-full rounded-full bg-forest px-5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              {busy ? "Saving…" : "Add booking"}
+            </button>
+          </div>
+          {error && <p className="text-[12.5px] font-medium text-terracotta lg:col-span-4">{error}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function OrdersClient({ initial, tourOptions, packageOptions }: { initial: AdminOrder[]; tourOptions: CatalogOption[]; packageOptions: CatalogOption[] }) {
   const [orders, setOrders] = useState(initial);
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -47,8 +117,9 @@ export default function OrdersClient({ initial }: { initial: AdminOrder[] }) {
       <PageHead
         eyebrow="Overview"
         title="Orders & Bookings"
-        desc="Every booking placed on your website, newest first. Update the status as you confirm and complete each booking — customers see payments and confirmations by WhatsApp/email for now."
+        desc="Every booking, newest first — website checkouts and manually added sales. Update the status as you confirm and complete each booking."
       />
+      <ManualOrderForm tourOptions={tourOptions} packageOptions={packageOptions} />
 
       {orders.length === 0 ? (
         <div className="rounded-[20px] border border-sand bg-white px-6 py-14 text-center">

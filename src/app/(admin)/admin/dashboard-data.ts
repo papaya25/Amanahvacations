@@ -20,6 +20,7 @@ export type OrderRow = {
   customer_whatsapp: string | null;
   promo_code: string | null;
   user_id: string | null;
+  source: string | null; // null/'website' = online checkout; 'manual' = admin-added
 };
 
 export async function getAllOrders(): Promise<OrderRow[]> {
@@ -27,7 +28,7 @@ export async function getAllOrders(): Promise<OrderRow[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id,created_at,status,items,subtotal,discount,total,payment_method,customer_name,customer_email,customer_whatsapp,promo_code,user_id"
+      "id,created_at,status,items,subtotal,discount,total,payment_method,customer_name,customer_email,customer_whatsapp,promo_code,user_id,source"
     )
     .order("created_at", { ascending: false })
     .limit(1000);

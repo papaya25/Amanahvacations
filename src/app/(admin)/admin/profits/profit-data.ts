@@ -334,18 +334,19 @@ export type TransferJobsLedger = {
   cost: number;
   profit: number;
   unpriced: number; // jobs with no price set (0 revenue, real cost)
+  manual: number; // added by the admin (vs pushed by TutCasa)
   /** YYYY-MM (travel date) → that month's transfer revenue/cost. */
   perMonth: Record<string, { revenue: number; cost: number }>;
 };
 
 export async function getTransferJobsLedger(): Promise<TransferJobsLedger> {
-  const empty: TransferJobsLedger = { count: 0, people: 0, revenue: 0, cost: 0, profit: 0, unpriced: 0, perMonth: {} };
+  const empty: TransferJobsLedger = { count: 0, people: 0, revenue: 0, cost: 0, profit: 0, unpriced: 0, manual: 0, perMonth: {} };
   if (!adminConfigured) return empty;
   const supabase = createAdminClient();
   const [{ data }, costs] = await Promise.all([
     supabase
       .from("tutcasa_transfers")
-      .select("passengers, price, status, travel_date")
+      .select("transfer_id, passengers, price, status, travel_date")
       .in("status", ["confirmed", "done"]),
     getCosts(),
   ]);
@@ -363,6 +364,7 @@ export async function getTransferJobsLedger(): Promise<TransferJobsLedger> {
     out.revenue += rev;
     out.cost += cost;
     if (rev === 0) out.unpriced += 1;
+    if (typeof t.transfer_id === "string" && t.transfer_id.startsWith("manual-")) out.manual += 1;
     const m = typeof t.travel_date === "string" ? t.travel_date.slice(0, 7) : null;
     if (m) {
       out.perMonth[m] ??= { revenue: 0, cost: 0 };

@@ -351,7 +351,7 @@ async function SalesTab({ orders, costRows }: { orders: OrderRow[]; costRows: Co
     <>
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Orders" value={String(stats.totalOrders)} />
-        <StatCard label="Revenue" value={fmtMXN(stats.totalRevenue)} />
+        <StatCard label="Revenue" value={fmtMXN(stats.totalRevenue + transfers.revenue)} hint="orders + airport transfers" />
         <StatCard label="Avg order value" value={fmtMXN(stats.avgOrderValue)} />
         <StatCard label="Avg group size" value={stats.avgGroupSize ? `${stats.avgGroupSize} people` : "—"} />
         <StatCard
