@@ -8,6 +8,8 @@ import {
   buildSalesStats,
   getCosts,
   getServiceMargins,
+  getTransferJobsLedger,
+  type TransferJobsLedger,
   type CostRow,
   type MarginRow,
   type SalesStats,
@@ -301,8 +303,9 @@ function MarginTr({ r }: { r: MarginRow }) {
 
 /* ── Tab 3 — Sales statistics ──────────────────────────────────────────── */
 
-function SalesTab({ orders }: { orders: OrderRow[] }) {
+async function SalesTab({ orders }: { orders: OrderRow[] }) {
   const stats: SalesStats = buildSalesStats(orders);
+  const transfers: TransferJobsLedger = await getTransferJobsLedger();
   const abandoned = abandonedCheckouts(orders);
 
   return (
@@ -322,6 +325,15 @@ function SalesTab({ orders }: { orders: OrderRow[] }) {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <SoldTable title="Packages sold" lines={stats.packages} />
         <SoldTable title="Tours sold" lines={stats.tours} />
+        <SoldTable
+          title="Airport transfers made"
+          lines={
+            transfers.count === 0
+              ? []
+              : [{ name: "Confirmed + completed transfers", units: transfers.count, revenue: transfers.revenue, people: transfers.people }]
+          }
+          note={`From the Airport Transfers queue. Cost ${fmtMXN(transfers.cost)} → profit ${fmtMXN(transfers.profit)}. TutCasa's free arrival transfers count too (0 revenue, real cost).`}
+        />
       </div>
 
       <div className="mt-6">

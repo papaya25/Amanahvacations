@@ -320,3 +320,44 @@ export function abandonedCheckouts(orders: OrderRow[]) {
     (o) => o.status === "Pending payment" && Date.parse(o.created_at) < cutoff
   );
 }
+
+/* ── Airport transfer jobs (the /admin/tutcasa-transfers queue) ───────────
+   These are NOT orders, so the order-based stats never saw them. Every
+   confirmed/done job counts as a transfer "made": revenue = its price
+   (0 for TutCasa's free arrival transfers — their cost is real either way),
+   cost = the matching transfer cost tier by passenger count. */
+
+export type TransferJobsLedger = {
+  count: number;
+  people: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+};
+
+export async function getTransferJobsLedger(): Promise<TransferJobsLedger> {
+  const empty = { count: 0, people: 0, revenue: 0, cost: 0, profit: 0 };
+  if (!adminConfigured) return empty;
+  const supabase = createAdminClient();
+  const [{ data }, costs] = await Promise.all([
+    supabase
+      .from("tutcasa_transfers")
+      .select("passengers, price, status")
+      .in("status", ["confirmed", "done"]),
+    getCosts(),
+  ]);
+  const costById = new Map(costs.rows.map((r) => [r.id, r.cost]));
+  const tierCost = (pax: number | null): number => {
+    const id = pax == null || pax <= 4 ? "transfer-1-4" : pax <= 8 ? "transfer-5-8" : "transfer-9plus";
+    return costById.get(id) || 0;
+  };
+  const out = { ...empty };
+  for (const t of data ?? []) {
+    out.count += 1;
+    out.people += t.passengers ?? 0;
+    out.revenue += Number(t.price) || 0;
+    out.cost += tierCost(t.passengers);
+  }
+  out.profit = out.revenue - out.cost;
+  return out;
+}
