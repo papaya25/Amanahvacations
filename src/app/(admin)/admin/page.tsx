@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageHead } from "./AdminUI";
+import { getTransferJobsLedger } from "./profits/profit-data";
 import {
   extractBookingEvents,
   getTransferEvents,
@@ -51,10 +52,11 @@ export default async function AdminDashboard({
   searchParams: Promise<{ m?: string }>;
 }) {
   const { m } = await searchParams;
-  const [orders, customers, visits] = await Promise.all([
+  const [orders, customers, visits, transfers] = await Promise.all([
     getAllOrders(),
     getCustomers(),
     getVisitStats(),
+    getTransferJobsLedger(),
   ]);
 
   const sales = orders.filter(isSale);
@@ -96,9 +98,10 @@ export default async function AdminDashboard({
       />
 
       {/* Stats */}
-      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <StatCard label="Orders" value={String(sales.length)} sub={`${pending.length} pending`} />
-        <StatCard label="Revenue" value={fmtMXN(revenue)} sub="excl. cancelled" />
+        <StatCard label="Revenue" value={fmtMXN(revenue + transfers.revenue)} sub="orders + transfers, excl. cancelled" />
+        <StatCard label="Airport transfers" value={String(transfers.count)} sub={`${fmtMXN(transfers.revenue)} revenue`} />
         <StatCard label="Paid orders" value={String(paid.length)} />
         <StatCard label="Avg order" value={sales.length ? fmtMXN(avg) : "—"} />
         <StatCard label="Customers" value={String(customers.length)} sub="registered accounts" />
