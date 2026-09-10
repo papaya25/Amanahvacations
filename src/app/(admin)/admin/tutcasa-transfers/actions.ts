@@ -20,6 +20,7 @@ export type TransferJob = {
   home: string | null;
   check_in: string | null;
   status: string;
+  provider: string | null;
   amanah_note: string | null;
   kind: "pickup" | "dropoff" | null;
   last_answer: string | null;
@@ -82,6 +83,18 @@ export async function completeTransfer(transferId: string) {
   return applyStatus(transferId, { status: "done" }, { status: "done" });
 }
 
+/** Assign/change who performs the ride (local field, no TutCasa callback). */
+export async function setTransferProvider(transferId: string, provider: string) {
+  if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
+  const supabase = createAdminClient();
+  await supabase
+    .from("tutcasa_transfers")
+    .update({ provider: provider.trim() || null, updated_at: new Date().toISOString() })
+    .eq("transfer_id", transferId);
+  revalidatePath("/admin/tutcasa-transfers");
+  return { ok: true };
+}
+
 /** Manually add a transfer (phone/WhatsApp-arranged, or an Amanah booking).
     Created directly as "confirmed" — the admin adding it IS the acceptance —
     so it lands on the dashboard calendar and in the day-before reminders. */
@@ -95,6 +108,7 @@ export async function addManualTransfer(input: {
   guestPhone?: string;
   home?: string;
   note?: string;
+  provider?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.fullName?.trim() || !input.travelDate) {
@@ -113,6 +127,7 @@ export async function addManualTransfer(input: {
     guest_phone: input.guestPhone?.trim() || null,
     home: input.home?.trim() || null,
     note: input.note?.trim() || null,
+    provider: input.provider?.trim() || null,
     status: "confirmed",
   });
   if (error) {

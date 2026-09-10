@@ -12,6 +12,7 @@ import {
   confirmTransfer,
   completeTransfer,
   requestTransferDetails,
+  setTransferProvider,
   type TransferJob,
 } from "./actions";
 import { deleteTransferJob } from "../tutcasa-tours/actions";
@@ -41,6 +42,8 @@ function JobCard({ job }: { job: TransferJob }) {
   const [error, setError] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [providerEdit, setProviderEdit] = useState(false);
+  const [provider, setProvider] = useState(job.provider ?? "");
 
   const run = async (fn: () => Promise<{ ok: boolean; error?: string }>) => {
     if (busy) return;
@@ -95,6 +98,35 @@ function JobCard({ job }: { job: TransferJob }) {
             </a>
           ) : (
             "—"
+          )}
+        </div>
+        <div>
+          🚐 Provider:{" "}
+          {providerEdit ? (
+            <span className="inline-flex items-center gap-1.5">
+              <input
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                placeholder="Driver / company"
+                className="w-40 rounded-lg border-[1.5px] border-sand bg-white px-2 py-1 text-[12.5px] outline-none focus:border-forest"
+                autoFocus
+              />
+              <button
+                onClick={() => run(async () => { const r = await setTransferProvider(job.transfer_id, provider); if (r.ok) setProviderEdit(false); return r; })}
+                disabled={busy}
+                className="rounded-lg border-[1.5px] border-forest px-2 py-1 text-[12px] font-semibold text-forest hover:bg-forest hover:text-white disabled:opacity-40"
+              >
+                ✓
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setProviderEdit(true)}
+              className={`underline decoration-dotted underline-offset-2 ${job.provider ? "font-semibold text-ink" : "text-sage"}`}
+              title="Click to change"
+            >
+              {job.provider ?? "assign…"}
+            </button>
           )}
         </div>
         {job.address && <div className="sm:col-span-2">📍 Address & unit: {job.address}</div>}
@@ -177,7 +209,7 @@ function ManualAddForm() {
   const [error, setError] = useState("");
   const [f, setF] = useState({
     fullName: "", travelDate: "", kind: "pickup" as "pickup" | "dropoff",
-    flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "",
+    flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "", provider: "",
   });
   const set = (k: string, v: string | number | boolean) => setF((p) => ({ ...p, [k]: v }));
   const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
@@ -191,7 +223,7 @@ function ManualAddForm() {
     setBusy(false);
     if (!res.ok) { setError(res.error ?? "Something went wrong."); return; }
     setOpen(false);
-    setF({ fullName: "", travelDate: "", kind: "pickup", flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "" });
+    setF({ fullName: "", travelDate: "", kind: "pickup", flightNumber: "", passengers: 2, babySeat: false, guestPhone: "", home: "", note: "", provider: "" });
     router.refresh();
   };
 
@@ -218,7 +250,8 @@ function ManualAddForm() {
           <div><span className={labelCls}>Passengers</span><input type="number" min={1} className={inputCls} value={f.passengers} onChange={(e) => set("passengers", Number(e.target.value) || 1)} /></div>
           <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
           <div className="lg:col-span-2"><span className={labelCls}>Drop-off / pickup place</span><input className={inputCls} value={f.home} onChange={(e) => set("home", e.target.value)} placeholder="Hotel or villa name & area" /></div>
-          <div className="lg:col-span-3"><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
+          <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company doing the ride" /></div>
+          <div className="lg:col-span-2"><span className={labelCls}>Note</span><input className={inputCls} value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Baby seat brand, luggage, terminal…" /></div>
           <div className="flex items-end gap-3">
             <label className="flex h-[42px] items-center gap-2 text-[12.5px] text-ink">
               <input type="checkbox" checked={f.babySeat} onChange={(e) => set("babySeat", e.target.checked)} className="h-4 w-4 accent-forest" />
