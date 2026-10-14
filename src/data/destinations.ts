@@ -408,27 +408,6 @@ export const DESTINATIONS: Destination[] = [
     ]
   },
   {
-    "slug": "spa-day",
-    "title": "Relax & Spa Day",
-    "alt": "Spa day with a beach massage in Playa del Carmen",
-    "card": "/images/dest/spa-day.jpg",
-    "hero": "/images/dest/spa-day-hero.jpg",
-    "paragraphs": [
-      "A spa day in Playa del Carmen offers the perfect escape for those seeking relaxation, balance, and a moment to truly unwind in a serene tropical setting. Surrounded by the calm atmosphere of the Caribbean, this experience is designed to recharge both body and mind, away from the energy of everyday life.",
-      "Enjoy access to peaceful spa facilities where you can relax, disconnect, and indulge in a variety of wellness treatments tailored to your needs. From soothing massages to revitalizing therapies, every detail is focused on comfort and tranquility, creating a deeply refreshing experience.",
-      "For an even more unforgettable moment, you can elevate your day with a **massage right on the beach**, where the sound of the waves and the ocean breeze enhance every sensation. Feeling the rhythm of the sea as you relax under the sun creates a unique and calming atmosphere that is truly special to the Riviera Maya.",
-      "This experience is ideal for couples, solo travelers, or anyone looking to slow down and enjoy a peaceful side of Riviera Maya, combining wellness, nature, and pure relaxation."
-    ],
-    "tags": [
-      "Beach",
-      "Playa del Carmen",
-      "Relaxation",
-      "Romantic",
-      "couples",
-      "SPA"
-    ]
-  },
-  {
       "slug": "tulum",
       "title": "Tulum",
       "alt": "Tulum archaeological site \u2014 El Castillo pyramid above the Caribbean Sea",
