@@ -37,6 +37,24 @@ function itemCost(item: CartItem, rows: CostRow[]): number | null {
   return row.cost * Math.max(1, item.people); // per person
 }
 
+/* Online payment-processor fees, absorbed by Amanah (customers pay the shown
+   price). Stripe rate verified against a real charge on this account (foreign
+   card — most guests): 4.1% + MX$3, plus 16% IVA on the fee.
+   ponytail: PayPal / Mercado Pago are published-rate estimates; swap in real
+   per-charge fees from the providers' APIs if exact accounting is needed. */
+const PROCESSOR_FEES: Record<string, { pct: number; fixed: number }> = {
+  "Credit / Debit Card": { pct: 4.1, fixed: 3 },
+  PayPal: { pct: 3.95, fixed: 4 },
+  "Mercado Pago": { pct: 3.49, fixed: 4 },
+};
+
+/** Estimated processor fee (MXN) on an order — only for paid online orders. */
+function orderFee(o: OrderRow): number {
+  const rate = PROCESSOR_FEES[o.payment_method];
+  if (!rate || !o.status.startsWith("Paid") || o.total <= 0) return 0;
+  return Math.round(((o.total * rate.pct) / 100 + rate.fixed) * 1.16);
+}
+
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "margins", label: "Service margins" },
@@ -125,6 +143,7 @@ async function OverviewTab({
 
   let revenue = 0;
   let totalCost = 0;
+  let totalFees = 0;
   const missing = new Set<string>();
   const perMonth = new Map<string, { revenue: number; cost: number }>();
 
@@ -138,6 +157,9 @@ async function OverviewTab({
         c += ic;
       }
     }
+    const fee = orderFee(o);
+    c += fee;
+    totalFees += fee;
     revenue += o.total;
     totalCost += c;
     const key = o.created_at.slice(0, 7);
@@ -178,6 +200,13 @@ async function OverviewTab({
           </div>
         ))}
       </div>
+
+      {totalFees > 0 && (
+        <p className="mt-3 text-[12px] text-sage">
+          Costs include an estimated {fmtMXN(totalFees)} in card/online payment fees (Stripe,
+          PayPal, Mercado Pago), which you absorb.
+        </p>
+      )}
 
       {transferJobs.count > 0 && (
         <p className="mt-3 text-[12px] text-sage">
@@ -337,12 +366,14 @@ async function SalesTab({ orders, costRows }: { orders: OrderRow[]; costRows: Co
     tour: { n: 0, revenue: 0, cost: 0 },
   };
   for (const o of orders.filter(isRealizedSale)) {
+    const fee = orderFee(o);
     for (const it of o.items) {
       if (it.kind !== "package" && it.kind !== "tour") continue;
       const c = cat[it.kind];
+      const total = Number(it.total) || 0;
       c.n += 1;
-      c.revenue += Number(it.total) || 0;
-      c.cost += itemCost(it, costRows) ?? 0;
+      c.revenue += total;
+      c.cost += (itemCost(it, costRows) ?? 0) + (o.total > 0 ? (fee * total) / o.total : 0);
     }
   }
   const abandoned = abandonedCheckouts(orders);
