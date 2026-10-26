@@ -49,6 +49,11 @@ export async function createManualOrder(input: {
   date: string; // YYYY-MM-DD (tour date / package check-in)
   totalMXN: number;
   paymentMethod?: string;
+  extraActivity?: string; // another activity added to the tour
+  extraActivityPrice?: number; // MXN, part of the total charged
+  customization?: string; // customized activity / changes under this tour
+  costMXN?: number; // what the whole booking costs US — drives Profits
+  performedBy?: string; // guide / provider who ran it
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.customerName?.trim() || !input.date || !input.title?.trim()) {
@@ -58,19 +63,57 @@ export async function createManualOrder(input: {
   const people = Math.max(1, input.people || 1);
   const supabase = createAdminClient();
 
-  const item = {
-    id: "m1",
-    kind: input.kind,
-    title: input.title.trim(),
-    subtitle: "Added manually",
-    details: [input.date, `${people} ${people === 1 ? "person" : "people"}`],
-    total: Math.round(input.totalMXN),
-    people,
-    meta:
-      input.kind === "tour"
-        ? { tour_key: input.catalogId, date: input.date, currency: "MXN" }
-        : { pkgId: input.catalogId, checkin: input.date, currency: "MXN" },
+  const extraName = input.extraActivity?.trim() || "";
+  const extraPrice = extraName ? Math.max(0, Math.round(input.extraActivityPrice || 0)) : 0;
+  const total = Math.round(input.totalMXN);
+  const custom = input.customization?.trim() || "";
+  const performer = input.performedBy?.trim() || "";
+  const cost = input.costMXN && input.costMXN > 0 ? Math.round(input.costMXN) : null;
+
+  const details = [input.date, `${people} ${people === 1 ? "person" : "people"}`];
+  if (custom) details.push(`Customized: ${custom}`);
+  if (performer) details.push(`Performed by: ${performer}`);
+  if (cost !== null) details.push(`Our cost: $${cost.toLocaleString("en-US")} MXN`);
+
+  // The whole booking's cost sits on the main line (meta.manual_cost), so
+  // Profits uses it instead of the catalogue cost table; the extra line
+  // carries 0 so it isn't flagged as "cost missing".
+  const baseMeta = {
+    currency: "MXN",
+    ...(input.kind === "tour"
+      ? { tour_key: input.catalogId, date: input.date }
+      : { pkgId: input.catalogId, checkin: input.date }),
+    ...(custom ? { custom } : {}),
+    ...(performer ? { performed_by: performer } : {}),
+    ...(cost !== null ? { manual_cost: String(cost) } : {}),
   };
+  const items = [
+    {
+      id: "m1",
+      kind: input.kind,
+      title: input.title.trim(),
+      subtitle: "Added manually",
+      details,
+      total: total - extraPrice,
+      people,
+      meta: baseMeta,
+    },
+    ...(extraName
+      ? [
+          {
+            id: "m2",
+            kind: "activity" as const,
+            title: extraName,
+            subtitle: `Extra with ${input.title.trim()}`,
+            details: [input.date, `${people} ${people === 1 ? "person" : "people"}`],
+            total: extraPrice,
+            people,
+            meta: { date: input.date, currency: "MXN", ...(cost !== null ? { manual_cost: "0" } : {}) },
+          },
+        ]
+      : []),
+  ];
+  if (extraPrice > total) return { ok: false, error: "The extra activity price can't exceed the total." };
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const id = `AMN-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -78,10 +121,10 @@ export async function createManualOrder(input: {
       id,
       status: "Confirmed",
       source: "manual",
-      items: [item],
-      subtotal: item.total,
+      items,
+      subtotal: total,
       discount: 0,
-      total: item.total,
+      total,
       payment_method: input.paymentMethod?.trim() || "Manual (offline)",
       customer_name: input.customerName.trim(),
       customer_email: "",

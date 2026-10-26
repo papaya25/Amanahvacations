@@ -31,7 +31,7 @@ function ManualOrderForm({ tourOptions, packageOptions }: { tourOptions: Catalog
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [f, setF] = useState({ kind: "tour" as "tour" | "package", catalogId: "", customerName: "", customerPhone: "", people: 2, date: "", totalMXN: 0, paymentMethod: "Cash" });
+  const [f, setF] = useState({ kind: "tour" as "tour" | "package", catalogId: "", customerName: "", customerPhone: "", people: 2, date: "", totalMXN: 0, paymentMethod: "Cash", extraActivity: "", extraActivityPrice: 0, customization: "", costMXN: 0, performedBy: "" });
   const options = f.kind === "tour" ? tourOptions : packageOptions;
   const set = (k: string, v: string | number) => setF((p) => ({ ...p, [k]: v }));
   const inputCls = "w-full rounded-xl border-[1.5px] border-sand bg-white px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-forest";
@@ -85,6 +85,11 @@ function ManualOrderForm({ tourOptions, packageOptions }: { tourOptions: Catalog
               {["Cash", "Card", "Bank transfer", "PayPal", "Other"].map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
           </div>
+          <div className="sm:col-span-2"><span className={labelCls}>Extra activity added</span><input className={inputCls} value={f.extraActivity} onChange={(e) => set("extraActivity", e.target.value)} placeholder="e.g. Cenote Azul (optional)" /></div>
+          <div><span className={labelCls}>Extra activity price</span><input type="number" min={0} className={inputCls} value={f.extraActivityPrice === 0 ? "" : f.extraActivityPrice} onChange={(e) => set("extraActivityPrice", Number(e.target.value) || 0)} placeholder="MXN — part of the total" /></div>
+          <div><span className={labelCls}>Our cost (whole booking)</span><input type="number" min={0} className={inputCls} value={f.costMXN === 0 ? "" : f.costMXN} onChange={(e) => set("costMXN", Number(e.target.value) || 0)} placeholder="MXN — for Profits" /></div>
+          <div className="sm:col-span-2"><span className={labelCls}>Customized activity (under this {f.kind})</span><input className={inputCls} value={f.customization} onChange={(e) => set("customization", e.target.value)} placeholder="e.g. Skip Valladolid, add private lunch (optional)" /></div>
+          <div><span className={labelCls}>Performed by</span><input className={inputCls} value={f.performedBy} onChange={(e) => set("performedBy", e.target.value)} placeholder="Guide / provider" /></div>
           <div className="flex items-end">
             <button
               onClick={submit}

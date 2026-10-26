@@ -24,6 +24,8 @@ export const dynamic = "force-dynamic";
 
 /** Cost of one booked item, from the admin's cost table (null = no cost set). */
 function itemCost(item: CartItem, rows: CostRow[]): number | null {
+  // Manual bookings carry the real cost the admin entered — it wins.
+  if (item.meta?.manual_cost !== undefined) return Number(item.meta.manual_cost) || 0;
   const byId = new Map(rows.map((r) => [r.id, r]));
   if (item.title === "Private Airport Transfer") {
     const tier =
