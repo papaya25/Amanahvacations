@@ -39,6 +39,8 @@ export async function updateOrderStatus(
    dashboard splits, calendar, and Profits (meta carries pkgId/tour_key for
    cost matching). No emails are sent — the sale already happened offline. */
 
+const CARD_FEE_PCT = 5;
+
 export async function createManualOrder(input: {
   kind: "package" | "tour";
   catalogId: string; // package id or tour key
@@ -115,6 +117,22 @@ export async function createManualOrder(input: {
   ];
   if (extraPrice > total) return { ok: false, error: "The extra activity price can't exceed the total." };
 
+  // Card payments: 5% fee charged to the client on top of the agreed price.
+  const cardFee = input.paymentMethod === "Card" ? Math.round(total * CARD_FEE_PCT / 100) : 0;
+  if (cardFee > 0) {
+    items.push({
+      id: "m3",
+      kind: "activity" as const,
+      title: `Card payment fee (${CARD_FEE_PCT}%)`,
+      subtitle: "Charged to the client",
+      details: [`${CARD_FEE_PCT}% of $${total.toLocaleString("en-US")} MXN`],
+      total: cardFee,
+      people,
+      meta: { date: input.date, currency: "MXN", manual_cost: "0" },
+    });
+  }
+  const grandTotal = total + cardFee;
+
   for (let attempt = 0; attempt < 5; attempt++) {
     const id = `AMN-${Math.floor(100000 + Math.random() * 900000)}`;
     const { error } = await supabase.from("orders").insert({
@@ -122,9 +140,9 @@ export async function createManualOrder(input: {
       status: "Confirmed",
       source: "manual",
       items,
-      subtotal: total,
+      subtotal: grandTotal,
       discount: 0,
-      total,
+      total: grandTotal,
       payment_method: input.paymentMethod?.trim() || "Manual (offline)",
       customer_name: input.customerName.trim(),
       customer_email: "",

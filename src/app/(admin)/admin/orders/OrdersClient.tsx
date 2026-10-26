@@ -85,6 +85,15 @@ function ManualOrderForm({ tourOptions, packageOptions }: { tourOptions: Catalog
               {["Cash", "Card", "Bank transfer", "PayPal", "Other"].map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
           </div>
+          {f.paymentMethod === "Card" && (
+            <div>
+              <span className={labelCls}>Card fee (5%)</span>
+              <div className="rounded-xl border-[1.5px] border-sand bg-cream px-3.5 py-2.5 text-[13px] text-ink">
+                +${Math.round(f.totalMXN * 0.05).toLocaleString("en-US")} → client pays{" "}
+                <strong>${(f.totalMXN + Math.round(f.totalMXN * 0.05)).toLocaleString("en-US")}</strong>
+              </div>
+            </div>
+          )}
           <div className="sm:col-span-2"><span className={labelCls}>Extra activity added</span><input className={inputCls} value={f.extraActivity} onChange={(e) => set("extraActivity", e.target.value)} placeholder="e.g. Cenote Azul (optional)" /></div>
           <div><span className={labelCls}>Extra activity price</span><input type="number" min={0} className={inputCls} value={f.extraActivityPrice === 0 ? "" : f.extraActivityPrice} onChange={(e) => set("extraActivityPrice", Number(e.target.value) || 0)} placeholder="MXN — part of the total" /></div>
           <div><span className={labelCls}>Our cost (whole booking)</span><input type="number" min={0} className={inputCls} value={f.costMXN === 0 ? "" : f.costMXN} onChange={(e) => set("costMXN", Number(e.target.value) || 0)} placeholder="MXN — for Profits" /></div>
