@@ -380,39 +380,54 @@ function ManualAddForm() {
   );
 }
 
+/* Three tabs: requested (awaiting our acceptance or guest details),
+   upcoming (accepted/confirmed rides), completed (done or closed). */
+const TABS = [
+  { id: "requested", label: "Requested", statuses: ["requested", "need_details"], empty: "No transfer requests waiting — new TutCasa bookings appear here automatically." },
+  { id: "upcoming", label: "Accepted / Upcoming", statuses: ["confirmed"], empty: "No upcoming transfers." },
+  { id: "completed", label: "Completed", statuses: ["done", "closed"], empty: "No completed transfers yet." },
+] as const;
+
 export default function TransfersClient({ initialJobs }: { initialJobs: TransferJob[] }) {
-  const active = initialJobs.filter((j) => j.status !== "done" && j.status !== "closed");
-  const finished = initialJobs.filter((j) => j.status === "done" || j.status === "closed");
+  // Land on whichever tab needs attention first.
+  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>(() =>
+    initialJobs.some((j) => j.status === "requested" || j.status === "need_details") ? "requested" : "upcoming"
+  );
+  const current = TABS.find((t) => t.id === tab)!;
+  const jobs = initialJobs.filter((j) => (current.statuses as readonly string[]).includes(j.status));
+  // Completed: most recent ride first; the other tabs keep soonest-first.
+  if (tab === "completed") jobs.reverse();
 
   return (
     <>
       <ManualAddForm />
+      <div className="mb-4 flex flex-wrap gap-2">
+        {TABS.map((t) => {
+          const n = initialJobs.filter((j) => (t.statuses as readonly string[]).includes(j.status)).length;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`rounded-full px-4 py-2 text-[13px] font-semibold transition ${
+                tab === t.id ? "bg-forest text-white" : "border border-sand bg-white text-ink hover:border-forest"
+              }`}
+            >
+              {t.label} <span className={tab === t.id ? "opacity-80" : "text-sage"}>({n})</span>
+            </button>
+          );
+        })}
+      </div>
       <Card>
-        {active.length === 0 ? (
-          <p className="text-[13.5px] italic text-sage">
-            No open transfer jobs — new TutCasa bookings will appear here automatically.
-          </p>
+        {jobs.length === 0 ? (
+          <p className="text-[13.5px] italic text-sage">{current.empty}</p>
         ) : (
-          <div className="space-y-3">
-            {active.map((j) => (
+          <div className={`space-y-3${tab === "completed" ? " opacity-80" : ""}`}>
+            {jobs.map((j) => (
               <JobCard key={j.transfer_id} job={j} />
             ))}
           </div>
         )}
       </Card>
-
-      {finished.length > 0 && (
-        <Card>
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[1.5px] text-sage">
-            Completed ({finished.length})
-          </p>
-          <div className="space-y-3 opacity-70">
-            {finished.map((j) => (
-              <JobCard key={j.transfer_id} job={j} />
-            ))}
-          </div>
-        </Card>
-      )}
     </>
   );
 }
