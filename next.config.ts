@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "10mb" },
   },
   images: {
+    // Vercel bills every resize. Keep resized copies 31 days (default ~4h made
+    // the same photo re-transform several times a day) and generate 5 widths
+    // instead of 15 — each width is a separate billed transformation.
+    minimumCacheTTL: 2678400,
+    deviceSizes: [640, 1080, 1920],
+    imageSizes: [96, 256],
     // Admin-uploaded photos live in Supabase Storage.
     remotePatterns: [
       {
