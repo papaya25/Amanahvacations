@@ -4,8 +4,20 @@
     {
       "name": "amanah-dev",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-lc", "PATH=\"$HOME/.local/node22/bin:$PATH\" npm run dev -- -p 3010"],
+      "runtimeArgs": [
+        "-lc",
+        "PATH=\"$HOME/.local/node22/bin:$PATH\" npm run dev -- -p 3010"
+      ],
       "port": 3010
+    },
+    {
+      "name": "amanah-prod",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "PATH=\"$HOME/.local/node22/bin:$PATH\" npm run start -- -p 3012"
+      ],
+      "port": 3012
     }
   ]
 }

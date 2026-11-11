@@ -43,6 +43,12 @@ export async function proxy(request: NextRequest) {
   const buildResponse = () =>
     rewriteUrl ? NextResponse.rewrite(rewriteUrl, { request }) : NextResponse.next({ request });
 
+  // Public pages need only the locale rewrite. The Supabase auth round-trip
+  // below runs solely where a session matters (account gate, login bounce) —
+  // never on ordinary page views.
+  const needsSession = localeFreePath.startsWith("/account") || localeFreePath === "/login";
+  if (!needsSession) return buildResponse();
+
   let response = buildResponse();
 
   // Customer session refresh (keeps auth cookies fresh on account/login pages).

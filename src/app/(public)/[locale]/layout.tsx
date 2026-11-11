@@ -35,11 +35,14 @@ export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
 }
 
-/* Render public pages on demand so they always read the current translation
-   cache (in Supabase) instead of baking translations in at build time. This
-   keeps the deployed site's translations in sync with the database and makes
-   the build fast and reliable — no per-page translation work at build time. */
-export const dynamic = "force-dynamic";
+/* ISR: public pages are prerendered and served from Vercel's cache, then
+   re-rendered at most hourly — or immediately when an admin save calls
+   revalidatePath("/", "layout"). Per-visitor pages (checkout, thank-you,
+   account) opt back into dynamic rendering in their own files. Rendering on
+   every request (the old force-dynamic) burned the team's Fluid CPU quota on
+   crawler traffic. Any string the translation cache missed at render time
+   self-heals at the next revalidation. */
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://amanahvacations.com"),

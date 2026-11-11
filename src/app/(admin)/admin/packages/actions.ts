@@ -72,9 +72,9 @@ export async function savePackages(packages: PackageInput[]): Promise<SaveResult
       if (upErr) return { ok: false, error: upErr.message };
     }
 
-    // Refresh the pages that render package content.
-    revalidatePath("/packages");
-    revalidatePath("/");
+    // Package content renders on several pages in every locale (/en/packages,
+    // /fr/…, home, VIP…), so refresh the whole public tree.
+    revalidatePath("/", "layout");
 
     return { ok: true };
   } catch (e) {
