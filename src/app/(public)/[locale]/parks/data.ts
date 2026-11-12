@@ -84,4 +84,14 @@ export const PARKS: Park[] = [
     price: 1700,
     desc: "A protected sanctuary in Akumal caring for spider monkeys, coatis and macaws rescued from the illegal wildlife trade. Walk the shaded jungle paths with a keeper and — under supervision — get remarkably close. The visit children remember most.",
   },
+  {
+    id: "parasailing",
+    name: "Parasailing",
+    sub: "Fly over the Caribbean",
+    dur: "About 1 hour",
+    img: "/images/parks/parasailing.jpg",
+    imgFit: "cover",
+    price: 1800,
+    desc: "Rise above the turquoise Caribbean on a smooth parasailing flight off Playa del Carmen, with wide views of the coastline. A perfect morning activity for couples and friends.",
+  },
 ];
