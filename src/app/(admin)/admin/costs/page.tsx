@@ -61,13 +61,13 @@ const DEFAULT: { rows: CostRow[]; taxRate: number } = {
       ],
       "Add-on"
     ),
-    // Transfer costs are per group size tier (round trip), matching how
+    // Transfer costs are per group size tier (per trip), matching how
     // transfers are actually priced.
     ...seed(
       [
-        ["transfer-1-4", "Airport Transfer — 1–4 people (round trip)"],
-        ["transfer-5-8", "Airport Transfer — 5–8 people (round trip)"],
-        ["transfer-9plus", "Airport Transfer — 9+ people (round trip)"],
+        ["transfer-1-4", "Airport Transfer — 1–3 people (per trip)"],
+        ["transfer-5-8", "Airport Transfer — 4+ people (per trip)"],
+        ["transfer-9plus", "Airport Transfer — spare tier (per trip)"],
       ],
       "Transfer"
     ),

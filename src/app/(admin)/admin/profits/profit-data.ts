@@ -165,7 +165,7 @@ export async function getServiceMargins(): Promise<MarginRow[]> {
   }
 
   const tierIds = ["transfer-1-4", "transfer-5-8", "transfer-9plus"];
-  const tierNames = ["Airport Transfer — 1–4 people", "Airport Transfer — 5–8 people", "Airport Transfer — 9+ people"];
+  const tierNames = ["Airport Transfer — 1–3 people", "Airport Transfer — 4+ people", "Airport Transfer — spare tier"];
   const tiers = transfers?.tiers ?? [];
   tierIds.forEach((id, i) => {
     const sell = tiers[i]?.price;
