@@ -31,6 +31,7 @@ export default function DreamAdventure({
           <Image
             src="/images/dream-adventure.jpg"
             alt="Turquoise Caribbean coastline of the Riviera Maya"
+            unoptimized
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover"

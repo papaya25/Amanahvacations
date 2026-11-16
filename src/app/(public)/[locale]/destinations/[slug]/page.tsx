@@ -171,6 +171,7 @@ export default async function DestinationPage({ params }: Props) {
         <Image
           src={dest.hero}
           alt={dest.alt}
+          unoptimized={dest.hero.startsWith("/")}
           fill
           priority
           sizes="100vw"
@@ -285,8 +286,9 @@ export default async function DestinationPage({ params }: Props) {
                 <Image
                   src={d.card}
                   alt={d.alt}
+                  unoptimized={d.card.startsWith("/")}
                   fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1320px) 25vw, 320px"
                   className="object-cover"
                 />
                 <div

@@ -131,6 +131,7 @@ export default async function AirportTransfersPage({
         <Image
           src="/images/hero-beaches.jpg"
           alt="Arriving relaxed to the white-sand beaches of the Riviera Maya"
+          unoptimized
           fill
           priority
           sizes="100vw"

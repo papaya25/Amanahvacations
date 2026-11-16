@@ -102,6 +102,7 @@ export default async function AboutPage({
         <Image
           src="/images/hero-tulum.jpg"
           alt="The Mayan ruins of Tulum above the Caribbean Sea"
+          unoptimized
           fill
           priority
           sizes="100vw"
@@ -137,16 +138,16 @@ export default async function AboutPage({
         </div>
         <div className="grid grid-cols-2 gap-3.5">
           <div className="relative aspect-[3/4] overflow-hidden rounded-[18px]">
-            <Image src="/images/hero-cenotes.jpg" alt="A hidden cenote with a beam of sunlight" fill sizes="25vw" className="object-cover" />
+            <Image src="/images/hero-cenotes.jpg" alt="A hidden cenote with a beam of sunlight" fill unoptimized className="object-cover" />
           </div>
           <div className="relative mt-8 aspect-[3/4] overflow-hidden rounded-[18px]">
-            <Image src="/images/dest/holbox.jpg" alt="Holbox island beach" fill sizes="25vw" className="object-cover" />
+            <Image src="/images/dest/holbox.jpg" alt="Holbox island beach" fill unoptimized className="object-cover" />
           </div>
           <div className="relative -mt-8 aspect-[3/4] overflow-hidden rounded-[18px]">
-            <Image src="/images/dest/siankaan.jpg" alt="Sian Ka'an biosphere reserve" fill sizes="25vw" className="object-cover" />
+            <Image src="/images/dest/siankaan.jpg" alt="Sian Ka'an biosphere reserve" fill unoptimized className="object-cover" />
           </div>
           <div className="relative aspect-[3/4] overflow-hidden rounded-[18px]">
-            <Image src="/images/hero-dining.jpg" alt="Private sunset dinner on the beach" fill sizes="25vw" className="object-cover" />
+            <Image src="/images/hero-dining.jpg" alt="Private sunset dinner on the beach" fill unoptimized className="object-cover" />
           </div>
         </div>
       </section>

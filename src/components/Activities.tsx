@@ -58,8 +58,9 @@ export default async function Activities({ locale }: { locale: Locale }) {
               <Image
                 src={a.img}
                 alt={a.alt}
+                unoptimized={a.img.startsWith("/")}
                 fill
-                sizes="(max-width: 768px) 50vw, 25vw"
+                sizes="(max-width: 768px) 50vw, (max-width: 1320px) 25vw, 320px"
                 className="object-cover"
               />
               <div

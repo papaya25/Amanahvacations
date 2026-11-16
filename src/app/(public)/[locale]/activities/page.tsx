@@ -120,8 +120,9 @@ export default async function ActivitiesPage({
               <Image
                 src={d.card}
                 alt={d.alt}
+                unoptimized={d.card.startsWith("/")}
                 fill
-                sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 320px"
                 className="object-cover"
               />
               <div

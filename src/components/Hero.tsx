@@ -189,6 +189,7 @@ export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent
         <Image
           src={s.src}
           alt={s.alt}
+          unoptimized={s.src.startsWith("/")}
           fill
           priority={i === 0}
           sizes={sizes}

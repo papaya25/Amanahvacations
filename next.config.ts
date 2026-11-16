@@ -16,9 +16,13 @@ const nextConfig: NextConfig = {
     // Vercel bills every resize. Keep resized copies 31 days (default ~4h made
     // the same photo re-transform several times a day) and generate 5 widths
     // instead of 15 — each width is a separate billed transformation.
+    // Local /public photos skip this entirely (`unoptimized`, pre-compressed);
+    // only admin-uploaded Supabase photos, the logo and cart thumbnails resize.
+    // 3 widths: dropping 96/640 only ever rounds UP to the next size, so
+    // nothing gets softer.
     minimumCacheTTL: 2678400,
-    deviceSizes: [640, 1080, 1920],
-    imageSizes: [96, 256],
+    deviceSizes: [1080, 1920],
+    imageSizes: [256],
     // Admin-uploaded photos live in Supabase Storage.
     remotePatterns: [
       {
