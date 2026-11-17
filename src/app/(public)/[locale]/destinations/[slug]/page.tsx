@@ -58,11 +58,11 @@ function faqsFor(title: string) {
     },
     {
       q: `Do you offer halal-friendly options for ${title}?`,
-      a: `Yes — we regularly host Muslim travelers and can arrange halal dining, prayer times and modest, private setups around your ${title} experience. Just let us know when you book.`,
+      a: `Yes — we regularly host Muslim travelers and can arrange halal dining, prayer times and modest, private setups around your ${title} experience — see our [halal-friendly private tours](/halal). Just let us know when you book.`,
     },
     {
       q: `How do I book ${title}?`,
-      a: `Pick your dates and tell us your group size, then book online or message us on WhatsApp for a tailored quote. We confirm availability and hotel pickup within a few hours.`,
+      a: `Pick your dates and tell us your group size, then book online or message us on WhatsApp for a tailored quote. We confirm availability and hotel pickup within a few hours, and can add a [private transfer from Cancún Airport](/airport-transfers) for your arrival.`,
     },
   ];
 }

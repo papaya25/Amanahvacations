@@ -151,7 +151,7 @@ const PKG_SUMMARY_FALLBACK = [
 const FAQS = [
   {
     q: "What's included in a Riviera Maya package?",
-    a: "Each package bundles private airport transfers, a series of private tours and activities, and a personal WhatsApp concierge. You can add accommodation and extra experiences at checkout. Exactly what's included is listed on each package card.",
+    a: "Each package bundles [private airport transfers](/airport-transfers), a series of private tours and activities, and a personal WhatsApp concierge. You can add accommodation and extra experiences at checkout. Exactly what's included is listed on each package card.",
   },
   {
     q: "Can I customize a package or build my own?",
@@ -159,7 +159,7 @@ const FAQS = [
   },
   {
     q: "Are the packages halal-friendly?",
-    a: "Yes. We arrange halal dining, private and modest setups, prayer times and alcohol-free villas on request. See our Halal-Friendly Travel page for details.",
+    a: "Yes. We arrange halal dining, private and modest setups, prayer times and alcohol-free villas on request. See our [halal-friendly travel in the Riviera Maya](/halal) page for details.",
   },
   {
     q: "Do prices include hotels?",

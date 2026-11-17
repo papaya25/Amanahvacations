@@ -1,6 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeHref } from "@/lib/i18n/config";
+
+/* Answers may carry internal links as [anchor text](/path) — rendered as real
+   localized links here; faqSchema() strips them to plain text for Google. */
+const LINK = /\[([^\]]+)\]\((\/[^)\s]*)\)/g;
 
 /* Accordion FAQ. The FAQPage JSON-LD is emitted by the page (server side) via
    faqSchema() so Google can show the questions as rich results — this component
@@ -17,6 +24,23 @@ export default function Faq({
   dark?: boolean;
 }) {
   const [open, setOpen] = useState<number | null>(0);
+  const { locale } = useI18n();
+  const withLinks = (text: string) => {
+    const parts = text.split(LINK); // [text, anchor, href, text, anchor, href, …]
+    return parts.map((part, i) =>
+      i % 3 === 1 ? (
+        <Link
+          key={i}
+          href={localizeHref(parts[i + 1], locale)}
+          className={`underline underline-offset-2 ${dark ? "text-gold" : "text-forest"}`}
+        >
+          {part}
+        </Link>
+      ) : i % 3 === 2 ? null : (
+        part
+      )
+    );
+  };
 
   return (
     <section
@@ -85,7 +109,7 @@ export default function Faq({
                         dark ? "text-white/65" : "text-sage"
                       }`}
                     >
-                      {it.a}
+                      {withLinks(it.a)}
                     </p>
                   </div>
                 </div>

@@ -69,11 +69,11 @@ const FAQS = [
   },
   {
     q: "Do you pick us up from our hotel in Playa del Carmen or Tulum?",
-    a: "Yes. Private round-trip pickup from your hotel or villa in Playa del Carmen, Tulum and the surrounding Riviera Maya is included in every tour.",
+    a: "Yes. Private round-trip pickup from your hotel or villa in Playa del Carmen, Tulum and the surrounding Riviera Maya is included in every tour. Landing in Cancún? We also run [private airport transfers from Cancún Airport](/airport-transfers) straight to your hotel.",
   },
   {
     q: "Are the tours family-friendly and halal-friendly?",
-    a: "Both. Our tours are designed to be comfortable for families and all ages, and we regularly host Muslim travelers — halal dining and prayer arrangements can be added on request.",
+    a: "Both. Our tours are designed to be comfortable for families and all ages, and we regularly host Muslim travelers — halal dining and prayer arrangements can be added on request. See how our [halal-friendly private tours](/halal) work.",
   },
   {
     q: "How far in advance should I book a tour?",

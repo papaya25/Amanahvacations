@@ -122,7 +122,7 @@ async function translateBatch(texts: string[], locale: Locale): Promise<string[]
       max_tokens: 8192,
       system:
         `Translate each numbered English string to ${LOCALE_NAMES[locale]} for a travel/tourism website. ` +
-        `Keep the tone warm and professional. Preserve any {{placeholders}}, HTML tags, and punctuation style. ` +
+        `Keep the tone warm and professional. Preserve any {{placeholders}}, HTML tags, and punctuation style. Keep markdown links like [text](/path) intact: translate the text inside [ ], never change the (/path). ` +
         `Keep proper place and brand names in their original form (e.g. Cancún, Tulum, Chichén Itzá, Xcaret, Cozumel, Holbox, Sian Ka'an, Riviera Maya, Rosewood Mayakoba, PayPal), ` +
         `but ALWAYS translate the ordinary descriptive words around them — words like Tour, Park, Visit, Sanctuary, Aquarium, Lagoon, Guided, Private, City, Beach, Reserve, Overnight, Lessons, Snorkeling. ` +
         `For example "Cenote Visit", "Cancún City Tour", "Monkey Sanctuary", "Xcaret Park" must become natural ${LOCALE_NAMES[locale]}. ` +

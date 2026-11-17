@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "Are your trips family-safe and halal-friendly?",
-    a: "Yes to both. Everything is designed to be comfortable for families and couples, and we specialize in halal-friendly travel — halal dining, alcohol-free private villas, prayer arrangements and modest setups on request.",
+    a: "Yes to both. Everything is designed to be comfortable for families and couples, and we specialize in [halal-friendly travel in Playa del Carmen](/halal) — halal dining, alcohol-free private villas, prayer arrangements and modest setups on request.",
   },
   {
     q: "What languages does your team speak?",
