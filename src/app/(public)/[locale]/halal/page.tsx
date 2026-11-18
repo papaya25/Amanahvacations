@@ -4,7 +4,8 @@ import { pageAlternates } from "@/lib/seo";
 import HalalClient from "./HalalClient";
 import { HALAL_CONTENT_EN, type HalalContent } from "./content";
 import { translateMany } from "@/lib/i18n/translate";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { isLocale, localizeHref, type Locale } from "@/lib/i18n/config";
+import Link from "next/link";
 import "./halal.css";
 
 export async function generateMetadata({
@@ -92,9 +93,23 @@ export default async function HalalPage({
   const { locale: rawLocale } = await params;
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   const content = await translateHalalContent(locale);
+  const [guideLead, guideLink] = await translateMany(
+    ["Planning your trip?", "Read our Muslim travel guide to Playa del Carmen & Cancún — mosques, halal food and prayer times"],
+    locale
+  );
   return (
     <main>
       <HalalClient content={content} />
+      {/* The guide is deliberately off the menu/home page; this is its main internal link. */}
+      <p className="bg-night px-5 pb-12 pt-2 text-center text-[14px] text-white/70">
+        {guideLead}{" "}
+        <Link
+          href={localizeHref("/muslim-guide-playa-del-carmen-cancun", locale)}
+          className="font-semibold text-gold underline underline-offset-2"
+        >
+          {guideLink} →
+        </Link>
+      </p>
     </main>
   );
 }
