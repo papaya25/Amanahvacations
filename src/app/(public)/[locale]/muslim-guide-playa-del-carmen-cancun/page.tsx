@@ -3,20 +3,21 @@ import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
-import { IconMosque, IconDining, IconCompass, IconWaves, IconVilla, IconFamily } from "@/components/LuxeIcons";
 import { localizeMetadata } from "@/lib/i18n/metadata";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, localizeHref, type Locale } from "@/lib/i18n/config";
 import { SITE_URL, breadcrumbSchema, faqSchema, pageAlternates } from "@/lib/seo";
 
-/* Muslim travel guide — an SEO landing page (not in the menu or on the home
-   page by Maher's choice; reached from /halal and the sitemap). Every fact
-   comes from Maher, who lives in Playa del Carmen:
-   docs/seo/muslim-guide-facts-from-maher.md. No fixed prayer-time table
-   (times change); link the mosque's website here once it's live. */
+/* Muslim travel guide — an editorial article and SEO landing page (not in the
+   menu or on the home page by Maher's choice; reached from /halal and the
+   sitemap). Every fact comes from Maher, who lives in Playa del Carmen:
+   docs/seo/muslim-guide-facts-from-maher.md. Photos are his. No fixed
+   prayer-time table (times change); link the mosque's website once live. */
 
 const PATH = "/muslim-guide-playa-del-carmen-cancun";
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-18";
+const HERO = "/images/guide/muslim-traveler-tulum-terrace.jpg";
+const FAMILY = "/images/guide/muslim-family-villa-dinner.jpg";
 
 const maps = (q: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 
@@ -29,7 +30,7 @@ export async function generateMetadata({
   return localizeMetadata(locale, {
     title: "Muslim Travel Guide to Playa del Carmen & Cancún: Mosques, Halal Food, Prayer",
     description:
-      "A local's guide for Muslim travelers: the mosque in Playa del Carmen, the Cancún musalla, halal restaurants and halal meat, prayer times, qibla, burkini tips and where to stay.",
+      "A local guide for Muslim travelers: the mosque in Playa del Carmen and Friday prayer, the Cancún musalla, halal restaurants and halal meat, kosher and seafood options, burkini tips and where to stay.",
     keywords: [
       "mosque Playa del Carmen",
       "mosque Cancun",
@@ -43,65 +44,137 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
       title: "Muslim Travel Guide to Playa del Carmen & Cancún",
-      description: "Mosques, halal food, prayer times and practical tips — from a local Muslim-owned tour operator.",
+      description: "Mosques, Friday prayer, halal food and practical tips — from a Muslim-owned tour operator in Playa del Carmen.",
       url: localizeHref(PATH, isLocale(locale) ? locale : "en"),
-      images: ["/images/dest/quinta-hero.jpg"],
+      images: [HERO],
     },
   });
 }
 
-const MOSQUES = [
-  {
-    city: "Playa del Carmen",
-    name: "Masjid Al-Rahman",
-    kind: "Mosque",
-    address: "Calle 3 Sur & Calle 60 Diagonal Sur, Ejidal, 77712 Playa del Carmen",
-    desc: "A real, large mosque with an imam trained at Al-Azhar in Egypt. Jumu'ah is held every Friday at 2 pm, with the khutbah in a mix of Spanish and Arabic. In Ramadan it holds Tarawih prayers and iftar; all year long it runs Islamic classes and Quran classes for adults and children. On both Eids, Muslims from all over the Riviera Maya gather here.",
-    q: "Masjid Al-Rahman Calle 3 Sur Ejidal Playa del Carmen",
-  },
-  {
-    city: "Cancún",
-    name: "Masjid Al-Rahim",
-    kind: "Musalla (prayer room)",
-    address: "Calle Alce 24, 77500 Cancún",
-    desc: "A musalla — a prayer room rather than a full mosque — serving Muslims living in and visiting Cancún.",
-    q: "Masjid Al-Rahim Calle Alce 24 Cancun",
-  },
+/* ---------- Content (English source; translated per locale) ---------- */
+
+const INTRO = [
+  "Before they book, almost every Muslim family asks us the same questions. Is there a mosque? Where can we eat halal? Will my wife and daughters feel comfortable in a hijab, or in a burkini at the beach? The short answer is yes — and the longer answer is what this guide is for.",
+  "We are Amanah Vacations, a Muslim-owned tour operator based in Playa del Carmen. We live here, we pray here and we eat here, so everything on this page comes from our own experience on the ground rather than from lists copied around the internet. We keep it up to date as places open and close.",
+  "Playa del Carmen is the heart of Muslim life on the Riviera Maya: it has the region's mosque, its halal restaurants and its halal meat supplier. Cancún, about an hour to the north, has a small musalla. Here is what each city offers, and how to make the most of your stay.",
 ];
 
-const FOOD = [
-  {
-    title: "Fully halal, Muslim-owned",
-    places: ["French Kebab", "Ar Rayan"],
-    note: "Both are owned by a Muslim and serve only halal food.",
-  },
-  {
-    title: "Halal meat, non-Muslim owner",
-    places: ["Street Food Latino"],
-    note: "Serves halal meat; the owner is not Muslim.",
-  },
-  {
-    title: "Halal meat, but beer may be served",
-    places: ["Shawarma", "Los Faraones Tacos & Kebab Express"],
-    note: "The meat is halal, but these places may also sell beer.",
-  },
-  {
-    title: "Vegetarian",
-    places: ["Falafel Nassaya"],
-    note: "Falafel and vegetarian Middle Eastern plates.",
-  },
-  {
-    title: "Kosher",
-    places: ["Moshe Cube Kosher", "Two Smokers Smokehouse", "Let's Meat Kosher Steak House"],
-    note: "Some Muslim travelers also eat at kosher restaurants — follow your own school of thought.",
-  },
-];
+const MOSQUES = {
+  title: "Mosques and Friday prayer",
+  intro:
+    "You will not have to choose between your holiday and your prayers. Playa del Carmen has a real mosque with a full program, and Cancún has a prayer room for the days you are staying further north.",
+  items: [
+    {
+      city: "Playa del Carmen",
+      name: "Masjid Al-Rahman",
+      kind: "Mosque",
+      address: "Calle 3 Sur & Calle 60 Diagonal Sur, Ejidal, 77712 Playa del Carmen",
+      q: "Masjid Al-Rahman Calle 3 Sur Ejidal Playa del Carmen",
+      paras: [
+        "Masjid Al-Rahman is a real, large mosque — not a prayer room in an apartment — and it is the centre of the Muslim community on the Riviera Maya. Its imam studied at Al-Azhar in Egypt.",
+        "Jumu'ah is held every Friday at 2 pm, and the khutbah is given in a mix of Spanish and Arabic, so visitors from abroad can follow along.",
+        "During Ramadan the mosque holds Tarawih prayers and iftar, and all year long it runs Islamic classes and Quran classes for adults and children. On both Eids, Muslims from all over the Riviera Maya gather here — if your trip falls on Eid, this is where you will want to pray.",
+      ],
+    },
+    {
+      city: "Cancún",
+      name: "Masjid Al-Rahim",
+      kind: "Musalla (prayer room)",
+      address: "Calle Alce 24, 77500 Cancún",
+      q: "Masjid Al-Rahim Calle Alce 24 Cancun",
+      paras: [
+        "Cancún does not have a full mosque, but Masjid Al-Rahim is a musalla — a prayer room — serving the Muslims who live in and visit the city.",
+        "If you are staying in Cancún and want to attend Jumu'ah or the Eid prayer, plan the drive to Masjid Al-Rahman in Playa del Carmen, about an hour away.",
+      ],
+    },
+  ],
+};
 
+const COMMUNITY = {
+  title: "The Muslim community",
+  paras: [
+    "Roughly 250 to 300 Muslims live between Cancún, Playa del Carmen and Tulum. It is a small community, but a close and welcoming one, and it comes together at Masjid Al-Rahman — every Friday, throughout Ramadan, and above all on both Eids, when Muslims from across the Riviera Maya gather in Playa del Carmen.",
+    "Emara Academy is part of that community life: it does da'wa and organizes classes and activities for Muslims and for new converts.",
+  ],
+  emaraCta: "Visit Emara Academy →",
+};
+
+type Place = { name: string; address: string; desc: string };
+const FOOD = {
+  title: "Halal food in Playa del Carmen",
+  intro:
+    "Playa del Carmen is the easiest place on the Riviera Maya to eat halal. Here are the places we know and trust, one by one. In Cancún we don't know of a halal restaurant — there, seafood, fish and vegetarian dishes are the way to go, or plan your meals around a visit to Playa.",
+  groups: [
+    {
+      title: "Halal restaurants & halal meat",
+      intro: "Restaurants that serve halal meat — read each note, because ownership and alcohol policies differ.",
+      places: [
+        { name: "French Kebab", address: "", desc: "Owned by a Muslim and serves only halal food. It is also where to buy halal meat: the owner is Playa del Carmen's only halal meat supplier, so if you are cooking in your apartment or villa, ask here and they will provide what you need." },
+        { name: "Ar Rayan", address: "", desc: "Owned by the same Muslim owner as French Kebab, and serves only halal food." },
+        { name: "Street Food Latino", address: "", desc: "Serves halal meat. The owner is not Muslim." },
+        { name: "Shaywarma", address: "", desc: "Serves halal meat." },
+        { name: "Los Faraones", address: "", desc: "Serves halal meat." },
+        { name: "Tacos & Kebab Express", address: "", desc: "Serves halal meat, but may also sell beer." },
+      ] as Place[],
+    },
+    {
+      title: "Kosher restaurants",
+      intro: "Some Muslim travelers also eat at kosher restaurants — follow your own school of thought.",
+      places: [
+        { name: "Moshe Cube Kosher", address: "", desc: "Kosher restaurant." },
+        { name: "Two Smokers Smokehouse", address: "", desc: "Kosher smokehouse." },
+        { name: "Let's Meat Kosher Steak House", address: "", desc: "Kosher steak house." },
+      ] as Place[],
+    },
+    {
+      title: "Vegetarian & seafood",
+      intro: "Playa del Carmen has plenty of seafood and fish restaurants, and they are an easy choice anywhere on the coast. We will keep adding our favorites to this list.",
+      places: [
+        { name: "Falafel Nassaya", address: "", desc: "Falafel and vegetarian Middle Eastern plates." },
+      ] as Place[],
+    },
+  ],
+};
+
+const PRAYER = {
+  title: "Prayer times and qibla",
+  paras: [
+    "Daily prayer times change through the year, so the simplest approach is your usual prayer app set to Cancún or Playa del Carmen. Quintana Roo keeps the same clock all year — there is no daylight saving to catch you out.",
+    "The qibla from Cancún and Playa del Carmen is about 54° from true north, toward the north-east — Makkah is around 12,540 km away.",
+  ],
+};
+
+const MODEST = {
+  title: "Hijab, burkini and the beach",
+  paras: [
+    "There is no law in Mexico against modest swimwear, and you will not need one. The hijab is fine everywhere, and people here are very respectful.",
+    "The burkini is fine at the public beaches, at the cenotes and at the parks — wear what you are comfortable in and enjoy the water.",
+  ],
+};
+
+const STAY = {
+  title: "Where to stay",
+  paras: [
+    "There is no halal-certified hotel in the area. You can ask a hotel to keep alcohol out of your room, but the food in its restaurants won't be halal.",
+    "That is why many Muslim families prefer an Airbnb or a resort condo with its own kitchen, where you can cook with halal meat from Playa del Carmen. Our partner TutCasa has a splendid condo in Mareazul that works beautifully for families.",
+  ],
+  cta: "See TutCasa →",
+};
+
+const TOURS = {
+  title: "Tours designed for Muslim families",
+  paras: [
+    "Every Amanah tour is designed for Muslim families. Our tours are private, so you never share transport with strangers.",
+    "When something has to be shared — like a snorkeling boat, where a private one would be very expensive for a family — there is no alcohol and no music on board. We bring a prayer carpet so you can pray during the tour whenever you need to. Please note that food is not included on our tours.",
+  ],
+  ctaHalal: "Our halal-friendly travel",
+  ctaTours: "See our private tours",
+};
 
 const FAQS = [
   {
     q: "Is there a mosque in Playa del Carmen?",
-    a: "Yes. Masjid Al-Rahman, in the Ejidal neighborhood (Calle 3 Sur & Calle 60 Diagonal Sur), is a real, large mosque with an imam trained at Al-Azhar. Jumu'ah is every Friday at 2 pm; it also holds Tarawih and iftar in Ramadan, Eid prayers for the whole Riviera Maya, and classes all year.",
+    a: "Yes. Masjid Al-Rahman, in the Ejidal neighborhood (Calle 3 Sur & Calle 60 Diagonal Sur), is a real, large mosque with an imam trained at Al-Azhar. It holds Friday prayer every week, Tarawih and iftar in Ramadan, Eid prayers for the whole Riviera Maya, and classes all year.",
   },
   {
     q: "When is Friday prayer (Jumu'ah) in Playa del Carmen?",
@@ -109,15 +182,15 @@ const FAQS = [
   },
   {
     q: "Is there a mosque in Cancún?",
-    a: "Cancún has a musalla (prayer room), Masjid Al-Rahim, at Calle Alce 24. For the full mosque experience, Masjid Al-Rahman in Playa del Carmen is about an hour's drive south.",
+    a: "Cancún has a musalla (prayer room), Masjid Al-Rahim, at Calle Alce 24. For Friday prayer and the Eid prayers, Masjid Al-Rahman in Playa del Carmen is about an hour's drive south.",
   },
   {
     q: "Where can I eat halal food in Playa del Carmen?",
-    a: "French Kebab and Ar Rayan are Muslim-owned and serve only halal food. Street Food Latino, Shawarma and Los Faraones Tacos & Kebab Express also serve halal meat (the last two may sell beer). Seafood and vegetarian options are everywhere.",
+    a: "French Kebab and Ar Rayan are Muslim-owned and serve only halal food. Street Food Latino, Shaywarma, Los Faraones and Tacos & Kebab Express also serve halal meat — Tacos & Kebab Express may sell beer. Seafood and vegetarian options are everywhere.",
   },
   {
     q: "Is there halal food in Cancún?",
-    a: "We don't know of a halal restaurant in Cancún itself. Most Muslim visitors eat seafood, fish and vegetarian dishes there, or make the trip to Playa del Carmen's halal restaurants.",
+    a: "We don't know of a halal restaurant in Cancún itself. Most Muslim visitors eat seafood, fish and vegetarian dishes there, or plan their meals around Playa del Carmen's halal restaurants.",
   },
   {
     q: "Can I buy halal meat in Playa del Carmen?",
@@ -137,6 +210,21 @@ const FAQS = [
   },
 ];
 
+const LABELS = [
+  "Muslim travel guide · Riviera Maya",
+  "Muslims in Playa del Carmen & Cancún",
+  "A local guide to mosques, halal food and Muslim life on the Riviera Maya",
+  "By Amanah Vacations, Playa del Carmen",
+  "Updated",
+  "Get directions →",
+  "Directions",
+  "Muslim travel — your questions answered",
+  "Good to know",
+  "In this guide",
+  "A Muslim family dinner by the pool at a private villa",
+  "A traveler in a hijab looking out over the Tulum ruins and the Caribbean at sunset",
+];
+
 export default async function MuslimGuidePage({
   params,
 }: {
@@ -146,64 +234,53 @@ export default async function MuslimGuidePage({
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   const L = (href: string) => localizeHref(href, locale);
 
-  const S = [
-    "Muslim travel guide · Riviera Maya",
-    "Muslims in Playa del Carmen & Cancún",
-    "Yes — Playa del Carmen has a real mosque, with an imam from Al-Azhar, Friday prayer every week at 2 pm, Ramadan Tarawih and iftar, and classes all year. Cancún has a musalla. Halal restaurants and halal meat are in Playa del Carmen; the hijab and burkini are welcome everywhere. This guide is written by Amanah Vacations, a Muslim-owned tour operator based in Playa del Carmen.",
-    "Mosques & prayer spaces",
-    "Get directions →",
-    "The Muslim community",
-    "Roughly 250 to 300 Muslims live between Cancún, Playa del Carmen and Tulum — a small, welcoming community that comes together at Masjid Al-Rahman, especially for Friday prayer, in Ramadan, and on both Eids, when Muslims from across the Riviera Maya gather there.",
-    "Emara Academy does da'wa and organizes classes and activities for Muslims and new converts.",
-    "Visit Emara Academy →",
-    "Halal food in Playa del Carmen",
-    "Plenty of seafood and fish restaurants make easy choices too. In Cancún we don't know of a halal restaurant — seafood, fish and vegetarian dishes are the way to go.",
-    "Buying halal meat",
-    "There is one halal meat supplier in Playa del Carmen — the owner of Ar Rayan and French Kebab. If you are cooking in your apartment or villa, ask at French Kebab for halal meat and they will provide what you need.",
-    "Friday prayer, prayer times & qibla",
-    "Jumu'ah is held every Friday at 2 pm at Masjid Al-Rahman in Playa del Carmen, with the khutbah in a mix of Spanish and Arabic.",
-    "Daily prayer times change through the year, so use your prayer app set to Cancún or Playa del Carmen. Quintana Roo keeps the same clock all year — there is no daylight saving.",
-    "Qibla: about 54° from true north (north-east), toward Makkah — around 12,540 km away.",
-    "Hijab, burkini & the beach",
-    "There is no law against modest swimwear. The hijab is fine everywhere and people here are very respectful, so the burkini is fine at the public beaches, the cenotes and the parks.",
-    "Where to stay",
-    "There is no halal-certified hotel in the area. You can ask a hotel for no alcohol in your room, but the food won't be halal. Many Muslim families prefer an Airbnb or a resort condo with its own kitchen — like the splendid condo of our partner TutCasa in Mareazul.",
-    "See TutCasa →",
-    "Halal-friendly tours",
-    "Every Amanah tour is designed for Muslim families. Tours are private, so you never share transport with strangers. When something has to be shared — like a snorkeling boat, where a private one would be very expensive for a family — there is no alcohol and no music. We bring a prayer carpet if you want to pray during the tour. Food is not included on our tours.",
-    "Our halal-friendly travel",
-    "See our private tours",
-    "Muslim travel — your questions answered",
-    "Good to know",
-    "Last updated",
-    "Written by Amanah Vacations, Playa del Carmen",
-    "Directions",
+  // Flatten every English string, translate in one call, then read back in order.
+  const src: string[] = [];
+  const put = (s: string) => (src.push(s), src.length - 1);
+  const ids = {
+    labels: LABELS.map(put),
+    intro: INTRO.map(put),
+    mosques: {
+      title: put(MOSQUES.title),
+      intro: put(MOSQUES.intro),
+      items: MOSQUES.items.map((m) => ({ kind: put(m.kind), paras: m.paras.map(put) })),
+    },
+    community: { title: put(COMMUNITY.title), paras: COMMUNITY.paras.map(put), cta: put(COMMUNITY.emaraCta) },
+    food: {
+      title: put(FOOD.title),
+      intro: put(FOOD.intro),
+      groups: FOOD.groups.map((g) => ({ title: put(g.title), intro: put(g.intro), descs: g.places.map((p) => put(p.desc)) })),
+    },
+    prayer: { title: put(PRAYER.title), paras: PRAYER.paras.map(put) },
+    modest: { title: put(MODEST.title), paras: MODEST.paras.map(put) },
+    stay: { title: put(STAY.title), paras: STAY.paras.map(put), cta: put(STAY.cta) },
+    tours: { title: put(TOURS.title), paras: TOURS.paras.map(put), ctaHalal: put(TOURS.ctaHalal), ctaTours: put(TOURS.ctaTours) },
+    faqQ: FAQS.map((f) => put(f.q)),
+    faqA: FAQS.map((f) => put(f.a)),
+  };
+  const tr = await translateMany(src, locale);
+  const T = (i: number) => tr[i];
+  const [eyebrow, h1, subtitle, byline, labelUpdated, labelDirections, labelMap, faqHeading, faqEyebrow, labelToc, altFamily, altHero] =
+    ids.labels.map(T);
+  const faqs = FAQS.map((_, i) => ({ q: T(ids.faqQ[i]), a: T(ids.faqA[i]) }));
+
+  const toc = [
+    { id: "mosques", label: T(ids.mosques.title) },
+    { id: "community", label: T(ids.community.title) },
+    { id: "food", label: T(ids.food.title) },
+    { id: "prayer", label: T(ids.prayer.title) },
+    { id: "modest", label: T(ids.modest.title) },
+    { id: "stay", label: T(ids.stay.title) },
+    { id: "tours", label: T(ids.tours.title) },
   ];
-  const mosqueTexts = MOSQUES.flatMap((m) => [m.kind, m.desc]);
-  const foodTexts = FOOD.flatMap((f) => [f.title, f.note]);
-  const all = await translateMany(
-    [...S, ...mosqueTexts, ...foodTexts, ...FAQS.map((f) => f.q), ...FAQS.map((f) => f.a)],
-    locale
-  );
-  let c = 0;
-  const t = all.slice(c, (c += S.length));
-  const mosqueT = all.slice(c, (c += mosqueTexts.length));
-  const foodT = all.slice(c, (c += foodTexts.length));
-  const faqQ = all.slice(c, (c += FAQS.length));
-  const faqA = all.slice(c, (c += FAQS.length));
-  const faqs = FAQS.map((_, i) => ({ q: faqQ[i], a: faqA[i] }));
-  const [
-    eyebrow, h1, lede, hMosques, labelDirections, hCommunity, community, emara, emaraCta,
-    hFood, foodNote, hMeat, meat, hPrayer, jumuah, prayerNote, qibla,
-    hSwim, swim, hStay, stay, stayCta, hTours, tours, ctaHalal, ctaTours, faqHeading, faqEyebrow,
-    labelUpdated, byline, labelMap,
-  ] = t;
 
   const url = `${SITE_URL}${L(PATH)}`;
-  const sectionTitle = "font-serif text-[clamp(26px,2.8vw,38px)] font-semibold leading-[1.08] tracking-[-0.5px] text-ink";
-  const body = "text-[clamp(14px,1.05vw,15.5px)] leading-[1.85] text-ink/80";
-  const icon =
-    "h-10 w-10 shrink-0 [&_svg]:h-full [&_svg]:w-full [&_svg]:stroke-terracotta [&_svg]:[stroke-width:1.3] [&_svg]:[stroke-linecap:round] [&_svg]:[stroke-linejoin:round]";
+  const date = new Date(UPDATED).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+
+  const h2 = "font-serif text-[clamp(28px,3vw,40px)] font-semibold leading-[1.08] tracking-[-0.5px] text-ink";
+  const prose = "space-y-5 text-[clamp(15px,1.1vw,17px)] leading-[1.9] text-ink/80";
+  const section = "scroll-mt-28 border-t border-sand pt-[clamp(40px,5vw,64px)] mt-[clamp(40px,5vw,64px)]";
+  const link = "font-semibold text-forest underline underline-offset-2 hover:text-terracotta";
 
   return (
     <main className="bg-cream">
@@ -213,18 +290,18 @@ export default async function MuslimGuidePage({
             "@context": "https://schema.org",
             "@type": "Article",
             headline: "Muslim Travel Guide to Playa del Carmen & Cancún",
-            description: lede,
+            description: INTRO[0],
             inLanguage: locale,
-            image: `${SITE_URL}/images/dest/quinta-hero.jpg`,
-            datePublished: UPDATED,
+            image: `${SITE_URL}${HERO}`,
+            datePublished: "2026-11-17",
             dateModified: UPDATED,
             mainEntityOfPage: url,
             author: { "@id": `${SITE_URL}/#organization` },
             publisher: { "@id": `${SITE_URL}/#organization` },
           },
-          ...MOSQUES.map((m) => ({
+          ...MOSQUES.items.map((m) => ({
             "@context": "https://schema.org",
-            "@type": "Mosque",
+            "@type": m.kind === "Mosque" ? "Mosque" : "PlaceOfWorship",
             name: m.name,
             address: m.address,
             hasMap: maps(m.q),
@@ -239,198 +316,199 @@ export default async function MuslimGuidePage({
       />
 
       {/* Hero */}
-      <section className="relative flex min-h-[46vh] items-end overflow-hidden md:min-h-[54vh]">
-        <Image
-          src="/images/dest/quinta-hero.jpg"
-          alt="Quinta Avenida in Playa del Carmen"
-          unoptimized
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+      <section className="relative flex min-h-[62vh] items-end overflow-hidden md:min-h-[72vh]">
+        <Image src={HERO} alt={altHero} unoptimized fill priority sizes="100vw" className="object-cover object-[60%_center]" />
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to top, rgba(10,26,16,0.88) 0%, rgba(10,26,16,0.35) 55%, rgba(10,26,16,0.1) 100%)",
+              "linear-gradient(to top, rgba(10,26,16,0.86) 0%, rgba(10,26,16,0.35) 50%, rgba(10,26,16,0) 80%)",
           }}
         />
-        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-5 pb-[clamp(28px,4vw,56px)] pt-24 lg:px-8">
+        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-5 pb-[clamp(32px,5vw,64px)] pt-24 lg:px-8">
           <div className="mb-3 flex items-center gap-2.5 text-[10.5px] font-semibold uppercase tracking-[3px] text-gold">
             <span aria-hidden className="h-[1.5px] w-[26px] bg-gold" />
             {eyebrow}
           </div>
-          <h1 className="max-w-[820px] font-serif text-[clamp(34px,4.8vw,62px)] font-semibold leading-[1.02] tracking-[-1px] text-white">
+          <h1 className="max-w-[820px] font-serif text-[clamp(38px,5.4vw,70px)] font-semibold leading-[1.0] tracking-[-1px] text-white">
             {h1}
           </h1>
+          <p className="mt-4 max-w-[620px] font-serif text-[clamp(18px,1.7vw,23px)] italic leading-[1.4] text-white/85">
+            {subtitle}
+          </p>
         </div>
       </section>
 
-      <article className="mx-auto max-w-[1100px] px-5 py-[clamp(40px,5vw,72px)] lg:px-8">
-        {/* Short answer */}
-        <div className="rounded-[22px] border border-sand bg-white p-[clamp(22px,2.5vw,36px)]">
-          <p className="font-serif text-[clamp(18px,1.6vw,22px)] leading-[1.6] text-forest">{lede}</p>
-          <p className="mt-4 text-[12px] font-medium uppercase tracking-[2px] text-sage">
-            {byline} · {labelUpdated}{" "}
-            <time dateTime={UPDATED}>
-              {new Date(UPDATED).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
-            </time>
+      <div className="mx-auto grid max-w-[1100px] gap-[clamp(32px,4vw,64px)] px-5 py-[clamp(44px,6vw,88px)] lg:grid-cols-[1fr_240px] lg:px-8">
+        <article className="min-w-0 max-w-[720px]">
+          <p className="mb-8 text-[11.5px] font-semibold uppercase tracking-[2px] text-sage">
+            {byline} · {labelUpdated} <time dateTime={UPDATED}>{date}</time>
           </p>
-        </div>
 
-        {/* Mosques */}
-        <section className="mt-[clamp(44px,5vw,72px)]" aria-labelledby="mosques">
-          <div className="mb-6 flex items-center gap-3">
-            <span className={icon}>{IconMosque}</span>
-            <h2 id="mosques" className={sectionTitle}>{hMosques}</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {MOSQUES.map((m, i) => (
-              <div key={m.name} className="rounded-[20px] border border-sand bg-white p-6">
-                <div className="text-[10.5px] font-semibold uppercase tracking-[2.5px] text-terracotta">
-                  {m.city} · {mosqueT[i * 2]}
-                </div>
-                <h3 className="mt-1.5 font-serif text-[24px] font-semibold text-ink">{m.name}</h3>
-                <p className="mt-1 text-[13px] text-sage">{m.address}</p>
-                <p className={`mt-3 ${body}`}>{mosqueT[i * 2 + 1]}</p>
-                <a
-                  href={maps(m.q)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${labelMap}: ${m.name}`}
-                  className="mt-4 inline-block text-[13px] font-semibold text-forest underline underline-offset-2"
-                >
-                  {labelDirections}
-                </a>
-              </div>
+          {/* Introduction */}
+          <div className={prose}>
+            <p className="font-serif text-[clamp(20px,1.8vw,25px)] leading-[1.55] text-ink first-letter:float-left first-letter:mr-2 first-letter:font-serif first-letter:text-[3.4em] first-letter:leading-[0.85] first-letter:text-terracotta">
+              {T(ids.intro[0])}
+            </p>
+            {ids.intro.slice(1).map((i) => (
+              <p key={i}>{T(i)}</p>
             ))}
           </div>
-        </section>
 
-        {/* Community */}
-        <section className="mt-[clamp(44px,5vw,72px)]" aria-labelledby="community">
-          <div className="mb-4 flex items-center gap-3">
-            <span className={icon}>{IconFamily}</span>
-            <h2 id="community" className={sectionTitle}>{hCommunity}</h2>
-          </div>
-          <div className={`max-w-[760px] space-y-3 ${body}`}>
-            <p>{community}</p>
-            <p>
-              {emara}{" "}
-              <a
-                href="https://emaraacademy.org"
-                target="_blank"
-                rel="noopener"
-                className="font-semibold text-forest underline underline-offset-2"
-              >
-                {emaraCta}
-              </a>
-            </p>
-          </div>
-        </section>
+          {/* Mosques */}
+          <section id="mosques" className={section}>
+            <h2 className={h2}>{T(ids.mosques.title)}</h2>
+            <p className={`mt-5 ${prose}`}>{T(ids.mosques.intro)}</p>
+            {MOSQUES.items.map((m, i) => (
+              <div key={m.name} className="mt-10">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[2.5px] text-terracotta">
+                  {m.city} · {T(ids.mosques.items[i].kind)}
+                </div>
+                <h3 className="mt-1.5 font-serif text-[clamp(24px,2.2vw,30px)] font-semibold text-ink">{m.name}</h3>
+                <p className="mt-1 text-[14px] text-sage">
+                  {m.address} ·{" "}
+                  <a href={maps(m.q)} target="_blank" rel="noopener noreferrer" aria-label={`${labelMap}: ${m.name}`} className={link}>
+                    {labelDirections}
+                  </a>
+                </p>
+                <div className={`mt-4 ${prose}`}>
+                  {ids.mosques.items[i].paras.map((p) => (
+                    <p key={p}>{T(p)}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
 
-        {/* Food */}
-        <section className="mt-[clamp(44px,5vw,72px)]" aria-labelledby="food">
-          <div className="mb-6 flex items-center gap-3">
-            <span className={icon}>{IconDining}</span>
-            <h2 id="food" className={sectionTitle}>{hFood}</h2>
-          </div>
-          <div className="divide-y divide-sand overflow-hidden rounded-[20px] border border-sand bg-white">
-            {FOOD.map((f, i) => (
-              <div key={f.title} className="grid gap-2 p-5 md:grid-cols-[240px_1fr] md:gap-6">
-                <h3 className="font-serif text-[18px] font-semibold text-ink">{foodT[i * 2]}</h3>
-                <div>
-                  <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                    {f.places.map((p) => (
-                      <li key={p}>
+          {/* Community */}
+          <section id="community" className={section}>
+            <h2 className={h2}>{T(ids.community.title)}</h2>
+            <div className={`mt-5 ${prose}`}>
+              {ids.community.paras.map((p) => (
+                <p key={p}>{T(p)}</p>
+              ))}
+              <p>
+                <a href="https://emaraacademy.org" target="_blank" rel="noopener" className={link}>
+                  {T(ids.community.cta)}
+                </a>
+              </p>
+            </div>
+          </section>
+
+          {/* Food */}
+          <section id="food" className={section}>
+            <h2 className={h2}>{T(ids.food.title)}</h2>
+            <p className={`mt-5 ${prose}`}>{T(ids.food.intro)}</p>
+            {FOOD.groups.map((g, gi) => (
+              <div key={g.title} className="mt-10">
+                <h3 className="font-serif text-[clamp(22px,2vw,27px)] font-semibold text-ink">{T(ids.food.groups[gi].title)}</h3>
+                <p className="mt-2 text-[15px] leading-[1.8] text-sage">{T(ids.food.groups[gi].intro)}</p>
+                <ol className="mt-5 space-y-4">
+                  {g.places.map((p, pi) => (
+                    <li key={p.name} className="rounded-[16px] border border-sand bg-white px-5 py-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <h4 className="font-serif text-[20px] font-semibold text-ink">{p.name}</h4>
                         <a
-                          href={maps(`${p} Playa del Carmen`)}
+                          href={maps(`${p.name} ${p.address || "Playa del Carmen"}`)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[15px] font-semibold text-forest underline underline-offset-2"
+                          aria-label={`${labelMap}: ${p.name}`}
+                          className="text-[13px] font-semibold text-forest underline underline-offset-2 hover:text-terracotta"
                         >
-                          {p}
+                          {labelDirections}
                         </a>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-1 text-[13.5px] leading-[1.7] text-sage">{foodT[i * 2 + 1]}</p>
-                </div>
+                      </div>
+                      {p.address && <p className="mt-0.5 text-[13.5px] text-sage">{p.address}</p>}
+                      <p className="mt-2 text-[15px] leading-[1.75] text-ink/80">{T(ids.food.groups[gi].descs[pi])}</p>
+                    </li>
+                  ))}
+                </ol>
               </div>
             ))}
-          </div>
-          <p className={`mt-4 max-w-[760px] ${body}`}>{foodNote}</p>
+          </section>
 
-          <h3 className="mt-8 font-serif text-[22px] font-semibold text-ink">{hMeat}</h3>
-          <p className={`mt-2 max-w-[760px] ${body}`}>{meat}</p>
-        </section>
+          {/* Prayer */}
+          <section id="prayer" className={section}>
+            <h2 className={h2}>{T(ids.prayer.title)}</h2>
+            <div className={`mt-5 ${prose}`}>
+              {ids.prayer.paras.map((p) => (
+                <p key={p}>{T(p)}</p>
+              ))}
+            </div>
+          </section>
 
-        {/* Prayer */}
-        <section className="mt-[clamp(44px,5vw,72px)]" aria-labelledby="prayer">
-          <div className="mb-4 flex items-center gap-3">
-            <span className={icon}>{IconCompass}</span>
-            <h2 id="prayer" className={sectionTitle}>{hPrayer}</h2>
-          </div>
-          <p className="max-w-[760px] font-serif text-[clamp(18px,1.6vw,22px)] leading-[1.55] text-forest">{jumuah}</p>
-          <p className={`mt-3 max-w-[760px] ${body}`}>{prayerNote}</p>
-          <p className="mt-4 font-serif text-[18px] italic text-forest">{qibla}</p>
-        </section>
+          {/* Modest swimwear */}
+          <section id="modest" className={section}>
+            <h2 className={h2}>{T(ids.modest.title)}</h2>
+            <div className={`mt-5 ${prose}`}>
+              {ids.modest.paras.map((p) => (
+                <p key={p}>{T(p)}</p>
+              ))}
+            </div>
+          </section>
 
-        {/* Swimwear */}
-        <section className="mt-[clamp(44px,5vw,72px)]" aria-labelledby="swim">
-          <div className="mb-4 flex items-center gap-3">
-            <span className={icon}>{IconWaves}</span>
-            <h2 id="swim" className={sectionTitle}>{hSwim}</h2>
-          </div>
-          <p className={`max-w-[760px] ${body}`}>{swim}</p>
-        </section>
+          {/* Stay */}
+          <section id="stay" className={section}>
+            <h2 className={h2}>{T(ids.stay.title)}</h2>
+            <figure className="relative mt-6 aspect-[16/8] overflow-hidden rounded-[20px]">
+              <Image src={FAMILY} alt={altFamily} fill unoptimized sizes="(max-width: 1024px) 100vw, 720px" className="object-cover" />
+            </figure>
+            <div className={`mt-6 ${prose}`}>
+              {ids.stay.paras.map((p) => (
+                <p key={p}>{T(p)}</p>
+              ))}
+              <p>
+                <a href="https://tutcasa.com" target="_blank" rel="noopener" className={link}>
+                  {T(ids.stay.cta)}
+                </a>
+              </p>
+            </div>
+          </section>
 
-        {/* Stay */}
-        <section className="mt-[clamp(44px,5vw,72px)]" aria-labelledby="stay">
-          <div className="mb-4 flex items-center gap-3">
-            <span className={icon}>{IconVilla}</span>
-            <h2 id="stay" className={sectionTitle}>{hStay}</h2>
-          </div>
-          <p className={`max-w-[760px] ${body}`}>
-            {stay}{" "}
-            <a
-              href="https://tutcasa.com"
-              target="_blank"
-              rel="noopener"
-              className="font-semibold text-forest underline underline-offset-2"
-            >
-              {stayCta}
-            </a>
-          </p>
-        </section>
+          {/* Tours */}
+          <section id="tours" className="mt-[clamp(40px,5vw,64px)] scroll-mt-28">
+            <div className="rounded-[24px] bg-night px-[clamp(22px,3vw,44px)] py-[clamp(30px,4vw,48px)]">
+              <h2 className="font-serif text-[clamp(26px,2.8vw,36px)] font-semibold text-white">{T(ids.tours.title)}</h2>
+              <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-white/75">
+                {ids.tours.paras.map((p) => (
+                  <p key={p}>{T(p)}</p>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href={L("/halal")}
+                  className="rounded-full bg-gradient-to-br from-terracotta to-gold px-7 py-3 text-center text-[14px] font-semibold text-white transition hover:-translate-y-0.5"
+                >
+                  {T(ids.tours.ctaHalal)}
+                </Link>
+                <Link
+                  href={L("/tours")}
+                  className="rounded-full border-[1.5px] border-white/40 px-6 py-3 text-center text-[14px] font-medium text-white transition hover:border-white hover:bg-white hover:text-ink"
+                >
+                  {T(ids.tours.ctaTours)}
+                </Link>
+              </div>
+            </div>
+          </section>
+        </article>
 
-        {/* Tours */}
-        <section
-          className="mt-[clamp(44px,5vw,72px)] rounded-[24px] bg-night px-[clamp(22px,3vw,48px)] py-[clamp(32px,4vw,52px)]"
-          aria-labelledby="tours"
-        >
-          <h2 id="tours" className="font-serif text-[clamp(26px,2.8vw,38px)] font-semibold text-white">
-            {hTours}
-          </h2>
-          <p className="mt-3 max-w-[720px] text-[14.5px] leading-[1.85] text-white/70">{tours}</p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href={L("/halal")}
-              className="rounded-full bg-gradient-to-br from-terracotta to-gold px-7 py-3 text-center text-[14px] font-semibold text-white transition hover:-translate-y-0.5"
-            >
-              {ctaHalal}
-            </Link>
-            <Link
-              href={L("/tours")}
-              className="rounded-full border-[1.5px] border-white/40 px-6 py-3 text-center text-[14px] font-medium text-white transition hover:border-white hover:bg-white hover:text-ink"
-            >
-              {ctaTours}
-            </Link>
-          </div>
-        </section>
-      </article>
+        {/* Table of contents (desktop) */}
+        <aside className="hidden lg:block">
+          <nav aria-label={labelToc} className="sticky top-[108px] border-l border-sand pl-5">
+            <div className="mb-3 text-[10.5px] font-semibold uppercase tracking-[2.5px] text-terracotta">{labelToc}</div>
+            <ol className="space-y-2.5 text-[14px] leading-snug">
+              {toc.map((s) => (
+                <li key={s.id}>
+                  <a href={`#${s.id}`} className="text-ink/70 transition hover:text-forest">
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        </aside>
+      </div>
 
       <Faq items={faqs} heading={faqHeading} eyebrow={faqEyebrow} />
     </main>

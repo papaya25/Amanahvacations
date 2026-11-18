@@ -47,3 +47,10 @@ tour. We do NOT provide food during tours.
 - Both Eids: Muslims from all over the Riviera Maya gather at the Playa del Carmen mosque.
 - Jumu'ah: every Friday at 2 pm at Masjid Al-Rahman, Playa del Carmen. Khutbah in a mix of Spanish and Arabic.
 - Prayer times change through the year; the mosque is building a website — add a link to it when it's live (TODO).
+
+## Corrections 2026-11-18
+- The restaurant is **Shaywarma** (not "Shawarma").
+- **Los Faraones** and **Tacos & Kebab Express** are two separate restaurants. Only **Tacos & Kebab Express** might serve beer.
+- Food categories (his structure): 1) Halal restaurants & meat 2) Kosher restaurants 3) Vegetarian & seafood (list grows over time).
+- Each restaurant listed one by one with its address.
+- Hero/images: use Maher's two photos (hijabi woman on terrace over Tulum ruins; Muslim family dinner by infinity pool).
