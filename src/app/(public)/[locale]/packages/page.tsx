@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import PackagesClient from "./PackagesClient";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
@@ -112,7 +113,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
 
   title: "Riviera Maya Vacation Packages — Private, Family & Halal-Friendly",
   description:
@@ -135,7 +136,7 @@ export async function generateMetadata({
     images: ["/images/pkg/honeymoon.jpg"],
   },
     alternates: pageAlternates(locale, "/packages"),
-  };
+  });
 }
 
 // Fallback summary for the structured data if the backend isn't reachable.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import ParksClient from "./ParksClient";
 import { PARKS, type Park } from "./data";
 import JsonLd from "@/components/JsonLd";
@@ -14,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
     title: "Xcaret, Xel-Há, Xplor & More — Riviera Maya Parks with Private Transport",
     description:
       "Book the Riviera Maya's famous parks with ticket + private round-trip transportation included: Xcaret, Xel-Há, Xplor, Xplor Fuego, Xenses and the Akumal Monkey Sanctuary. Family-safe and halal-friendly.",
@@ -37,7 +38,7 @@ export async function generateMetadata({
       images: ["/images/parks/xplor.jpg"],
     },
     alternates: pageAlternates(locale, "/parks"),
-  };
+  });
 }
 
 export default async function ParksPage({

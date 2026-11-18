@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import { pageAlternates } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,13 +13,13 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
 
   title: "About Us — The Amanah Difference",
   description:
     "Amanah Vacations designs complete, personalized experiences in the Riviera Maya — private tours, luxury options and halal-friendly travel, with a multilingual team welcoming guests from all over the world.",
     alternates: pageAlternates(locale, "/aboutus"),
-  };
+  });
 }
 
 const VALUES = [

@@ -272,11 +272,12 @@ export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent
             <span aria-hidden className="h-[1.5px] w-[22px] shrink-0 bg-terracotta" />
             Riviera Maya · Mexico
           </div>
-          <h1 className="mb-4 font-serif text-[52px] font-semibold leading-[0.94] tracking-[-2px] text-white">
+          {/* Not an <h1>: the desktop hero below owns the page's single H1. */}
+          <div className="mb-4 font-serif text-[52px] font-semibold leading-[0.94] tracking-[-2px] text-white">
             {content.headline}
             <br />
             <em className="block italic text-gold">{content.headlineEm}</em>
-          </h1>
+          </div>
           <p className="mb-5 max-w-[320px] text-[13.5px] font-light leading-[1.72] text-white/68">
             {dict.hero_mobile_tagline}
           </p>

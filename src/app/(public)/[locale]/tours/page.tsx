@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import { Caveat } from "next/font/google";
 import ToursClient from "./ToursClient";
 import { TOURS, parseTierPrices, type Tour } from "./data";
@@ -23,7 +24,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
 
   title: "Private Tours & Day Trips from Playa del Carmen | Riviera Maya",
   description:
@@ -47,7 +48,7 @@ export async function generateMetadata({
     images: ["/images/tours/chichen.jpg"],
   },
     alternates: pageAlternates(locale, "/tours"),
-  };
+  });
 }
 
 // Lightweight summary for structured data (MXN, per person "from" — the
@@ -103,12 +104,14 @@ export default async function ToursPage({
         .map((t) => {
           const tiers = parseTierPrices(t.prices);
           let from = t.offer > 0 && t.offer < t.price ? t.offer : t.price;
+          let high: number | undefined;
           if (tiers) {
             const paxes = Object.keys(tiers).map(Number).sort((a, b) => a - b);
             const top = paxes[paxes.length - 1];
             from = Math.round(tiers[top] / top);
+            high = Math.round(tiers[paxes[0]] / paxes[0]);
           }
-          return { name: t.name, price: from, img: t.img };
+          return { name: t.name, price: from, high, img: t.img };
         })
         .filter((t) => t.price > 0)
     : TOUR_SUMMARY;
@@ -183,6 +186,7 @@ export default async function ToursPage({
               image: t.img,
               url: "/tours",
               priceMXN: t.price,
+              highMXN: (t as { high?: number }).high,
             })
           ),
           faqSchema(faqs),

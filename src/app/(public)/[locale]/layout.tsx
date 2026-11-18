@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import { notFound } from "next/navigation";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -44,7 +45,13 @@ export function generateStaticParams() {
    self-heals at the next revalidation. */
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return localizeMetadata(locale, {
   metadataBase: new URL("https://amanahvacations.com"),
   title: {
     default:
@@ -70,7 +77,8 @@ export const metadata: Metadata = {
     images: ["/images/hero-cenotes.jpg"],
   },
   icons: { icon: "/favicon.png" },
-};
+  });
+}
 
 export default async function LocaleRootLayout({
   children,

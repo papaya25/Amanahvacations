@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
@@ -6,6 +7,14 @@ import Faq from "@/components/Faq";
 import { breadcrumbSchema, faqSchema, pageAlternates } from "@/lib/seo";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
+import { getSavedTransfers } from "@/lib/content/addons";
+import Price from "@/components/Price";
+
+// Same defaults checkout uses if the admin never saved transfer settings.
+const DEFAULT_TIERS = [
+  { label: "1–3 people (per trip)", price: 1300 },
+  { label: "4+ people (per trip)", price: 1500 },
+];
 
 export async function generateMetadata({
   params,
@@ -13,7 +22,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
 
   title: "Cancún Airport Transfers — Private to Playa del Carmen & Tulum",
   description:
@@ -34,7 +43,7 @@ export async function generateMetadata({
     images: ["/images/hero-beaches.jpg"],
   },
     alternates: pageAlternates(locale, "/airport-transfers"),
-  };
+  });
 }
 
 const FEATURES = [
@@ -46,10 +55,12 @@ const FEATURES = [
   { title: "Round Trip or One Way", desc: "Book your arrival, your departure, or both — we'll schedule the return pickup around your flight." },
 ];
 
-const FAQS = [
+const faqsFor = (tiers: { label: string; price: number }[]) => [
   {
     q: "How much does a private transfer from Cancún airport cost?",
-    a: "Pricing depends on your destination and group size — message us with your flight details and group and we'll confirm an exact quote right away. Transfers are also included in all our packages.",
+    a: `A private one-way transfer is priced per trip, not per person: ${tiers
+      .map((t) => `${t.price.toLocaleString("en-US")} MXN for ${t.label.replace(/\s*\(.*\)/, "")}`)
+      .join(", ")}. Transfers are already included in all our packages, and you can add one to any booking at checkout.`,
   },
   {
     q: "How long is the drive from Cancún airport to Playa del Carmen or Tulum?",
@@ -73,6 +84,10 @@ export default async function AirportTransfersPage({
   const { locale: rawLocale } = await params;
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
 
+  const saved = await getSavedTransfers();
+  const tiers = saved?.tiers?.filter((t) => t.price > 0).length ? saved.tiers.filter((t) => t.price > 0) : DEFAULT_TIERS;
+  const FAQS = faqsFor(tiers);
+
   const texts = await translateMany(
     [
       "Door to Door · Just Your Group",
@@ -80,8 +95,8 @@ export default async function AirportTransfersPage({
       "done right",
       "Your vacation starts the moment you land — not after a chaotic taxi line. We collect you inside the terminal and drive you straight to your hotel or villa in Playa del Carmen, Tulum, or anywhere in the Riviera Maya, in a private air-conditioned van with cold water waiting. Every transfer is exclusively for your group.",
       "Simple pricing,",
-      "per person or per group",
-      "Rates depend on your destination and group size. Send us your flight details and we'll confirm your exact price right away — or add a transfer to any booking at checkout. Transfers are already included in all our packages.",
+      "per trip, not per person",
+      "One fixed price for your whole private van, one way, from Cancún airport to your hotel or villa. Add it to any booking at checkout or message us your flight details. Transfers are already included in all our packages.",
       "Get a Quote on WhatsApp →",
       "Contact Us",
       "Airport transfers — good to know",
@@ -90,6 +105,7 @@ export default async function AirportTransfersPage({
       ...FEATURES.map((f) => f.desc),
       ...FAQS.map((f) => f.q),
       ...FAQS.map((f) => f.a),
+      ...tiers.map((t) => t.label),
     ],
     locale
   );
@@ -113,6 +129,7 @@ export default async function AirportTransfersPage({
   const faqQs = texts.slice(cursor, (cursor += FAQS.length));
   const faqAs = texts.slice(cursor, (cursor += FAQS.length));
   const translatedFaqs = FAQS.map((f, i) => ({ q: faqQs[i], a: faqAs[i] }));
+  const tierLabels = texts.slice(cursor, (cursor += tiers.length));
 
   return (
     <main className="bg-cream">
@@ -183,7 +200,17 @@ export default async function AirportTransfersPage({
           <h2 className="font-serif text-[clamp(24px,2.6vw,36px)] font-semibold text-white">
             {priceTitle1} <em className="italic text-gold">{priceTitle2}</em>
           </h2>
-          <p className="mx-auto mt-3 max-w-[520px] text-[13.5px] leading-[1.75] text-white/60">
+          <div className="mx-auto mt-6 grid max-w-[560px] gap-3 sm:grid-cols-2">
+            {tiers.map((t, i) => (
+              <div key={t.label} className="rounded-[16px] border border-white/15 bg-white/[0.04] px-5 py-4">
+                <div className="font-serif text-[30px] font-semibold text-gold">
+                  <Price mxn={t.price} />
+                </div>
+                <div className="mt-1 text-[13px] text-white/70">{tierLabels[i]}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mx-auto mt-4 max-w-[520px] text-[13.5px] leading-[1.75] text-white/60">
             {priceText}
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import Image from "next/image";
 import Link from "next/link";
 import { getEffectiveDestinations } from "@/lib/content/activities";
@@ -13,7 +14,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
 
   title: "Things to Do in the Riviera Maya — Activities & Day Trips",
   description:
@@ -37,7 +38,7 @@ export async function generateMetadata({
     images: ["/images/act-whaleshark.jpg"],
   },
     alternates: pageAlternates(locale, "/activities"),
-  };
+  });
 }
 
 export default async function ActivitiesPage({

@@ -83,6 +83,17 @@ export function breadcrumbSchema(items: { name: string; path: string }[]) {
   };
 }
 
+/** Shorten text for a meta description without cutting a word in half:
+    keep whole sentences when they fit, otherwise stop at a word + "…". */
+export function clip(text: string, max = 158): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const sentence = cut.lastIndexOf(". ");
+  if (sentence > max * 0.8) return cut.slice(0, sentence + 1);
+  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:—–-]+$/, "") + "…";
+}
+
 export function faqSchema(faqs: { q: string; a: string }[]) {
   return {
     "@context": "https://schema.org",
@@ -102,6 +113,8 @@ export function productOfferSchema(opts: {
   image: string;
   url: string;
   priceMXN: number;
+  /** Per-person price at the smallest group — makes the offer a low–high range. */
+  highMXN?: number;
 }) {
   return {
     "@context": "https://schema.org",
@@ -112,8 +125,9 @@ export function productOfferSchema(opts: {
     brand: { "@type": "Brand", name: SITE_NAME },
     url: `${SITE_URL}${opts.url}`,
     offers: {
-      "@type": "Offer",
-      price: opts.priceMXN,
+      ...(opts.highMXN && opts.highMXN > opts.priceMXN
+        ? { "@type": "AggregateOffer", lowPrice: opts.priceMXN, highPrice: opts.highMXN }
+        : { "@type": "Offer", price: opts.priceMXN }),
       priceCurrency: "MXN",
       availability: "https://schema.org/InStock",
       url: `${SITE_URL}${opts.url}`,

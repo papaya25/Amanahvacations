@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,11 +7,28 @@ import { DESTINATIONS } from "@/data/destinations";
 import { getEffectiveDestination, getEffectiveDestinations } from "@/lib/content/activities";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
-import { breadcrumbSchema, faqSchema, touristAttractionSchema, pageAlternates } from "@/lib/seo";
+import { breadcrumbSchema, clip, faqSchema, touristAttractionSchema, pageAlternates } from "@/lib/seo";
 import { translateMany } from "@/lib/i18n/translate";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { isLocale, localizeHref, type Locale } from "@/lib/i18n/config";
 
 type Props = { params: Promise<{ slug: string; locale: string }> };
+
+/* Destinations we actually sell deep-link straight to that tour/park card;
+   the rest get the generic tours button (plus the existing contact CTA —
+   "we'll arrange it" is the concierge model for unlisted experiences). */
+const DEST_TOUR_LINKS: Record<string, string> = {
+  chichenitza: "/tours#tour-chichen",
+  valladolid: "/tours#tour-chichen",
+  coba: "/tours#tour-cobacenotes",
+  cozumel: "/tours#tour-cozumel",
+  holbox: "/tours#tour-holbox",
+  cenotes: "/tours#tour-rutacenotes",
+  snorkeling: "/tours#tour-akumalcenotes",
+  contoy: "/tours#tour-isla-contoy-national-park",
+  tulum: "/tours#tour-tulumcenotes",
+  zipline: "/parks#park-xplor",
+  xcaret: "/parks#park-xcaret",
+};
 
 export function generateStaticParams() {
   return DESTINATIONS.map((d) => ({ slug: d.slug }));
@@ -20,11 +38,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params;
   const dest = await getEffectiveDestination(slug);
   if (!dest) return {};
-  const title = `${dest.title} — Private Tour from Playa del Carmen`;
-  const description = `${dest.title} in the Riviera Maya with Amanah Vacations: a private, family-safe${
-    " and halal-friendly"
-  } experience with hotel pickup and trusted guides. ${dest.paragraphs[0] ?? ""}`.slice(0, 158);
-  return {
+  // Only destinations we actually run as a tour are titled "Private … Tour".
+  const title = DEST_TOUR_LINKS[dest.slug]
+    ? `Private ${dest.title} Tour from Playa del Carmen`
+    : `${dest.title} — Riviera Maya, from Playa del Carmen`;
+  const description = clip(
+    `${dest.title} with Amanah Vacations: private, family-safe and halal-friendly, with hotel pickup. ${dest.paragraphs[0] ?? ""}`
+  );
+  return localizeMetadata(locale, {
     title,
     description,
     keywords: [
@@ -40,10 +61,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       title,
       description,
-      url: `/destinations/${dest.slug}`,
+      url: localizeHref(`/destinations/${dest.slug}`, isLocale(locale) ? locale : "en"),
       images: [dest.hero],
     },
-  };
+  });
 }
 
 function faqsFor(title: string) {
@@ -86,22 +107,6 @@ export default async function DestinationPage({ params }: Props) {
 
   const paragraphs = await translateMany(dest.paragraphs, locale);
 
-  /* Destinations we actually sell deep-link straight to that tour/park card;
-     the rest get the generic tours button (plus the existing contact CTA —
-     "we'll arrange it" is the concierge model for unlisted experiences). */
-  const DEST_TOUR_LINKS: Record<string, string> = {
-    chichenitza: "/tours#tour-chichen",
-    valladolid: "/tours#tour-chichen",
-    coba: "/tours#tour-cobacenotes",
-    cozumel: "/tours#tour-cozumel",
-    holbox: "/tours#tour-holbox",
-    cenotes: "/tours#tour-rutacenotes",
-    snorkeling: "/tours#tour-akumalcenotes",
-    contoy: "/tours#tour-isla-contoy-national-park",
-    tulum: "/tours#tour-tulumcenotes",
-    zipline: "/parks#park-xplor",
-    xcaret: "/parks#park-xcaret",
-  };
   const tourLink = DEST_TOUR_LINKS[dest.slug];
 
   const staticLabels = await translateMany(

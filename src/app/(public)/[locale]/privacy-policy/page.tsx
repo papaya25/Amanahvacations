@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeMetadata } from "@/lib/i18n/metadata";
 import { pageAlternates } from "@/lib/seo";
 import { BODY, TITLE } from "./content";
 import { getLegalDoc, renderLegalHtml } from "@/lib/content/legal";
@@ -12,12 +13,12 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
+  return localizeMetadata(locale, {
 
   title: "Privacy Policy",
   description: "How Amanah Vacations collects, uses, protects and shares your personal data, including your ARCO rights under Mexican law.",
     alternates: pageAlternates(locale, "/privacy-policy"),
-  };
+  });
 }
 
 export default async function Page({
