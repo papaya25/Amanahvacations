@@ -25,10 +25,11 @@ const nextConfig: NextConfig = {
       "/waiver": "/liability-waiver",
       "/book-online": "/tours",
       "/services": "/tours",
-      "/blog": "/",
       "/halal-tours": "/halal",
       "/transfers": "/airport-transfers",
       "/destinations/spa-day": "/activities",
+      // Muslim guide moved into the blog (2026-11-18).
+      "/muslim-guide-playa-del-carmen-cancun": "/blog/muslim-guide-playa-del-carmen-cancun",
     };
     return Object.entries(map).flatMap(([from, to]) => [
       { source: from, destination: to, permanent: true },

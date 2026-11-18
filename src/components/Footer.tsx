@@ -13,6 +13,7 @@ const EXPLORE_KEYS = [
   { key: "nav_tours", href: "/tours" },
   { key: "nav_vip", href: "/vip" },
   { key: "nav_about", href: "/aboutus" },
+  { key: "footer_blog", href: "/blog" },
 ] as const;
 
 const SUPPORT_KEYS = [

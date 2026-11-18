@@ -9,12 +9,12 @@ import { isLocale, localizeHref, type Locale } from "@/lib/i18n/config";
 import { SITE_URL, breadcrumbSchema, faqSchema, pageAlternates } from "@/lib/seo";
 
 /* Muslim travel guide — an editorial article and SEO landing page (not in the
-   menu or on the home page by Maher's choice; reached from /halal and the
-   sitemap). Every fact comes from Maher, who lives in Playa del Carmen:
+   menu or on the home page by Maher's choice; reached from /halal, /blog and
+   the sitemap). Listed in src/lib/blog.ts. Every fact comes from Maher, who lives in Playa del Carmen:
    docs/seo/muslim-guide-facts-from-maher.md. Photos are his. No fixed
    prayer-time table (times change); link the mosque's website once live. */
 
-const PATH = "/muslim-guide-playa-del-carmen-cancun";
+const PATH = "/blog/muslim-guide-playa-del-carmen-cancun";
 const UPDATED = "2026-11-18";
 const HERO = "/images/guide/muslim-traveler-tulum-terrace.jpg";
 const FAMILY = "/images/guide/muslim-family-villa-dinner.jpg";
@@ -308,7 +308,7 @@ export default async function MuslimGuidePage({
           })),
           breadcrumbSchema([
             { name: "Home", path: "/" },
-            { name: "Halal-Friendly Travel", path: "/halal" },
+            { name: "Blog", path: "/blog" },
             { name: "Muslim Travel Guide", path: PATH },
           ]),
           faqSchema(FAQS),

@@ -22,6 +22,7 @@ export const EN_DICT = {
   footer_support: "Support",
   footer_airport_transfers: "Airport Transfers",
   footer_halal: "Halal Friendly Options",
+  footer_blog: "Travel Blog",
   footer_terms: "Terms & Conditions",
   footer_privacy: "Privacy Policy",
   footer_waiver: "Liability Waiver",

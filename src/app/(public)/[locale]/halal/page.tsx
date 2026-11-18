@@ -104,7 +104,7 @@ export default async function HalalPage({
       <p className="bg-night px-5 pb-12 pt-2 text-center text-[14px] text-white/70">
         {guideLead}{" "}
         <Link
-          href={localizeHref("/muslim-guide-playa-del-carmen-cancun", locale)}
+          href={localizeHref("/blog/muslim-guide-playa-del-carmen-cancun", locale)}
           className="font-semibold text-gold underline underline-offset-2"
         >
           {guideLink} →
