@@ -12,8 +12,8 @@ import { SITE_URL, breadcrumbSchema, faqSchema, pageAlternates } from "@/lib/seo
 /* Muslim travel guide — an SEO landing page (not in the menu or on the home
    page by Maher's choice; reached from /halal and the sitemap). Every fact
    comes from Maher, who lives in Playa del Carmen:
-   docs/seo/muslim-guide-facts-from-maher.md. Prayer times / qibla are
-   computed (MWL method, UTC−5) and labelled approximate. */
+   docs/seo/muslim-guide-facts-from-maher.md. No fixed prayer-time table
+   (times change); link the mosque's website here once it's live. */
 
 const PATH = "/muslim-guide-playa-del-carmen-cancun";
 const UPDATED = "2026-11-17";
@@ -56,7 +56,7 @@ const MOSQUES = [
     name: "Masjid Al-Rahman",
     kind: "Mosque",
     address: "Calle 3 Sur & Calle 60 Diagonal Sur, Ejidal, 77712 Playa del Carmen",
-    desc: "A real, large mosque with an imam trained at Al-Azhar in Egypt. In Ramadan it holds Tarawih prayers and iftar; all year long it runs Islamic classes and Quran classes for adults and children, and it celebrates both Eids with the community.",
+    desc: "A real, large mosque with an imam trained at Al-Azhar in Egypt. Jumu'ah is held every Friday at 2 pm, with the khutbah in a mix of Spanish and Arabic. In Ramadan it holds Tarawih prayers and iftar; all year long it runs Islamic classes and Quran classes for adults and children. On both Eids, Muslims from all over the Riviera Maya gather here.",
     q: "Masjid Al-Rahman Calle 3 Sur Ejidal Playa del Carmen",
   },
   {
@@ -97,18 +97,15 @@ const FOOD = [
   },
 ];
 
-// Approximate times (MWL method, Cancún, UTC−5 all year — Quintana Roo has no daylight saving).
-const PRAYER_ROWS = [
-  ["21 March", "05:37", "12:55", "18:58", "20:08"],
-  ["21 June", "04:42", "12:49", "19:32", "20:52"],
-  ["22 September", "05:22", "12:40", "18:44", "19:53"],
-  ["21 December", "06:01", "12:46", "18:11", "19:26"],
-];
 
 const FAQS = [
   {
     q: "Is there a mosque in Playa del Carmen?",
-    a: "Yes. Masjid Al-Rahman, in the Ejidal neighborhood (Calle 3 Sur & Calle 60 Diagonal Sur), is a real, large mosque with an imam trained at Al-Azhar. It holds Tarawih and iftar in Ramadan, Eid celebrations, and classes all year.",
+    a: "Yes. Masjid Al-Rahman, in the Ejidal neighborhood (Calle 3 Sur & Calle 60 Diagonal Sur), is a real, large mosque with an imam trained at Al-Azhar. Jumu'ah is every Friday at 2 pm; it also holds Tarawih and iftar in Ramadan, Eid prayers for the whole Riviera Maya, and classes all year.",
+  },
+  {
+    q: "When is Friday prayer (Jumu'ah) in Playa del Carmen?",
+    a: "Every Friday at 2 pm at Masjid Al-Rahman, Calle 3 Sur & Calle 60 Diagonal Sur, Ejidal. The khutbah is in a mix of Spanish and Arabic.",
   },
   {
     q: "Is there a mosque in Cancún?",
@@ -152,24 +149,20 @@ export default async function MuslimGuidePage({
   const S = [
     "Muslim travel guide · Riviera Maya",
     "Muslims in Playa del Carmen & Cancún",
-    "Yes — Playa del Carmen has a real mosque, with an imam from Al-Azhar, Ramadan Tarawih and iftar, and classes all year. Cancún has a musalla. Halal restaurants and halal meat are in Playa del Carmen; the hijab and burkini are welcome everywhere. This guide is written by Amanah Vacations, a Muslim-owned tour operator based in Playa del Carmen.",
+    "Yes — Playa del Carmen has a real mosque, with an imam from Al-Azhar, Friday prayer every week at 2 pm, Ramadan Tarawih and iftar, and classes all year. Cancún has a musalla. Halal restaurants and halal meat are in Playa del Carmen; the hijab and burkini are welcome everywhere. This guide is written by Amanah Vacations, a Muslim-owned tour operator based in Playa del Carmen.",
     "Mosques & prayer spaces",
     "Get directions →",
     "The Muslim community",
-    "Roughly 250 to 300 Muslims live between Cancún, Playa del Carmen and Tulum — a small, welcoming community that comes together at Masjid Al-Rahman, especially in Ramadan and for both Eids.",
+    "Roughly 250 to 300 Muslims live between Cancún, Playa del Carmen and Tulum — a small, welcoming community that comes together at Masjid Al-Rahman, especially for Friday prayer, in Ramadan, and on both Eids, when Muslims from across the Riviera Maya gather there.",
     "Emara Academy does da'wa and organizes classes and activities for Muslims and new converts.",
     "Visit Emara Academy →",
     "Halal food in Playa del Carmen",
     "Plenty of seafood and fish restaurants make easy choices too. In Cancún we don't know of a halal restaurant — seafood, fish and vegetarian dishes are the way to go.",
     "Buying halal meat",
     "There is one halal meat supplier in Playa del Carmen — the owner of Ar Rayan and French Kebab. If you are cooking in your apartment or villa, ask at French Kebab for halal meat and they will provide what you need.",
-    "Prayer times & qibla",
-    "Approximate times for Cancún and Playa del Carmen (Muslim World League method). Quintana Roo stays on the same time all year — no daylight saving. Times shift by a minute or two each day, so check with the mosque or your prayer app.",
-    "Date",
-    "Fajr",
-    "Dhuhr",
-    "Maghrib",
-    "Isha",
+    "Friday prayer, prayer times & qibla",
+    "Jumu'ah is held every Friday at 2 pm at Masjid Al-Rahman in Playa del Carmen, with the khutbah in a mix of Spanish and Arabic.",
+    "Daily prayer times change through the year, so use your prayer app set to Cancún or Playa del Carmen. Quintana Roo keeps the same clock all year — there is no daylight saving.",
     "Qibla: about 54° from true north (north-east), toward Makkah — around 12,540 km away.",
     "Hijab, burkini & the beach",
     "There is no law against modest swimwear. The hijab is fine everywhere and people here are very respectful, so the burkini is fine at the public beaches, the cenotes and the parks.",
@@ -188,22 +181,20 @@ export default async function MuslimGuidePage({
   ];
   const mosqueTexts = MOSQUES.flatMap((m) => [m.kind, m.desc]);
   const foodTexts = FOOD.flatMap((f) => [f.title, f.note]);
-  const prayerDates = PRAYER_ROWS.map((r) => r[0]);
   const all = await translateMany(
-    [...S, ...mosqueTexts, ...foodTexts, ...prayerDates, ...FAQS.map((f) => f.q), ...FAQS.map((f) => f.a)],
+    [...S, ...mosqueTexts, ...foodTexts, ...FAQS.map((f) => f.q), ...FAQS.map((f) => f.a)],
     locale
   );
   let c = 0;
   const t = all.slice(c, (c += S.length));
   const mosqueT = all.slice(c, (c += mosqueTexts.length));
   const foodT = all.slice(c, (c += foodTexts.length));
-  const dateT = all.slice(c, (c += prayerDates.length));
   const faqQ = all.slice(c, (c += FAQS.length));
   const faqA = all.slice(c, (c += FAQS.length));
   const faqs = FAQS.map((_, i) => ({ q: faqQ[i], a: faqA[i] }));
   const [
     eyebrow, h1, lede, hMosques, labelDirections, hCommunity, community, emara, emaraCta,
-    hFood, foodNote, hMeat, meat, hPrayer, prayerNote, thDate, thFajr, thDhuhr, thMaghrib, thIsha, qibla,
+    hFood, foodNote, hMeat, meat, hPrayer, jumuah, prayerNote, qibla,
     hSwim, swim, hStay, stay, stayCta, hTours, tours, ctaHalal, ctaTours, faqHeading, faqEyebrow,
     labelUpdated, byline, labelMap,
   ] = t;
@@ -382,28 +373,8 @@ export default async function MuslimGuidePage({
             <span className={icon}>{IconCompass}</span>
             <h2 id="prayer" className={sectionTitle}>{hPrayer}</h2>
           </div>
-          <p className={`max-w-[760px] ${body}`}>{prayerNote}</p>
-          <div className="mt-5 overflow-x-auto rounded-[20px] border border-sand bg-white">
-            <table className="w-full min-w-[480px] text-left text-[14px]">
-              <thead className="bg-cream/70 text-[11px] uppercase tracking-[2px] text-terracotta">
-                <tr>
-                  {[thDate, thFajr, thDhuhr, thMaghrib, thIsha].map((h) => (
-                    <th key={h} scope="col" className="px-4 py-3 font-semibold">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-sand text-ink/85">
-                {PRAYER_ROWS.map((r, i) => (
-                  <tr key={r[0]}>
-                    <th scope="row" className="px-4 py-3 font-medium text-ink">{dateT[i]}</th>
-                    {r.slice(1).map((v, j) => (
-                      <td key={j} className="px-4 py-3 tabular-nums">{v}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="max-w-[760px] font-serif text-[clamp(18px,1.6vw,22px)] leading-[1.55] text-forest">{jumuah}</p>
+          <p className={`mt-3 max-w-[760px] ${body}`}>{prayerNote}</p>
           <p className="mt-4 font-serif text-[18px] italic text-forest">{qibla}</p>
         </section>
 

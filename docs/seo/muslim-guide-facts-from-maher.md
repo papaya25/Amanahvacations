@@ -42,3 +42,8 @@ When something must be shared (e.g. a snorkeling boat, where a private one would
 very expensive for the family), there is no alcohol and no music. All tours are
 Muslim-friendly and we provide a prayer carpet if guests want to pray during the
 tour. We do NOT provide food during tours.
+
+## Added 2026-11-17
+- Both Eids: Muslims from all over the Riviera Maya gather at the Playa del Carmen mosque.
+- Jumu'ah: every Friday at 2 pm at Masjid Al-Rahman, Playa del Carmen. Khutbah in a mix of Spanish and Arabic.
+- Prayer times change through the year; the mosque is building a website — add a link to it when it's live (TODO).
