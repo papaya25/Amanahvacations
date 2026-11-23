@@ -594,6 +594,7 @@ function BalancesTab({
     .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
   const owedToUs = balances.filter((b) => b.balance > 0).reduce((s, b) => s + b.balance, 0);
   const weOwe = balances.filter((b) => b.balance < 0).reduce((s, b) => s - b.balance, 0);
+  const [open, setOpen] = useState<string | null>(null);
 
   return (
     <>
@@ -616,8 +617,14 @@ function BalancesTab({
             </thead>
             <tbody>
               {balances.map((b) => (
-                <tr key={b.name}>
-                  <td className={`${td} font-semibold`}>{b.name}{!b.partnerId && <span className="ml-1.5 text-[10.5px] font-normal text-sage">(not in Partners)</span>}</td>
+                <Fragment key={b.name}>
+                <tr>
+                  <td className={`${td} font-semibold`}>
+                    <button className="text-left hover:text-forest" onClick={() => setOpen(open === b.name ? null : b.name)} aria-expanded={open === b.name}>
+                      {open === b.name ? "▾" : "▸"} {b.name}
+                    </button>
+                    {!b.partnerId && <span className="ml-1.5 text-[10.5px] font-normal text-sage">(not in Partners)</span>}
+                  </td>
                   <td className={tdr}>{b.opening ? mx(b.opening) : "—"}</td>
                   <td className={tdr}>{b.collected ? mx(b.collected) : "—"}</td>
                   <td className={tdr}>{b.ourCost ? mx(b.ourCost) : "—"}</td>
@@ -651,6 +658,14 @@ function BalancesTab({
                     )}
                   </td>
                 </tr>
+                {open === b.name && (
+                  <tr>
+                    <td colSpan={9} className="border-b border-sand bg-cream/60 px-3 py-3">
+                      <BalanceLines b={b} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -660,6 +675,37 @@ function BalancesTab({
         </p>
       </Box>
     </>
+  );
+}
+
+/** Everything behind one partner's balance, with a running total. */
+function BalanceLines({ b }: { b: ReturnType<typeof buildBalances>[number] }) {
+  let run = b.opening;
+  return (
+    <table className="min-w-full border-collapse text-[12.5px]">
+      <thead>
+        <tr>{["Date", "What", "Effect", "Balance after"].map((h, i) => <th key={h} className={`${th} ${i > 1 ? "text-right" : ""}`}>{h}</th>)}</tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td className={td} />
+          <td className={`${td} text-sage`}>Opening balance{b.opening ? "" : " (none)"}</td>
+          <td className={tdr} />
+          <td className={tdr}>{mx(b.opening)}</td>
+        </tr>
+        {b.lines.map((l, i) => {
+          run += l.amount;
+          return (
+            <tr key={i}>
+              <td className={`${td} whitespace-nowrap`}>{l.date}</td>
+              <td className={td}>{l.label}</td>
+              <td className={`${tdr} ${l.amount < 0 ? "text-terracotta" : "text-forest"}`}>{l.amount > 0 ? "+" : "−"}{mx(Math.abs(l.amount))}</td>
+              <td className={tdr}>{run > 0 ? `owes you ${mx(run)}` : run < 0 ? `you owe ${mx(-run)}` : "settled"}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 

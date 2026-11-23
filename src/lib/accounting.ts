@@ -246,6 +246,8 @@ export type PartnerBalance = {
   received: number; // payments they made to us
   paid: number; // payments we made to them
   balance: number;
+  /** Every line behind the balance (+ = they owe us more), oldest first. */
+  lines: { date: string; label: string; amount: number }[];
 };
 
 /* ── The book (site_content "accounting", private) ─────────────────────── */
@@ -308,7 +310,7 @@ export function buildBalances(
     if (!map.has(k)) {
       map.set(k, {
         name: p?.name ?? name.trim(), partnerId: p?.id ?? null, from: p?.openingDate ?? "",
-        opening: p?.openingBalance ?? 0, collected: 0, ourCost: 0, commission: 0, received: 0, paid: 0, balance: 0,
+        opening: p?.openingBalance ?? 0, collected: 0, ourCost: 0, commission: 0, received: 0, paid: 0, balance: 0, lines: [],
       });
     }
     return map.get(k)!;
@@ -318,12 +320,22 @@ export function buildBalances(
   const live = (b: { from: string }, date: string) => !b.from || date >= b.from;
   for (const r of rows) {
     if (r.date > asOf) continue;
+    const who = `${r.name || "—"} · ${r.service}${r.description ? ` (${r.description})` : ""}`;
     const c = r.collectedBy ? get(r.collectedBy) : null;
-    if (c && live(c, r.date)) c.collected += r.charged;
+    if (c && live(c, r.date)) {
+      c.collected += r.charged;
+      c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged });
+    }
     const p = r.provider ? get(r.provider) : null;
-    if (p && live(p, r.date)) p.ourCost += r.cost;
+    if (p && live(p, r.date) && r.cost) {
+      p.ourCost += r.cost;
+      p.lines.push({ date: r.date, label: `${who} — their cost`, amount: -r.cost });
+    }
     const a = r.affiliate && r.commission ? get(r.affiliate) : null;
-    if (a && live(a, r.date)) a.commission += r.commission;
+    if (a && live(a, r.date)) {
+      a.commission += r.commission;
+      a.lines.push({ date: r.date, label: `${who} — their commission`, amount: -r.commission });
+    }
   }
   for (const pay of payments) {
     const b = get(pay.partner);
@@ -332,7 +344,14 @@ export function buildBalances(
     if (!b || (pay.imported && !live(b, pay.date))) continue;
     if (pay.direction === "received") b.received += pay.amount;
     else b.paid += pay.amount;
+    const kind = pay.kind === "commission" ? "commission" : "payment";
+    b.lines.push({
+      date: pay.date,
+      label: `${pay.direction === "received" ? `They paid us (${kind})` : `We paid them (${kind})`}${pay.note ? ` — ${pay.note}` : ""}`,
+      amount: pay.direction === "received" ? -pay.amount : pay.amount,
+    });
   }
+  for (const b of map.values()) b.lines.sort((x, y) => x.date.localeCompare(y.date));
   return [...map.values()].map(({ from: _from, ...b }) => ({
     ...b,
     balance: b.opening + b.collected - b.ourCost - b.commission - b.received + b.paid,
