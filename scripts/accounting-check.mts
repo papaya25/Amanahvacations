@@ -1,6 +1,6 @@
 // Run: node --experimental-strip-types scripts/accounting-check.mts
 import assert from "node:assert";
-import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge } from "../src/lib/accounting.ts";
+import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge, parseStripeRef } from "../src/lib/accounting.ts";
 assert.equal(countryFromPhone("+1 8196647489")?.name, "Canada");
 assert.equal(countryFromPhone("+1 (678) 717-7781")?.name, "USA");
 assert.equal(countryFromPhone("+44 7946 472769")?.name, "United Kingdom");
@@ -34,3 +34,9 @@ assert.ok(isBabyAge("baby") && isBabyAge("0") && !isBabyAge("2") && !isBabyAge("
 // Ahmed: tour 7,850 paid by card on the provider's terminal, cost 6,700 → profit 1,150.
 assert.equal(rowMath({ charged: 7850, cost: 6700, fee: 0, commission: 0 }, 0).net, 1150);
 console.log("accounting checks OK");
+
+// Stripe ref from a pasted dashboard link
+assert.equal(parseStripeRef("https://dashboard.stripe.com/acct_1X/payments/pi_3AbC9xYz?foo=1"), "pi_3AbC9xYz");
+assert.equal(parseStripeRef(" ch_123abc "), "ch_123abc");
+assert.equal(parseStripeRef("1262"), "");
+console.log("stripe ref ok");

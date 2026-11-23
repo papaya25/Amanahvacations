@@ -477,7 +477,7 @@ function RowEditor({ row, partners, onDone }: { row: AcctRow; partners: Partner[
         {!isEntry && (
           <div>
             <span className={labelCls}>Stripe payment ID</span>
-            <input className={inputCls} value={f.stripeRef} onChange={(e) => set("stripeRef", e.target.value.trim())} placeholder="pi_… → exact fee" />
+            <input className={inputCls} value={f.stripeRef} onChange={(e) => set("stripeRef", e.target.value.trim())} placeholder="pi_… or paste the Stripe link" />
           </div>
         )}
         <div><span className={labelCls}>Commission</span>{num("commission")}</div>

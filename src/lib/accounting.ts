@@ -152,6 +152,9 @@ export function countryFromPhone(phone: string | null | undefined): { iso: strin
 /* ── One line of the accounting log ───────────────────────────────────── */
 
 export type ServiceType = "Airport pickup" | "Airport drop-off" | "Airport transfer" | "Tour" | "Package" | "Park" | "Stay" | "Activity" | "Other";
+/** Payment id from whatever was pasted: "pi_…", "ch_…" or a dashboard link. */
+export const parseStripeRef = (s: string | null | undefined) => (s ?? "").match(/\b(?:pi|ch|py)_[A-Za-z0-9]+/)?.[0] ?? "";
+
 export const SERVICE_TYPES: ServiceType[] = ["Airport pickup", "Airport drop-off", "Airport transfer", "Tour", "Package", "Park", "Stay", "Activity", "Other"];
 
 /** Per-row overrides stored in orders.acct / tutcasa_transfers.acct. */
@@ -165,6 +168,7 @@ export type AcctOverrides = {
   fee?: number;
   feeExact?: boolean; // fee read from Stripe (not an estimate)
   net?: number; // what Stripe actually paid out
+  received?: number; // what Stripe charged, in MXN at ITS exchange rate (client paid in USD)
   stripeRef?: string; // pi_… / ch_… for manual Stripe charges
   commission?: number;
   country?: string;

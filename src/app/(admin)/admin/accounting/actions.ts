@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { PROFITS_COOKIE, verifyProfitsToken } from "@/lib/adminAuth";
-import { EMPTY_BOOK, type AcctOverrides, type Book, type Expense, type LedgerEntry, type Payment } from "@/lib/accounting";
+import { EMPTY_BOOK, parseStripeRef, type AcctOverrides, type Book, type Expense, type LedgerEntry, type Payment } from "@/lib/accounting";
 
 type Res = { ok: boolean; error?: string };
 
@@ -108,11 +108,15 @@ export async function saveRow(
     if (kind === "t" && k === "provider") columns.provider = v || null;
     else if (kind === "t" && k === "charged") columns.price = v || null;
     else if (kind === "t" && k === "method") columns.payment_method = v || null;
+    else if (k === "stripeRef" && parseStripeRef(String(v))) acct.stripeRef = parseStripeRef(String(v));
     else if (v === null || v === "") delete acct[k];
     else acct[k] = v;
   }
   // A new Stripe id or a hand-typed fee replaces the fee read from Stripe.
-  if ("stripeRef" in patch || "fee" in patch) delete acct.feeExact;
+  if ("stripeRef" in patch || "fee" in patch) {
+    delete acct.feeExact;
+    delete acct.received;
+  }
   const { error } = await supabase.from(table).update({ ...columns, acct }).eq(idCol, id);
   revalidatePath("/admin/accounting");
   return error ? { ok: false, error: error.message } : { ok: true };

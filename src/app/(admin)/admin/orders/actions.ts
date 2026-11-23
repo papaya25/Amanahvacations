@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { ORDER_STATUSES, type AdminOrder } from "./types";
 import { getPartners } from "@/lib/content/partners";
-import { matchPartner } from "@/lib/accounting";
+import { matchPartner, parseStripeRef } from "@/lib/accounting";
 
 export async function listOrders(): Promise<AdminOrder[] | null> {
   if (!(await isAdminRequest())) return null;
@@ -57,6 +57,7 @@ export type OrderInput = {
   paymentMethod?: string;
   cardSurcharge?: boolean; // Card / Stripe: add 5% on top for the client
   stripeFee?: number; // what Stripe kept (Accounting)
+  stripeRef?: string; // Stripe payment id or link → exact fee + MXN received
   source?: string; // where the client came from — an affiliate name earns commission
   extraActivity?: string; // another activity added to the tour
   extraActivityPrice?: number; // MXN, part of the total charged
@@ -152,6 +153,8 @@ async function buildManualOrder(input: OrderInput, keepMeta: Record<string, stri
   const affiliate = matchPartner(source, await getPartners());
   const acct: Record<string, unknown> = { source };
   if (input.paymentMethod === "Stripe" && (input.stripeFee ?? 0) > 0) acct.fee = Math.round(input.stripeFee!);
+  const ref = input.paymentMethod === "Stripe" ? parseStripeRef(input.stripeRef) : "";
+  if (ref) acct.stripeRef = ref;
   return { items, total: total + cardFee, referrer: affiliate?.affiliate ? affiliate.id : null, acct };
 }
 
@@ -218,7 +221,7 @@ export async function updateOrder(id: string, input: OrderInput): Promise<{ ok: 
     const built = await buildManualOrder(input, keep);
     if ("error" in built) return { ok: false, error: built.error };
     // The form now owns price, cost, provider and fee: drop older overrides.
-    const { fee: _fee, feeExact: _fx, cost: _c, provider: _p, charged: _ch, ...rest } = prevAcct;
+    const { fee: _fee, feeExact: _fx, cost: _c, provider: _p, charged: _ch, received: _r, net: _n, stripeRef: _sr, ...rest } = prevAcct;
     patch = {
       ...customer,
       items: built.items,

@@ -23,6 +23,7 @@ import {
   matchPartner,
   partnerTransferRate,
   seatPax,
+  parseStripeRef,
   transferCostId,
   type AcctOverrides,
   type AcctRow,
@@ -114,7 +115,7 @@ const paidOnline = (o: OrderRaw) => o.source !== "manual" && o.status.startsWith
    checkout), so one list call finds them. Manual Stripe charges: the admin
    pastes the payment id (pi_… / ch_…) on the row. Found fees are saved on the
    order (acct.fee + feeExact), so Stripe is asked only once per payment. */
-type BT = { fee: number; net: number };
+type BT = { amount: number; fee: number; net: number };
 function btOf(charge: unknown): BT | null {
   const bt = (charge as { balance_transaction?: unknown } | null)?.balance_transaction;
   return bt && typeof bt === "object" ? (bt as BT) : null;
@@ -128,8 +129,8 @@ async function syncStripeFees(orders: OrderRaw[]): Promise<void> {
   const stripe = getStripe();
   const found = new Map<string, BT>();
   const add = (id: string, bt: BT) => {
-    const prev = found.get(id) ?? { fee: 0, net: 0 };
-    found.set(id, { fee: prev.fee + bt.fee / 100, net: prev.net + bt.net / 100 });
+    const prev = found.get(id) ?? { amount: 0, fee: 0, net: 0 };
+    found.set(id, { amount: prev.amount + bt.amount / 100, fee: prev.fee + bt.fee / 100, net: prev.net + bt.net / 100 });
   };
   try {
     if (web.length) {
@@ -143,7 +144,8 @@ async function syncStripeFees(orders: OrderRaw[]): Promise<void> {
       }
     }
     for (const o of manual) {
-      const ref = o.acct!.stripeRef!.trim();
+      const ref = parseStripeRef(o.acct!.stripeRef);
+      if (!ref) continue;
       const bt = ref.startsWith("pi_")
         ? btOf((await stripe.paymentIntents.retrieve(ref, { expand: ["latest_charge.balance_transaction"] })).latest_charge)
         : btOf(await stripe.charges.retrieve(ref, { expand: ["balance_transaction"] }));
@@ -155,7 +157,8 @@ async function syncStripeFees(orders: OrderRaw[]): Promise<void> {
   const supabase = createAdminClient();
   for (const [id, bt] of found) {
     const o = orders.find((x) => x.id === id)!;
-    o.acct = { ...(o.acct ?? {}), fee: Math.round(bt.fee), net: Math.round(bt.net), feeExact: true };
+    // amount = MXN Stripe actually charged (its own USD→MXN rate), before fees.
+    o.acct = { ...(o.acct ?? {}), received: Math.round(bt.amount), fee: Math.round(bt.fee), net: Math.round(bt.net), feeExact: true };
     await supabase.from("orders").update({ acct: o.acct }).eq("id", id);
   }
 }
@@ -237,6 +240,8 @@ export async function getAccounting(): Promise<AccountingData> {
     const passThroughTotal = passThrough.reduce((s, it) => s + (Number(it.total) || 0), 0);
     const ours = rest.filter((it) => !passThrough.includes(it));
     const stayTotal = items.filter((it) => it.kind === "stay").reduce((s, it) => s + (Number(it.total) || 0), 0);
+    // Pesos Stripe really charged (its exchange rate, not ours); older syncs saved only net + fee.
+    const stripeGross = a.received ?? (a.feeExact && a.net ? a.net + (a.fee ?? 0) : 0);
     const orderFee = a.fee ?? (paidOnline(o) ? estimateFee(method, o.total) : 0);
     const common = {
       name: o.customer_name,
@@ -273,7 +278,7 @@ export async function getAccounting(): Promise<AccountingData> {
         // A partner who runs the tour (JF, Azul Riviera…) collects the client's
         // money themselves — unless we took it online (Stripe / PayPal).
         collectedBy: a.collectedBy ?? (providerPartner?.provider && !ONLINE_METHODS.has(method) ? providerPartner.name : "Amanah"),
-        charged: a.charged ?? o.total - stayTotal - passThroughTotal,
+        charged: a.charged ?? (stripeGross && !paidStays.length ? stripeGross : o.total - stayTotal - passThroughTotal),
         cost: a.cost ?? ours.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0),
         fee: orderFee,
         feeExact: Boolean(a.feeExact),

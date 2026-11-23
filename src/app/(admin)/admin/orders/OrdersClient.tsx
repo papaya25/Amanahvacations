@@ -48,14 +48,14 @@ function orderType(o: AdminOrder): string {
 
 type Fields = {
   kind: Kind; catalogId: string; title: string; customerName: string; customerPhone: string; customerEmail: string;
-  people: number; date: string; totalMXN: number; paymentMethod: string; cardSurcharge: boolean; stripeFee: number;
+  people: number; date: string; totalMXN: number; paymentMethod: string; cardSurcharge: boolean; stripeFee: number; stripeRef: string;
   source: string; extraActivity: string; extraActivityPrice: number; customization: string; costMXN: number;
   performedBy: string; notes: string;
 };
 
 const BLANK: Fields = {
   kind: "tour", catalogId: "", title: "", customerName: "", customerPhone: "", customerEmail: "", people: 2, date: "",
-  totalMXN: 0, paymentMethod: "Cash", cardSurcharge: true, stripeFee: 0, source: "WhatsApp / direct",
+  totalMXN: 0, paymentMethod: "Cash", cardSurcharge: true, stripeFee: 0, stripeRef: "", source: "WhatsApp / direct",
   extraActivity: "", extraActivityPrice: 0, customization: "", costMXN: 0, performedBy: "", notes: "",
 };
 
@@ -89,6 +89,7 @@ function fieldsFromOrder(o: AdminOrder, partners: PartnerOption[]): Fields {
     paymentMethod: o.payment_method,
     cardSurcharge: Boolean(fee),
     stripeFee: Number(o.acct?.fee) || 0,
+    stripeRef: o.acct?.stripeRef ?? "",
     source: o.acct?.source ?? (referrerName || (o.source === "manual" ? "WhatsApp / direct" : "Website")),
     extraActivity: extra?.title ?? "",
     extraActivityPrice: extra?.total ?? 0,
@@ -129,7 +130,7 @@ function OrderForm({
     setBusy(true);
     setError("");
     const title = options.find((o) => o.id === f.catalogId)?.name ?? f.title;
-    const res = await onSubmit({ ...f, title, stripeFee: f.paymentMethod === "Stripe" ? f.stripeFee || feeEstimate : 0 });
+    const res = await onSubmit({ ...f, title, stripeFee: f.paymentMethod === "Stripe" ? f.stripeFee || (f.stripeRef ? 0 : feeEstimate) : 0 });
     setBusy(false);
     if (!res.ok) setError(res.error ?? "Something went wrong.");
   };
@@ -184,6 +185,13 @@ function OrderForm({
             </div>
           )}
           {f.paymentMethod === "Stripe" && (
+            <div>
+              <span className={labelCls}>Stripe payment ID or link</span>
+              <input className={inputCls} value={f.stripeRef} onChange={(e) => set("stripeRef", e.target.value.trim())} placeholder="pi_… or paste the Stripe link" />
+              <p className="mt-1 text-[11px] text-sage">Accounting then reads Stripe&apos;s real fee and the pesos you actually received.</p>
+            </div>
+          )}
+          {f.paymentMethod === "Stripe" && !f.stripeRef && (
             <div>
               <span className={labelCls}>Stripe fee (what Stripe keeps)</span>
               <input type="number" min={0} className={inputCls} value={f.stripeFee === 0 ? "" : f.stripeFee} onChange={(e) => set("stripeFee", Number(e.target.value) || 0)} placeholder={`≈ ${feeEstimate} (estimate)`} />
