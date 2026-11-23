@@ -40,3 +40,11 @@ assert.equal(parseStripeRef("https://dashboard.stripe.com/acct_1X/payments/pi_3A
 assert.equal(parseStripeRef(" ch_123abc "), "ch_123abc");
 assert.equal(parseStripeRef("1262"), "");
 console.log("stripe ref ok");
+
+// Payments before the opening date: spreadsheet imports are already in the opening
+// balance (skipped); a payment typed in later always counts (Moussa paid 850 on Aug 29).
+const opened = DEFAULT_PARTNERS.map((p) => ({ ...p, openingDate: "2026-09-01", openingBalance: p.id === "moussa" ? 850 : 0 }));
+const pay = (id: string, amount: number, imported?: boolean) => ({ id, date: "2026-08-29", partner: "Moussa", direction: "received" as const, kind: "settlement" as const, method: "Cash", amount, note: "", imported });
+const mb = buildBalances([], [pay("y-3", 1000, true), pay("p-1", 850)], opened).find((x) => x.name === "Moussa")!;
+assert.equal(mb.balance, 0);
+console.log("opening-date payments ok");

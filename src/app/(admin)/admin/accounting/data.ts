@@ -123,11 +123,13 @@ function btOf(charge: unknown): BT | null {
 
 async function syncStripeFees(orders: OrderRaw[]): Promise<void> {
   if (!stripeConfigured) return;
-  const web = orders.filter((o) => o.payment_method === "Credit / Debit Card" && o.status.startsWith("Paid") && !o.acct?.feeExact);
+  // feeChecked: Stripe was already asked and had no match — don't ask on every page load (slow).
+  const web = orders.filter((o) => o.payment_method === "Credit / Debit Card" && o.status.startsWith("Paid") && !o.acct?.feeExact && !o.acct?.feeChecked);
   const manual = orders.filter((o) => o.acct?.stripeRef && !o.acct?.feeExact);
   if (!web.length && !manual.length) return;
   const stripe = getStripe();
   const found = new Map<string, BT>();
+  let listed = false; // only trust "no match" when Stripe actually answered
   const add = (id: string, bt: BT) => {
     const prev = found.get(id) ?? { amount: 0, fee: 0, net: 0 };
     found.set(id, { amount: prev.amount + bt.amount / 100, fee: prev.fee + bt.fee / 100, net: prev.net + bt.net / 100 });
@@ -142,6 +144,7 @@ async function syncStripeFees(orders: OrderRaw[]): Promise<void> {
         const bt = btOf(pi.latest_charge);
         if (oid && wanted.has(oid) && pi.status === "succeeded" && bt) add(oid, bt);
       }
+      listed = true;
     }
     for (const o of manual) {
       const ref = parseStripeRef(o.acct!.stripeRef);
@@ -155,6 +158,12 @@ async function syncStripeFees(orders: OrderRaw[]): Promise<void> {
     console.error("syncStripeFees:", e instanceof Error ? e.message : e);
   }
   const supabase = createAdminClient();
+  // Older website payments Stripe doesn't list any more keep the estimate; remember that.
+  for (const o of listed ? web : []) {
+    if (found.has(o.id)) continue;
+    o.acct = { ...(o.acct ?? {}), feeChecked: true };
+    await supabase.from("orders").update({ acct: o.acct }).eq("id", o.id);
+  }
   for (const [id, bt] of found) {
     const o = orders.find((x) => x.id === id)!;
     // amount = MXN Stripe actually charged (its own USD→MXN rate), before fees.

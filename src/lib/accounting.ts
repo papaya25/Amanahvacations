@@ -167,6 +167,7 @@ export type AcctOverrides = {
   cost?: number;
   fee?: number;
   feeExact?: boolean; // fee read from Stripe (not an estimate)
+  feeChecked?: boolean; // Stripe asked once, no match — keep the estimate
   net?: number; // what Stripe actually paid out
   received?: number; // what Stripe charged, in MXN at ITS exchange rate (client paid in USD)
   stripeRef?: string; // pi_… / ch_… for manual Stripe charges
@@ -282,6 +283,7 @@ export type Payment = {
   amount: number;
   note: string;
   receipt?: string; // path in the private "receipts" storage bucket
+  imported?: boolean; // from the 2026 spreadsheet → already inside the opening balance
 };
 
 export type Expense = { id: string; date: string; name: string; description: string; amount: number; receipt?: string };
@@ -325,7 +327,9 @@ export function buildBalances(
   }
   for (const pay of payments) {
     const b = get(pay.partner);
-    if (!b || !live(b, pay.date)) continue;
+    // Only spreadsheet imports are already in the opening balance; a payment
+    // typed in here always counts, whatever its date.
+    if (!b || (pay.imported && !live(b, pay.date))) continue;
     if (pay.direction === "received") b.received += pay.amount;
     else b.paid += pay.amount;
   }
