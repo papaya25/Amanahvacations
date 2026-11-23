@@ -251,7 +251,11 @@ function LogTab({ rows, book, tax, rate, partners }: { rows: AcctRow[]; book: Bo
   const [month, setMonth] = useState(months[0]);
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const list = rows.filter((r) => r.date.startsWith(month));
+  // Filters (service, came from, collected by, method, country) — totals and the Excel follow them.
+  const [flt, setFlt] = useState({ service: "", source: "", collectedBy: "", method: "", country: "" });
+  const FILTERS: [keyof typeof flt, string][] = [["service", "All services"], ["source", "Came from: all"], ["collectedBy", "Collected by: all"], ["method", "All methods"], ["country", "All countries"]];
+  const monthRows = rows.filter((r) => r.date.startsWith(month));
+  const list = monthRows.filter((r) => FILTERS.every(([k]) => !flt[k] || (r[k] || "—") === flt[k]));
   const t = totals(list, tax);
   const groups = new Set(list.map((r) => r.groupId)).size;
   const idx = months.indexOf(month);
@@ -272,6 +276,21 @@ function LogTab({ rows, book, tax, rate, partners }: { rows: AcctRow[]; book: Bo
         <button className={btnGhost} onClick={() => setAdding((a) => !a)}>
           {adding ? "− Close" : "+ Add a service that isn't in the system"}
         </button>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {FILTERS.map(([k, all]) => {
+          const opts = [...new Set(monthRows.map((r) => r[k] || "—"))].sort();
+          return (
+            <select key={k} value={flt[k]} onChange={(e) => setFlt((f) => ({ ...f, [k]: e.target.value }))} className={`rounded-full border bg-white px-3.5 py-1.5 text-[12.5px] text-ink outline-none ${flt[k] ? "border-forest font-semibold" : "border-sand"}`}>
+              <option value="">{all}</option>
+              {opts.map((o) => (<option key={o} value={o}>{o}</option>))}
+            </select>
+          );
+        })}
+        {FILTERS.some(([k]) => flt[k]) && (
+          <button className="text-[12.5px] font-semibold text-forest underline" onClick={() => setFlt({ service: "", source: "", collectedBy: "", method: "", country: "" })}>Clear filters</button>
+        )}
       </div>
 
       {adding && (
@@ -652,15 +671,20 @@ function PaymentsTab({ book, partnerNames, draft, receiptUrls }: { book: Book; p
     ...(draft ?? {}),
   };
   const [f, setF] = useState(blank);
+  const [editId, setEditId] = useState<string | null>(null);
   const set = (k: keyof typeof f, v: string | number) => setF((p) => ({ ...p, [k]: v }));
   const { busy, error, run } = useRun();
+  const reset = () => {
+    setEditId(null);
+    setF({ ...blank, partner: f.partner, amount: 0, note: "", receipt: undefined });
+  };
   const list = [...book.payments].sort((a, b) => b.date.localeCompare(a.date));
   const inTotal = list.filter((p) => p.direction === "received").reduce((s, p) => s + p.amount, 0);
   const outTotal = list.filter((p) => p.direction === "made").reduce((s, p) => s + p.amount, 0);
 
   return (
     <>
-      <Box title="Record a payment" desc="Money a partner paid you (e.g. TutCasa paying for transfers) or money you paid a partner (a driver's cost, a commission).">
+      <Box title={editId ? "Edit payment" : "Record a payment"} desc="Money a partner paid you (e.g. TutCasa paying for transfers) or money you paid a partner (a driver's cost, a commission).">
         <div className="grid gap-2.5 sm:grid-cols-3 lg:grid-cols-7">
           <div><span className={labelCls}>Date</span><input type="date" className={inputCls} value={f.date} onChange={(e) => set("date", e.target.value)} /></div>
           <div>
@@ -696,10 +720,14 @@ function PaymentsTab({ book, partnerNames, draft, receiptUrls }: { book: Book; p
           <button
             className={btn}
             disabled={busy || !f.partner.trim() || !(f.amount > 0)}
-            onClick={() => run(() => bookAdd("payments", f), () => setF({ ...blank, ...{ partner: f.partner }, amount: 0, note: "", receipt: undefined }))}
+            onClick={() => {
+              const { id: _id, ...data } = f as Payment;
+              run(() => (editId ? bookUpdate("payments", editId, data) : bookAdd("payments", data)), reset);
+            }}
           >
-            {busy ? "Saving…" : "Record payment"}
+            {busy ? "Saving…" : editId ? "Save changes" : "Record payment"}
           </button>
+          {editId && <button className={btnGhost} onClick={reset}>Cancel</button>}
           {error && <span className="text-[12px] font-medium text-terracotta">{error}</span>}
         </div>
       </Box>
@@ -734,7 +762,10 @@ function PaymentsTab({ book, partnerNames, draft, receiptUrls }: { book: Book; p
                         <ReceiptPicker label="Attach" onUploaded={(path) => run(() => bookUpdate("payments", p.id, { receipt: path }))} />
                       )}
                     </td>
-                    <td className={td}>
+                    <td className={`${td} whitespace-nowrap`}>
+                      <button className="mr-3 text-[12px] font-semibold text-forest hover:underline" onClick={() => { setEditId(p.id); setF({ ...p }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                        Edit
+                      </button>
                       <button className="text-[12px] text-sage hover:text-terracotta" disabled={busy} onClick={() => confirm("Delete this payment?") && run(() => bookDelete("payments", p.id))}>
                         Delete
                       </button>

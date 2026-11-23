@@ -1,0 +1,79 @@
+/* Ported 1:1 from the approved "Booking Confirmation.html" template. */
+.avdoc { --ink:#1c2b1e; --forest:#3a5a3c; --deep:#22382a; --sage:#6b7b6c; --cream:#f5f0ea; --sand:#ddd6ca;
+  --terracotta:#c8693a; --gold:#e8a84b; --paper:#fbf8f3; --serif: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-family: var(--font-outfit), Outfit, sans-serif; color: var(--ink);
+  width: 210mm; min-height: 297mm; background: var(--paper); position: relative; padding: 15mm 16mm 0;
+  display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(28,43,30,.18); overflow: hidden;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; text-align: left; }
+.avdoc * { box-sizing: border-box; margin: 0; padding: 0; }
+.avdoc header { display: flex; justify-content: space-between; align-items: flex-start; }
+.avdoc .logo { width: 33mm; margin: -3mm 0 0 -2mm; }
+.avdoc .titles { text-align: right; padding-top: 3mm; }
+.avdoc .eyebrow { font-size: 7.5pt; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: var(--terracotta); }
+.avdoc h1 { font-family: var(--serif); font-weight: 600; font-size: 27pt; line-height: 1; color: var(--deep); margin: 2mm 0 3mm; }
+.avdoc .ref { font-size: 8.5pt; color: var(--sage); line-height: 1.6; }
+.avdoc .ref b { color: var(--ink); font-weight: 600; }
+.avdoc .greet { margin: 7mm 0 6mm; font-family: var(--serif); font-style: italic; font-size: 15pt; color: var(--forest); }
+
+.avdoc .ticket { display: grid; grid-template-columns: 52mm minmax(0, 1fr) 30mm; min-height: 60mm; border-radius: 3px; overflow: hidden; position: relative; break-inside: avoid; }
+.avdoc .photo { background: var(--cream); display: flex; align-items: center; justify-content: center; }
+.avdoc .photo img { width: 40mm; }
+.avdoc .main { background: var(--deep); color: var(--cream); padding: 8mm 9mm; display: flex; flex-direction: column; justify-content: space-between; gap: 5mm; }
+.avdoc .main .eyebrow { color: var(--gold); }
+.avdoc .service { font-family: var(--serif); font-size: 25pt; font-weight: 600; line-height: 1.05; margin-top: 2mm; }
+.avdoc .sub { font-size: 9pt; color: var(--sand); margin-top: 1.5mm; letter-spacing: .04em; }
+.avdoc .facts { display: flex; flex-wrap: wrap; gap: 2mm 8mm; border-top: 1px solid rgba(245,240,234,.18); padding-top: 4mm; }
+.avdoc .facts small { display: block; font-size: 6.5pt; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: 1mm; }
+.avdoc .facts div { font-size: 11pt; font-weight: 500; white-space: nowrap; }
+.avdoc .facts.many { gap: 2mm 3mm; justify-content: space-between; } .avdoc .facts.many div { font-size: 10pt; }
+.avdoc .route { list-style: none; display: flex; position: relative; font-size: 9.5pt; font-weight: 500; }
+.avdoc .route::before { content: ""; position: absolute; top: 1.2mm; left: 1mm; right: 8mm; border-top: 1px dashed rgba(232,168,75,.6); }
+.avdoc .route li { flex: 1; position: relative; padding: 5mm 4mm 0 0; }
+.avdoc .route li:first-child { flex: 1.5; }
+.avdoc .route li::before { content: ""; position: absolute; top: 0; left: 0; width: 2.4mm; height: 2.4mm; border-radius: 50%; background: var(--deep); border: 1.5px solid var(--gold); }
+.avdoc .route li:first-child::before { background: var(--gold); }
+.avdoc .route small { display: block; font-size: 6.5pt; letter-spacing: .22em; text-transform: uppercase; color: var(--sand); opacity: .7; margin-bottom: .8mm; }
+.avdoc .stub { background: var(--gold); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2mm; border-left: 2px dashed var(--deep); }
+.avdoc .stub small { font-size: 6.5pt; letter-spacing: .25em; text-transform: uppercase; font-weight: 600; }
+.avdoc .stub .folio { font-family: var(--serif); font-size: 19pt; font-weight: 700; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: .06em; white-space: nowrap; }
+.avdoc .notch { position: absolute; right: 30mm; width: 6mm; height: 6mm; margin-right: -3mm; border-radius: 50%; background: var(--paper); }
+.avdoc .notch.t { top: -3mm; } .avdoc .notch.b { bottom: -3mm; }
+
+.avdoc .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm 12mm; margin-top: 9mm; }
+.avdoc .grid > div { break-inside: avoid; }
+.avdoc h2 { font-size: 7.5pt; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: var(--terracotta); padding-bottom: 2mm; border-bottom: 1px solid var(--sand); margin-bottom: 1mm; }
+.avdoc .row { display: flex; justify-content: space-between; gap: 6mm; padding: 2mm 0; font-size: 9.5pt; border-bottom: 1px solid #ece6dc; }
+.avdoc .row span:first-child { color: var(--sage); white-space: nowrap; }
+.avdoc .row span:last-child { text-align: right; font-weight: 500; }
+.avdoc .total { display: flex; justify-content: space-between; align-items: baseline; padding: 3mm 0 2mm; }
+.avdoc .total span:first-child { font-size: 9.5pt; color: var(--sage); }
+.avdoc .amount { font-family: var(--serif); font-size: 24pt; font-weight: 700; color: var(--deep); }
+.avdoc .amount small { font-family: var(--font-outfit), Outfit, sans-serif; font-size: 9pt; font-weight: 500; color: var(--sage); margin-left: 1mm; }
+.avdoc .pill { display: inline-block; font-size: 7.5pt; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: .8mm 2.5mm; border-radius: 3px; background: #f6e3c4; color: #7a5413; }
+.avdoc .pill.ok { background: #dcebd9; color: #2c5a2f; }
+
+.avdoc .sched { margin-top: 9mm; }
+.avdoc .day { display: grid; grid-template-columns: 30mm minmax(0, 1fr) 30mm; gap: 6mm; padding: 4mm 0; border-bottom: 1px solid #ece6dc; break-inside: avoid; }
+.avdoc .day .when small { display: block; font-size: 7pt; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--terracotta); }
+.avdoc .day .when b { display: block; font-family: var(--serif); font-size: 20pt; font-weight: 600; line-height: 1.1; color: var(--deep); }
+.avdoc .day h3 { font-size: 11pt; font-weight: 600; color: var(--forest); margin-bottom: 1mm; }
+.avdoc .day p { font-size: 9pt; line-height: 1.6; color: var(--forest); white-space: pre-line; }
+.avdoc .day .dur { text-align: right; }
+.avdoc .day .dur small { display: block; font-size: 6.5pt; letter-spacing: .22em; text-transform: uppercase; color: var(--sage); }
+.avdoc .day .dur b { font-size: 10pt; font-weight: 600; white-space: pre-line; }
+
+.avdoc .notes { margin-top: 8mm; background: var(--cream); border-left: 3px solid var(--terracotta); padding: 4.5mm 6mm; break-inside: avoid; }
+.avdoc .notes ul { list-style: none; font-size: 9pt; line-height: 1.75; color: var(--forest); }
+.avdoc .notes li::before { content: "—  "; color: var(--terracotta); }
+
+.avdoc footer { margin: 0 -16mm; background: var(--deep); color: var(--cream); padding: 6mm 16mm; display: flex; justify-content: space-between; align-items: center; font-size: 8.5pt; }
+.avdoc .spacer { flex: 1; min-height: 10mm; }
+.avdoc footer .brand { font-family: var(--serif); font-size: 13pt; white-space: nowrap; }
+.avdoc footer .brand i { color: var(--gold); font-size: 11pt; margin-left: 2mm; }
+.avdoc footer .contact { display: flex; gap: 5mm; white-space: nowrap; }
+.avdoc footer .contact span::before { content: "• "; color: var(--gold); }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  .avdoc { box-shadow: none; zoom: 1 !important; }
+}

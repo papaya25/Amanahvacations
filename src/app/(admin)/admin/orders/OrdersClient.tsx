@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createFromOrder } from "../invoices/actions";
 import { PageHead } from "../AdminUI";
 import { createManualOrder, updateOrder, updateOrderStatus } from "./actions";
 import { ORDER_STATUSES, type AdminOrder } from "./types";
@@ -421,6 +423,7 @@ export default function OrdersClient({ initial, tourOptions, packageOptions, par
                       >
                         {editing === o.id ? "Close edit" : "Edit booking"}
                       </button>
+                      <MakeConfirmation orderId={o.id} />
                     </div>
                   </div>
                   {editing === o.id && (
@@ -445,6 +448,31 @@ export default function OrdersClient({ initial, tourOptions, packageOptions, par
           ))}
         </div>
       )}
+    </>
+  );
+}
+
+/** One click: a booking confirmation (AV folio) pre-filled from this order — or the existing one. */
+function MakeConfirmation({ orderId }: { orderId: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <>
+      <button
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          const res = await createFromOrder(orderId);
+          setBusy(false);
+          if (res.ok && res.id) router.push(`/admin/invoices/${res.id}`);
+          else setError(res.error ?? "Couldn't create it.");
+        }}
+        className="mt-2 block rounded-full border-[1.5px] border-gold px-4 py-2 text-[12.5px] font-semibold text-ink transition hover:bg-gold disabled:opacity-50"
+      >
+        {busy ? "Opening…" : "Make confirmation"}
+      </button>
+      {error && <p className="mt-1 text-[11.5px] text-terracotta">{error}</p>}
     </>
   );
 }

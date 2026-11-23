@@ -18,7 +18,8 @@ import { DEFAULT_LOCALE, isLocale, stripLocale, type Locale } from "@/lib/i18n/c
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+  // /admin-print/<id> = an invoice alone on the page for "Save as PDF" — same login.
+  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/admin-print/")) {
     // TEMPORARY kill-switch (Maher's explicit request, 2026-09-05): with
     // ADMIN_OPEN=1 in the environment, /admin needs NO login. Remove the env
     // var + redeploy to re-lock. Must NEVER stay on for long — /admin exposes

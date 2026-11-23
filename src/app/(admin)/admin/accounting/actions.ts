@@ -43,7 +43,7 @@ export async function bookDelete(list: ListName, id: string): Promise<Res> {
   return writeBook(book);
 }
 
-export async function bookUpdate(list: "payments" | "expenses", id: string, patch: { receipt: string }): Promise<Res> {
+export async function bookUpdate<L extends "payments" | "expenses">(list: L, id: string, patch: Partial<Omit<ListItem[L], "id">>): Promise<Res> {
   if (!(await allowed())) return { ok: false, error: "Session expired — unlock Profits again." };
   const book = await readBook();
   book[list] = (book[list] as { id: string }[]).map((x) => (x.id === id ? { ...x, ...patch } : x)) as never;
