@@ -13,6 +13,7 @@ import { useCurrency } from "@/lib/currency";
 import type { AdminTour as AdminTourInput } from "@/lib/content/tours";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
+import { slugify, tourPath } from "@/lib/catalogSlugs";
 import { TOURS, parseTierPrices, tourPaxOptions, tourTotalFor, type Tour, type Stop } from "./data";
 import type { Activity } from "../packages/data";
 import ActivityPicker, { activityChargeTotal } from "@/components/ActivityPicker";
@@ -272,6 +273,9 @@ export default function ToursClient({
                   <div className="at-card-name">{t.name}</div>
                   <div className="at-card-subtitle">{t.sub}</div>
                   <div className="at-card-desc">{t.desc}</div>
+                  <a className="at-details-link" href={localizeHref(tourPath(t.key ?? slugify(t.name)), locale)}>
+                    {dict.pkgc_see_details} →
+                  </a>
 
                   {t.stops.length > 0 && (
                     <>

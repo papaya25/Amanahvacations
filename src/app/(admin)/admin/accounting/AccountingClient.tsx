@@ -127,6 +127,7 @@ const TABS = [
   { id: "payments", label: "Payments in / out" },
   { id: "commissions", label: "Commissions" },
   { id: "year", label: "Year summary" },
+  { id: "expenses", label: "Business expenses" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
 
@@ -165,7 +166,8 @@ export default function AccountingClient({ rows, book, partners, rateUSD, receip
       )}
       {tab === "payments" && <PaymentsTab book={book} partnerNames={partnerNames} draft={payDraft} receiptUrls={receiptUrls} />}
       {tab === "commissions" && <CommissionsTab rows={rows} book={book} partners={partners} />}
-      {tab === "year" && <YearTab rows={rows} book={book} partners={partners} rate={rateUSD} receiptUrls={receiptUrls} />}
+      {tab === "year" && <YearTab rows={rows} book={book} partners={partners} rate={rateUSD} />}
+      {tab === "expenses" && <ExpensesTab book={book} rate={rateUSD} receiptUrls={receiptUrls} />}
     </>
   );
 }
@@ -847,12 +849,11 @@ function Breakdown({ title, rows, tax, by }: { title: string; rows: AcctRow[]; t
   );
 }
 
-function YearTab({ rows, book, partners, rate, receiptUrls }: { rows: AcctRow[]; book: Book; partners: Partner[]; rate: number; receiptUrls: Record<string, string> }) {
+function YearTab({ rows, book, partners, rate }: { rows: AcctRow[]; book: Book; partners: Partner[]; rate: number }) {
   const years = [...new Set([...rows.map((r) => r.date.slice(0, 4)), today().slice(0, 4)])].filter(Boolean).sort().reverse();
   const [year, setYear] = useState(years[0]);
   const [taxInput, setTaxInput] = useState(String(book.taxRate));
-  const [exp, setExp] = useState<{ date: string; name: string; description: string; amount: number; receipt?: string }>({ date: today(), name: "", description: "", amount: 0 });
-  const { busy, error, run } = useRun();
+  const { busy, run } = useRun();
   const tax = book.taxRate;
   const yr = rows.filter((r) => r.date.startsWith(year));
   const t = totals(yr, tax);
@@ -965,33 +966,52 @@ function YearTab({ rows, book, partners, rate, receiptUrls }: { rows: AcctRow[];
         <Breakdown title="By provider" rows={yr} tax={tax} by={(r) => matchPartner(r.provider, partners)?.name ?? (r.provider || "Amanah (ourselves)")} />
       </div>
 
-      <Box title={`Business expenses ${year}`} desc="Costs that aren't tied to one client — RFC, accountant, phone, ads, website. They come off the year's profit.">
-        {expenses.length > 0 && (
-          <table className="mb-4 min-w-full border-collapse">
-            <tbody>
-              {expenses.map((e) => (
-                <tr key={e.id}>
-                  <td className={td}>{e.date}</td>
-                  <td className={`${td} font-medium`}>{e.name}</td>
-                  <td className={`${td} text-sage`}>{e.description}</td>
-                  <td className={tdr}>{mx(e.amount)}</td>
-                  <td className={td}>
-                    {e.receipt ? (
-                      <ReceiptLink path={e.receipt} urls={receiptUrls} />
-                    ) : (
-                      <ReceiptPicker label="Attach receipt" onUploaded={(path) => run(() => bookUpdate("expenses", e.id, { receipt: path }))} />
-                    )}
-                  </td>
-                  <td className={td}>
-                    <button className="text-[12px] text-sage hover:text-terracotta" disabled={busy} onClick={() => confirm("Delete this expense?") && run(() => bookDelete("expenses", e.id))}>
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <p className="text-[12.5px] text-sage">Business expenses (RFC, accountant, ads…) are in their own tab and come off the year&apos;s profit above.</p>
+    </>
+  );
+}
+
+/* ── Tab 6: business expenses ─────────────────────────────────────────── */
+
+function downloadExpenses(filename: string, expenses: Book["expenses"], rate: number) {
+  const cell = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const total = expenses.reduce((s, e) => s + e.amount, 0);
+  const lines: unknown[][] = [
+    ["Date", "Expense", "Description", "Amount MXN", "Amount USD", "Receipt"],
+    ...expenses.map((e) => [e.date, e.name, e.description, e.amount, Math.round(e.amount / rate), e.receipt ? "yes" : ""]),
+    ["TOTAL", "", "", total, Math.round(total / rate), ""],
+  ];
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + lines.map((l) => l.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function ExpensesTab({ book, rate, receiptUrls }: { book: Book; rate: number; receiptUrls: Record<string, string> }) {
+  const years = [...new Set([...book.expenses.map((e) => e.date.slice(0, 4)), today().slice(0, 4)])].sort().reverse();
+  const [year, setYear] = useState(years[0]);
+  const [exp, setExp] = useState<{ date: string; name: string; description: string; amount: number; receipt?: string }>({ date: today(), name: "", description: "", amount: 0 });
+  const { busy, error, run } = useRun();
+  const list = book.expenses.filter((e) => e.date.startsWith(year)).sort((a, b) => a.date.localeCompare(b.date));
+  const total = list.reduce((s, e) => s + e.amount, 0);
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <select value={year} onChange={(e) => setYear(e.target.value)} className="rounded-full border border-sand bg-white px-4 py-2 text-[13.5px] font-semibold text-ink outline-none">
+          {years.map((y) => <option key={y}>{y}</option>)}
+        </select>
+        <button className={btnGhost} disabled={!list.length} onClick={() => downloadExpenses(`amanah-expenses-${year}.csv`, list, rate)}>
+          Download expenses (Excel)
+        </button>
+        <div className="ml-auto"><Stat label={`Total ${year}`} value={mx(total)} hint={usd(total, rate)} /></div>
+      </div>
+
+      <Box title="Add an expense" desc="Costs that aren't tied to one client — RFC, accountant, phone, ads, website. They come off the year's profit.">
         <div className="grid gap-2.5 sm:grid-cols-4">
           <div><span className={labelCls}>Date</span><input type="date" className={inputCls} value={exp.date} onChange={(e) => setExp({ ...exp, date: e.target.value })} /></div>
           <div><span className={labelCls}>Expense</span><input className={inputCls} value={exp.name} onChange={(e) => setExp({ ...exp, name: e.target.value })} placeholder="e.g. Accountant" /></div>
@@ -1010,6 +1030,52 @@ function YearTab({ rows, book, partners, rate, receiptUrls }: { rows: AcctRow[];
           {error && <span className="text-[12px] font-medium text-terracotta">{error}</span>}
         </div>
       </Box>
+
+      <Box title={`Expenses ${year}`}>
+        {list.length === 0 ? (
+          <p className="text-[13px] italic text-sage">No expenses recorded for {year}.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr>{["Date", "Expense", "Description", "Amount", "USD", "Receipt", ""].map((h, i) => <th key={i} className={`${th} ${h === "Amount" || h === "USD" ? "text-right" : ""}`}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {list.map((e) => (
+                  <tr key={e.id}>
+                    <td className={td}>{e.date}</td>
+                    <td className={`${td} font-medium`}>{e.name}</td>
+                    <td className={`${td} text-sage`}>{e.description}</td>
+                    <td className={tdr}>{mx(e.amount)}</td>
+                    <td className={`${tdr} text-sage`}>{usd(e.amount, rate)}</td>
+                    <td className={td}>
+                      {e.receipt ? (
+                        <ReceiptLink path={e.receipt} urls={receiptUrls} />
+                      ) : (
+                        <ReceiptPicker label="Attach receipt" onUploaded={(path) => run(() => bookUpdate("expenses", e.id, { receipt: path }))} />
+                      )}
+                    </td>
+                    <td className={td}>
+                      <button className="text-[12px] text-sage hover:text-terracotta" disabled={busy} onClick={() => confirm("Delete this expense?") && run(() => bookDelete("expenses", e.id))}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-cream/60 font-semibold">
+                  <td className={td} colSpan={3}>Total {year}</td>
+                  <td className={tdr}>{mx(total)}</td>
+                  <td className={tdr}>{usd(total, rate)}</td>
+                  <td className={td} colSpan={2} />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </Box>
     </>
   );
 }
+

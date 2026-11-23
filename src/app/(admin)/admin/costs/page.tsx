@@ -61,13 +61,15 @@ const DEFAULT: { rows: CostRow[]; taxRate: number } = {
       ],
       "Add-on"
     ),
-    // Transfer costs are per group size tier (per trip), matching how
-    // transfers are actually priced.
+    // Transfer cost per trip by SEATED group size (babies under 2 don't count).
     ...seed(
       [
-        ["transfer-1-4", "Airport Transfer — 1–3 people (per trip)"],
-        ["transfer-5-8", "Airport Transfer — 4+ people (per trip)"],
-        ["transfer-9plus", "Airport Transfer — spare tier (per trip)"],
+        ["transfer-1", "Airport Transfer — 1 person (per trip)"],
+        ["transfer-2", "Airport Transfer — 2 people (per trip)"],
+        ["transfer-3", "Airport Transfer — 3 people (per trip)"],
+        ["transfer-4-6", "Airport Transfer — 4 to 6 people (per trip)"],
+        ["transfer-7-8", "Airport Transfer — 7 to 8 people (per trip)"],
+        ["transfer-9plus", "Airport Transfer — 9+ people (per trip)"],
       ],
       "Transfer"
     ),

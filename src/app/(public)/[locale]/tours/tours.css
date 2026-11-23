@@ -99,6 +99,8 @@
 #amanah-tours .at-card-name { font-family: var(--at-serif); font-weight: 700; font-size: 24px; color: var(--at-forest-deep); line-height: 1.15; }
 #amanah-tours .at-card-subtitle { font-size: 12.5px; color: var(--at-clay); font-weight: 500; margin-top: 5px; letter-spacing: 0.3px; }
 #amanah-tours .at-card-desc { font-size: 13px; color: var(--at-muted); line-height: 1.6; margin-top: 10px; }
+#amanah-tours .at-details-link { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--at-forest, #2d5a3d); text-decoration: underline; text-underline-offset: 3px; }
+#amanah-tours .at-details-link:hover { color: var(--at-clay); }
 
 /* Itinerary */
 #amanah-tours .at-itin-toggle { background: none; border: none; color: var(--at-forest); font-family: var(--at-sans); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 12px 0 4px; display: flex; align-items: center; gap: 6px; }

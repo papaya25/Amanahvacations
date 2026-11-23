@@ -29,12 +29,14 @@ export type TransferFields = {
   flightNumber: string; adults: number; kids: number; kidsAges: string[]; babySeat: boolean;
   guestPhone: string; home: string; note: string; provider: string; price: number; paymentMethod: string;
   source: string;
+  collectedBy: string; // "" = automatic
 };
 
 const BLANK: TransferFields = {
   fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: [],
   babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0, paymentMethod: "",
   source: "WhatsApp / direct",
+  collectedBy: "",
 };
 
 function TransferForm({
@@ -103,6 +105,13 @@ function TransferForm({
         <span className={labelCls}>Came from</span>
         <select className={inputCls} value={f.source} onChange={(e) => set("source", e.target.value)}>
           {[...new Set([f.source, ...partnerNames, ...SOURCES])].map((s) => (<option key={s} value={s}>{s}</option>))}
+        </select>
+      </div>
+      <div>
+        <span className={labelCls}>Money collected by</span>
+        <select className={inputCls} value={f.collectedBy} onChange={(e) => set("collectedBy", e.target.value)}>
+          <option value="">Automatic ({f.source === "TutCasa" ? "TutCasa pays us" : "Amanah"})</option>
+          {[...new Set(["Amanah", ...partnerNames])].map((n) => (<option key={n} value={n}>{n}</option>))}
         </select>
       </div>
       <div>
@@ -194,6 +203,9 @@ function JobCard({ job, partnerNames }: { job: TransferJob; partnerNames: string
             <span className="rounded-full bg-forest/10 px-2 py-0.5 text-[11px] font-bold text-forest">✍️ Manual</span>
           )}
           <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[11px] font-bold text-[#8a6a1e]">From: {sourceOf(job)}</span>
+          {job.acct?.collectedBy && (
+            <span className="rounded-full bg-sand px-2 py-0.5 text-[11px] font-bold text-ink/70">Paid to: {job.acct.collectedBy}</span>
+          )}
           <span className="rounded-full border border-sand bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-forest">
             {job.ref}
           </span>
@@ -336,6 +348,7 @@ function JobCard({ job, partnerNames }: { job: TransferJob; partnerNames: string
             price: job.price ?? 0,
             paymentMethod: job.payment_method ?? "",
             source: sourceOf(job),
+            collectedBy: job.acct?.collectedBy ?? "",
           }}
           partnerNames={partnerNames}
           submitLabel="Save changes"

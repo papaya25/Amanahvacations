@@ -10,6 +10,7 @@ import { getFaqs } from "@/lib/content/faq";
 import { getSavedTours } from "@/lib/content/tours";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
+import { tourPath } from "@/lib/catalogSlugs";
 import "./tours.css";
 
 const caveat = Caveat({
@@ -111,7 +112,7 @@ export default async function ToursPage({
             from = Math.round(tiers[top] / top);
             high = Math.round(tiers[paxes[0]] / paxes[0]);
           }
-          return { name: t.name, price: from, high, img: t.img };
+          return { name: t.name, price: from, high, img: t.img, url: tourPath(t.key) };
         })
         .filter((t) => t.price > 0)
     : TOUR_SUMMARY;
@@ -178,13 +179,13 @@ export default async function ToursPage({
             { name: "Home", path: "/" },
             { name: "Tours", path: "/tours" },
           ]),
-          itemListSchema(summary.map((t) => ({ name: t.name, url: "/tours" }))),
+          itemListSchema(summary.map((t) => ({ name: t.name, url: (t as { url?: string }).url ?? "/tours" }))),
           ...summary.map((t) =>
             productOfferSchema({
               name: t.name,
               description: `${t.name} — a private guided tour from Playa del Carmen with Amanah Vacations.`,
               image: t.img,
-              url: "/tours",
+              url: (t as { url?: string }).url ?? "/tours",
               priceMXN: t.price,
               highMXN: (t as { high?: number }).high,
             })

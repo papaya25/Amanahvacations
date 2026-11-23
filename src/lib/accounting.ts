@@ -72,6 +72,33 @@ export function partnerTransferRate(p: Partner, people: number): number {
   return people >= p.transferLargeFrom && p.transferLarge > 0 ? p.transferLarge : p.transferSmall;
 }
 
+/* ── Airport transfers: who takes a seat ─────────────────────────────────
+   Babies (under 2) don't count toward the group size for costing. Ages are
+   free text from the forms ("1", "6 months", "baby", "5"). */
+export function isBabyAge(age: string): boolean {
+  const a = age.trim().toLowerCase();
+  if (!a) return false;
+  if (/month|mes|mois|baby|bebe|bébé|infant/.test(a)) return true;
+  const n = Number(a.replace(",", ".").replace(/[^0-9.]/g, ""));
+  return a.replace(/[^0-9]/g, "") !== "" && n < 2;
+}
+
+export function seatPax(t: { adults: number | null; kids: number | null; kids_ages: string | null; passengers: number | null }): number {
+  const babies = (t.kids_ages ?? "").split(",").filter(isBabyAge).length;
+  const total = t.adults != null || t.kids != null ? (t.adults ?? 0) + (t.kids ?? 0) : (t.passengers ?? 1);
+  return Math.max(1, total - babies);
+}
+
+/** Cost-table row for a transfer of `pax` seated people. */
+export function transferCostId(pax: number): string {
+  if (pax <= 1) return "transfer-1";
+  if (pax === 2) return "transfer-2";
+  if (pax === 3) return "transfer-3";
+  if (pax <= 6) return "transfer-4-6";
+  if (pax <= 8) return "transfer-7-8";
+  return "transfer-9plus";
+}
+
 /* ── Phone → country ──────────────────────────────────────────────────── */
 
 // +1 numbers: Canadian area codes; every other +1 is treated as USA.

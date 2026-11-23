@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getEffectiveDestinations } from "@/lib/content/activities";
 import { SITE_URL } from "@/lib/seo";
 import { BLOG_POSTS, blogPath } from "@/lib/blog";
+import { getPackagePages, getParkPages, getTourPages } from "@/lib/catalogPages";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -58,5 +59,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  return [...corePages, ...destinationPages, ...blogPages];
+  // One page per tour, package and park.
+  const catalog = (await Promise.all([getTourPages(), getPackagePages(), getParkPages()])).flat();
+  const catalogPages = catalog.flatMap((c) =>
+    localized(c.path).map((url) => ({
+      url,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    }))
+  );
+
+  return [...corePages, ...catalogPages, ...destinationPages, ...blogPages];
 }

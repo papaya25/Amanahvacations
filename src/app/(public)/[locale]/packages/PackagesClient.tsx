@@ -11,6 +11,7 @@ import { useCurrency } from "@/lib/currency";
 import type { AdminAddon } from "@/lib/content/addons";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
+import { packagePath } from "@/lib/catalogSlugs";
 import {
   ACCOM_TIERS as DEFAULT_ACCOM_TIERS,
   ACTIVITIES as DEFAULT_ACTIVITIES,
@@ -831,7 +832,10 @@ export default function PackagesClient({
         </div>
         <div className="pkg-header">
           <div className="pkg-icon-wrap">{meta.icon}</div>
-          <div className="pkg-name">{meta.name}</div>
+          {/* The name links to the package's own page (crawlable; the popup stays for quick reading). */}
+          <a className="pkg-name" href={localizeHref(packagePath(pkgId), locale)} style={{ display: "block", textDecoration: "none" }}>
+            {meta.name}
+          </a>
           <div className="pkg-tagline">{meta.tagline}</div>
           <div className="pkg-min-stay">{dict.pkgc_min_stay}</div>
           <div className="pkg-min-people">

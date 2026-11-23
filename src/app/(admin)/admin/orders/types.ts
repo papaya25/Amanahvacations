@@ -19,6 +19,7 @@ export type AdminOrder = {
   consent_at: string | null;
   referrer: string | null; // affiliate partner id (commission)
   source: string | null; // null = website, "manual", "tutcasa"
+  acct: { source?: string; fee?: number; cost?: number; provider?: string } | null;
 };
 
 export const ORDER_STATUSES = [

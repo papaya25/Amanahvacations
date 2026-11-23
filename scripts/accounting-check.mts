@@ -1,6 +1,6 @@
 // Run: node --experimental-strip-types scripts/accounting-check.mts
 import assert from "node:assert";
-import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, rowMath, partnerTransferRate } from "../src/lib/accounting.ts";
+import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge } from "../src/lib/accounting.ts";
 assert.equal(countryFromPhone("+1 8196647489")?.name, "Canada");
 assert.equal(countryFromPhone("+1 (678) 717-7781")?.name, "USA");
 assert.equal(countryFromPhone("+44 7946 472769")?.name, "United Kingdom");
@@ -25,4 +25,12 @@ const b = buildBalances([
 ], [{ id: "p", date: "2026-09-05", partner: "TutCasa", direction: "received", kind: "settlement", method: "Transfer", amount: 1000, note: "" }], DEFAULT_PARTNERS);
 const by = Object.fromEntries(b.map((x) => [x.name, x.balance]));
 assert.deepEqual(by, { TutCasa: 1300 - 370 - 1000, Moussa: 400, JF: -1000, "Azul Riviera": -6400 });
+// Transfer cost tiers by seated people; babies (under 2) don't take a seat.
+assert.deepEqual([1, 2, 3, 4, 6, 7, 9].map(transferCostId), ["transfer-1", "transfer-2", "transfer-3", "transfer-4-6", "transfer-4-6", "transfer-7-8", "transfer-9plus"]);
+assert.equal(seatPax({ adults: 2, kids: 2, kids_ages: "1, 6", passengers: 4 }), 3);
+assert.equal(seatPax({ adults: 2, kids: 1, kids_ages: "8 months", passengers: 3 }), 2);
+assert.equal(seatPax({ adults: null, kids: null, kids_ages: null, passengers: 5 }), 5);
+assert.ok(isBabyAge("baby") && isBabyAge("0") && !isBabyAge("2") && !isBabyAge("12"));
+// Ahmed: tour 7,850 paid by card on the provider's terminal, cost 6,700 → profit 1,150.
+assert.equal(rowMath({ charged: 7850, cost: 6700, fee: 0, commission: 0 }, 0).net, 1150);
 console.log("accounting checks OK");

@@ -12,6 +12,7 @@ import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
 import { ACTIVITIES, PKG_TIERS, type PkgId } from "@/app/(public)/[locale]/packages/data";
 import type { OrderRow } from "../dashboard-data";
 import type { CartItem } from "@/lib/cart";
+import { seatPax, transferCostId } from "@/lib/accounting";
 
 export type CostRow = {
   id: string;
@@ -44,8 +45,7 @@ export function itemCost(item: CartItem, rows: CostRow[]): number | null {
   const byId = new Map(rows.map((r) => [r.id, r]));
   const people = Math.max(1, item.people || 1);
   if (item.title === "Private Airport Transfer") {
-    const tier = people <= 4 ? "transfer-1-4" : people <= 8 ? "transfer-5-8" : "transfer-9plus";
-    const row = byId.get(tier);
+    const row = byId.get(transferCostId(people));
     return row ? row.cost : null; // per group
   }
   const key = item.meta?.tour_key || item.meta?.pkgId || item.meta?.activity_id || "";
@@ -185,17 +185,16 @@ export async function getServiceMargins(): Promise<MarginRow[]> {
     });
   }
 
-  const tierIds = ["transfer-1-4", "transfer-5-8", "transfer-9plus"];
-  const tierNames = ["Airport Transfer — 1–3 people", "Airport Transfer — 4+ people", "Airport Transfer — spare tier"];
+  // Cost is per seated group size; the selling price has two tiers (1–3, 4+).
   const tiers = transfers?.tiers ?? [];
-  tierIds.forEach((id, i) => {
-    const sell = tiers[i]?.price;
+  ([[1, "1 person"], [2, "2 people"], [3, "3 people"], [4, "4–6 people"], [7, "7–8 people"], [9, "9+ people"]] as const).forEach(([pax, label]) => {
+    const sell = tiers[pax <= 3 ? 0 : 1]?.price;
     rows.push({
       category: "Transfer",
-      name: tiers[i]?.label ? `Airport Transfer — ${tiers[i].label}` : tierNames[i],
+      name: `Airport Transfer — ${label}`,
       unit: "group",
       price: sell && sell > 0 ? sell : null,
-      cost: costOf(id),
+      cost: costOf(transferCostId(pax)),
     });
   });
 
@@ -368,19 +367,16 @@ export async function getTransferJobsLedger(): Promise<TransferJobsLedger> {
   const [{ data }, costs] = await Promise.all([
     supabase
       .from("tutcasa_transfers")
-      .select("transfer_id, passengers, price, status, travel_date, payment_method")
+      .select("transfer_id, passengers, adults, kids, kids_ages, price, status, travel_date, payment_method")
       .in("status", ["confirmed", "done"]),
     getCosts(),
   ]);
   const costById = new Map(costs.rows.map((r) => [r.id, r.cost]));
-  const tierCost = (pax: number | null): number => {
-    const id = pax == null || pax <= 4 ? "transfer-1-4" : pax <= 8 ? "transfer-5-8" : "transfer-9plus";
-    return costById.get(id) || 0;
-  };
+  const tierCost = (pax: number): number => costById.get(transferCostId(pax)) || 0;
   const out: TransferJobsLedger = { ...empty, perMonth: {} };
   for (const t of data ?? []) {
     const rev = Number(t.price) || 0;
-    const cost = tierCost(t.passengers);
+    const cost = tierCost(seatPax(t));
     out.count += 1;
     out.people += t.passengers ?? 0;
     out.revenue += rev;

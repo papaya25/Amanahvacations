@@ -12,6 +12,7 @@ import { useCart } from "@/lib/cart";
 import { useCurrency } from "@/lib/currency";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
+import { parkPath } from "@/lib/catalogSlugs";
 import TourParkTabs from "@/components/TourParkTabs";
 import { PARKS, type Park } from "./data";
 
@@ -129,6 +130,9 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
                   <div className="at-card-name">{park.name}</div>
                   <div className="at-card-subtitle">{park.sub}</div>
                   <div className="at-card-desc">{park.desc}</div>
+                  <a className="at-details-link" href={localizeHref(parkPath(park.id), locale)}>
+                    {dict.pkgc_see_details} →
+                  </a>
 
                   <div className="pk-included">✓ {dict.parks_included}</div>
 

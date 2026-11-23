@@ -7,6 +7,7 @@ import { breadcrumbSchema, itemListSchema, productOfferSchema, pageAlternates } 
 import { getSavedAddons } from "@/lib/content/addons";
 import { translateMany } from "@/lib/i18n/translate";
 import { isLocale, type Locale } from "@/lib/i18n/config";
+import { parkPath } from "@/lib/catalogSlugs";
 import "../tours/tours.css";
 
 export async function generateMetadata({
@@ -84,13 +85,13 @@ export default async function ParksPage({
             { name: "Home", path: "/" },
             { name: "Parks", path: "/parks" },
           ]),
-          itemListSchema(parks.map((p) => ({ name: p.name, url: "/parks" }))),
+          itemListSchema(parks.map((p) => ({ name: p.name, url: parkPath(p.id) }))),
           ...parks.map((p) =>
             productOfferSchema({
               name: `${p.name} — ticket + private transport`,
               description: p.desc,
               image: p.img,
-              url: "/parks",
+              url: parkPath(p.id),
               priceMXN: p.price,
             })
           ),

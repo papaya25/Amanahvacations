@@ -22,6 +22,8 @@ import {
   estimateFee,
   matchPartner,
   partnerTransferRate,
+  seatPax,
+  transferCostId,
   type AcctOverrides,
   type AcctRow,
   type Book,
@@ -61,6 +63,7 @@ type TransferRaw = {
   passengers: number | null;
   adults: number | null;
   kids: number | null;
+  kids_ages: string | null;
   guest_phone: string | null;
   home: string | null;
   status: string;
@@ -102,6 +105,7 @@ const groupKeyOf = (phone: string | null | undefined, name: string) => {
   return d.length >= 7 ? `p${d.slice(-9)}` : `n${name.toLowerCase().replace(/[^a-z]/g, "")}`;
 };
 
+const ONLINE_METHODS = new Set(["Credit / Debit Card", "Stripe", "PayPal", "Mercado Pago"]);
 const realizedOrder = (s: string) => s !== "Cancelled" && s !== "Pending payment";
 const paidOnline = (o: OrderRaw) => o.source !== "manual" && o.status.startsWith("Paid");
 
@@ -190,7 +194,7 @@ export async function getAccounting(): Promise<AccountingData> {
       .limit(5000),
     supabase
       .from("tutcasa_transfers")
-      .select("transfer_id, full_name, travel_date, flight_number, passengers, adults, kids, guest_phone, home, status, provider, price, payment_method, kind, acct")
+      .select("transfer_id, full_name, travel_date, flight_number, passengers, adults, kids, kids_ages, guest_phone, home, status, provider, price, payment_method, kind, acct")
       .in("status", ["confirmed", "done"]),
   ]);
   // A TutCasa tour request isn't business until it's accepted.
@@ -200,8 +204,7 @@ export async function getAccounting(): Promise<AccountingData> {
   await syncStripeFees(orders);
 
   const costById = new Map(costs.rows.map((r) => [r.id, r.cost]));
-  const transferCost = (pax: number) =>
-    costById.get(pax <= 4 ? "transfer-1-4" : pax <= 8 ? "transfer-5-8" : "transfer-9plus") || 0;
+  const transferCost = (pax: number) => costById.get(transferCostId(pax)) || 0;
   const country = (override: string | undefined, phone: string | null | undefined) => {
     if (override) return { name: override, iso: override.slice(0, 2).toUpperCase() };
     return countryFromPhone(phone) ?? { name: "", iso: "XX" };
@@ -227,6 +230,12 @@ export async function getAccounting(): Promise<AccountingData> {
       a.source ?? referrerPartner?.name ?? (o.source === "manual" ? "WhatsApp / direct" : "Website");
     const affiliate = affiliateOf(source);
     const method = a.method ?? o.payment_method;
+    /* "Card" = the provider's own terminal: the client's 5% card fee goes to
+       the provider's processor, never to us — it's neither our revenue nor our
+       cost. (Cards WE charge go through Stripe / PayPal, where the 5% is ours.) */
+    const passThrough = method === "Card" ? rest.filter(isFeeLine) : [];
+    const passThroughTotal = passThrough.reduce((s, it) => s + (Number(it.total) || 0), 0);
+    const ours = rest.filter((it) => !passThrough.includes(it));
     const stayTotal = items.filter((it) => it.kind === "stay").reduce((s, it) => s + (Number(it.total) || 0), 0);
     const orderFee = a.fee ?? (paidOnline(o) ? estimateFee(method, o.total) : 0);
     const common = {
@@ -245,7 +254,9 @@ export async function getAccounting(): Promise<AccountingData> {
       o.created_at
     );
 
-    if (rest.length) {
+    if (ours.length) {
+      const provider = a.provider ?? ours.find((it) => it.meta?.performed_by)?.meta?.performed_by ?? "";
+      const providerPartner = matchPartner(provider, partners);
       const commissionBase = rest
         .filter((it) => !isFeeLine(it) && !isTransferLine(it))
         .reduce((s, it) => s + (Number(it.total) || 0), 0);
@@ -258,10 +269,12 @@ export async function getAccounting(): Promise<AccountingData> {
         service: serviceOf(rest),
         description: rest.filter((it) => !isFeeLine(it)).map((it) => it.title).join(" + "),
         affiliate: affiliate?.name ?? null,
-        provider: a.provider ?? rest.find((it) => it.meta?.performed_by)?.meta?.performed_by ?? "",
-        collectedBy: a.collectedBy ?? "Amanah",
-        charged: a.charged ?? o.total - stayTotal,
-        cost: a.cost ?? rest.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0),
+        provider,
+        // A partner who runs the tour (JF, Azul Riviera…) collects the client's
+        // money themselves — unless we took it online (Stripe / PayPal).
+        collectedBy: a.collectedBy ?? (providerPartner?.provider && !ONLINE_METHODS.has(method) ? providerPartner.name : "Amanah"),
+        charged: a.charged ?? o.total - stayTotal - passThroughTotal,
+        cost: a.cost ?? ours.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0),
         fee: orderFee,
         feeExact: Boolean(a.feeExact),
         commission:
@@ -284,7 +297,7 @@ export async function getAccounting(): Promise<AccountingData> {
         collectedBy: "Amanah",
         charged,
         cost: Math.round(charged * 0.9),
-        fee: rest.length || i > 0 ? 0 : orderFee,
+        fee: ours.length || i > 0 ? 0 : orderFee,
         feeExact: Boolean(a.feeExact),
         commission: 0,
       });
@@ -318,7 +331,7 @@ export async function getAccounting(): Promise<AccountingData> {
       collectedBy: a.collectedBy ?? (billedRate > 0 ? srcPartner!.name : "Amanah"),
       charged: Number(t.price) || billedRate,
       method: t.payment_method ?? "",
-      cost: a.cost ?? transferCost(pax),
+      cost: a.cost ?? transferCost(seatPax(t)), // babies don't take a seat
       fee: a.fee ?? 0,
       feeExact: Boolean(a.feeExact),
       commission: a.commission ?? 0,

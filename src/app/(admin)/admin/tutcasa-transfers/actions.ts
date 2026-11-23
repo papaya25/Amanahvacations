@@ -29,7 +29,7 @@ export type TransferJob = {
   amanah_note: string | null;
   kind: "pickup" | "dropoff" | null;
   last_answer: string | null;
-  acct: { source?: string } | null;
+  acct: { source?: string; collectedBy?: string } | null;
   received_at: string;
   updated_at: string;
 };
@@ -109,6 +109,7 @@ export async function updateTransfer(
     price?: number;
     paymentMethod?: string;
     source?: string;
+    collectedBy?: string; // "" = automatic (TutCasa for its jobs, otherwise Amanah)
   }
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
@@ -118,7 +119,12 @@ export async function updateTransfer(
   const supabase = createAdminClient();
   // "Came from" lives with the other accounting fields in acct.
   const { data: cur } = await supabase.from("tutcasa_transfers").select("acct").eq("transfer_id", transferId).maybeSingle();
-  const acct = { ...((cur?.acct as object) ?? {}), ...(input.source ? { source: input.source } : {}) };
+  const { collectedBy: _old, ...prev } = (cur?.acct as Record<string, unknown>) ?? {};
+  const acct = {
+    ...prev,
+    ...(input.source ? { source: input.source } : {}),
+    ...(input.collectedBy ? { collectedBy: input.collectedBy } : {}),
+  };
   const { error } = await supabase
     .from("tutcasa_transfers")
     .update({
@@ -180,6 +186,7 @@ export async function addManualTransfer(input: {
   price?: number;
   paymentMethod?: string;
   source?: string;
+  collectedBy?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.fullName?.trim() || !input.travelDate) {
@@ -204,7 +211,10 @@ export async function addManualTransfer(input: {
     provider: input.provider?.trim() || null,
     price: input.price || null,
     payment_method: input.paymentMethod?.trim() || null,
-    acct: input.source ? { source: input.source } : {},
+    acct: {
+      ...(input.source ? { source: input.source } : {}),
+      ...(input.collectedBy ? { collectedBy: input.collectedBy } : {}),
+    },
     status: "confirmed",
   });
   if (error) {
