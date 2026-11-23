@@ -17,24 +17,33 @@ import {
   type TransferJob,
 } from "./actions";
 import { deleteTransferJob } from "../tutcasa-tours/actions";
+import { PAYMENT_METHODS, SOURCES } from "@/lib/accounting";
+
+/** Where the transfer came from: pushed jobs are TutCasa's, manual ones direct. */
+const sourceOf = (j: TransferJob) =>
+  j.acct?.source ?? (j.transfer_id.startsWith("manual-") ? "WhatsApp / direct" : "TutCasa");
 
 /* One form, two jobs: "add manually" (blank) and per-card "Edit" (prefilled). */
 export type TransferFields = {
   fullName: string; travelDate: string; kind: "pickup" | "dropoff";
   flightNumber: string; adults: number; kids: number; kidsAges: string[]; babySeat: boolean;
   guestPhone: string; home: string; note: string; provider: string; price: number; paymentMethod: string;
+  source: string;
 };
 
 const BLANK: TransferFields = {
   fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: [],
   babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0, paymentMethod: "",
+  source: "WhatsApp / direct",
 };
 
 function TransferForm({
   initial,
   submitLabel,
   onSubmit,
+  partnerNames,
 }: {
+  partnerNames: string[];
   initial: TransferFields;
   submitLabel: string;
   onSubmit: (f: TransferFields) => Promise<{ ok: boolean; error?: string }>;
@@ -90,12 +99,22 @@ function TransferForm({
         </div>
       )}
       <div><span className={labelCls}>Guest phone</span><input className={inputCls} value={f.guestPhone} onChange={(e) => set("guestPhone", e.target.value)} placeholder="+1 ..." /></div>
-      <div><span className={labelCls}>Provider</span><input className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" /></div>
+      <div>
+        <span className={labelCls}>Came from</span>
+        <select className={inputCls} value={f.source} onChange={(e) => set("source", e.target.value)}>
+          {[...new Set([f.source, ...partnerNames, ...SOURCES])].map((s) => (<option key={s} value={s}>{s}</option>))}
+        </select>
+      </div>
+      <div>
+        <span className={labelCls}>Provider</span>
+        <input list="transfer-providers" className={inputCls} value={f.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Driver / company" />
+        <datalist id="transfer-providers">{partnerNames.map((n) => <option key={n} value={n} />)}</datalist>
+      </div>
       <div>
         <span className={labelCls}>Payment method</span>
         <select className={inputCls} value={f.paymentMethod} onChange={(e) => set("paymentMethod", e.target.value)}>
           <option value="">Not paid yet / unknown</option>
-          {["Cash", "Card", "Bank transfer", "PayPal", "Other"].map((m) => (<option key={m} value={m}>{m}</option>))}
+          {PAYMENT_METHODS.map((m) => (<option key={m} value={m}>{m}</option>))}
         </select>
       </div>
       <div><span className={labelCls}>Price</span><input type="number" min={0} className={inputCls} value={f.price === 0 ? "" : f.price} onChange={(e) => set("price", Number(e.target.value) || 0)} placeholder="MXN" /></div>
@@ -138,7 +157,7 @@ const STATUS_LABEL: Record<string, string> = {
 const fmtDate = (v: string | null) =>
   v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—";
 
-function JobCard({ job }: { job: TransferJob }) {
+function JobCard({ job, partnerNames }: { job: TransferJob; partnerNames: string[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -174,6 +193,7 @@ function JobCard({ job }: { job: TransferJob }) {
           {isManual && (
             <span className="rounded-full bg-forest/10 px-2 py-0.5 text-[11px] font-bold text-forest">✍️ Manual</span>
           )}
+          <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[11px] font-bold text-[#8a6a1e]">From: {sourceOf(job)}</span>
           <span className="rounded-full border border-sand bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-forest">
             {job.ref}
           </span>
@@ -315,7 +335,9 @@ function JobCard({ job }: { job: TransferJob }) {
             provider: job.provider ?? "",
             price: job.price ?? 0,
             paymentMethod: job.payment_method ?? "",
+            source: sourceOf(job),
           }}
+          partnerNames={partnerNames}
           submitLabel="Save changes"
           onSubmit={async (f) => {
             const res = await updateTransfer(job.transfer_id, { ...f, kidsAges: f.kidsAges.join(", ") });
@@ -351,7 +373,7 @@ function JobCard({ job }: { job: TransferJob }) {
   );
 }
 
-function ManualAddForm() {
+function ManualAddForm({ partnerNames }: { partnerNames: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   return (
@@ -365,6 +387,7 @@ function ManualAddForm() {
       {open && (
         <TransferForm
           initial={BLANK}
+          partnerNames={partnerNames}
           submitLabel="Add transfer"
           onSubmit={async (f) => {
             const res = await addManualTransfer({ ...f, kidsAges: f.kidsAges.join(", ") });
@@ -388,7 +411,7 @@ const TABS = [
   { id: "completed", label: "Completed", statuses: ["done", "closed"], empty: "No completed transfers yet." },
 ] as const;
 
-export default function TransfersClient({ initialJobs }: { initialJobs: TransferJob[] }) {
+export default function TransfersClient({ initialJobs, partnerNames }: { initialJobs: TransferJob[]; partnerNames: string[] }) {
   // Land on whichever tab needs attention first.
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>(() =>
     initialJobs.some((j) => j.status === "requested" || j.status === "need_details") ? "requested" : "upcoming"
@@ -400,7 +423,7 @@ export default function TransfersClient({ initialJobs }: { initialJobs: Transfer
 
   return (
     <>
-      <ManualAddForm />
+      <ManualAddForm partnerNames={partnerNames} />
       <div className="mb-4 flex flex-wrap gap-2">
         {TABS.map((t) => {
           const n = initialJobs.filter((j) => (t.statuses as readonly string[]).includes(j.status)).length;
@@ -423,7 +446,7 @@ export default function TransfersClient({ initialJobs }: { initialJobs: Transfer
         ) : (
           <div className={`space-y-3${tab === "completed" ? " opacity-80" : ""}`}>
             {jobs.map((j) => (
-              <JobCard key={j.transfer_id} job={j} />
+              <JobCard key={j.transfer_id} job={j} partnerNames={partnerNames} />
             ))}
           </div>
         )}

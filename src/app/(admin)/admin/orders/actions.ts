@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { ORDER_STATUSES, type AdminOrder } from "./types";
+import { getPartners } from "@/lib/content/partners";
+import { matchPartner } from "@/lib/accounting";
 
 export async function listOrders(): Promise<AdminOrder[] | null> {
   if (!(await isAdminRequest())) return null;
@@ -42,8 +44,8 @@ export async function updateOrderStatus(
 const CARD_FEE_PCT = 5;
 
 export async function createManualOrder(input: {
-  kind: "package" | "tour";
-  catalogId: string; // package id or tour key
+  kind: "package" | "tour" | "park";
+  catalogId: string; // package id, tour key or park id
   title: string; // display name from the picker (server stores what admin saw)
   customerName: string;
   customerPhone?: string;
@@ -51,6 +53,9 @@ export async function createManualOrder(input: {
   date: string; // YYYY-MM-DD (tour date / package check-in)
   totalMXN: number;
   paymentMethod?: string;
+  cardSurcharge?: boolean; // Card / Stripe: add 5% on top for the client
+  stripeFee?: number; // what Stripe kept (Accounting)
+  source?: string; // where the client came from — an affiliate name earns commission
   extraActivity?: string; // another activity added to the tour
   extraActivityPrice?: number; // MXN, part of the total charged
   customization?: string; // customized activity / changes under this tour
@@ -84,7 +89,9 @@ export async function createManualOrder(input: {
     currency: "MXN",
     ...(input.kind === "tour"
       ? { tour_key: input.catalogId, date: input.date }
-      : { pkgId: input.catalogId, checkin: input.date }),
+      : input.kind === "park"
+        ? { activity_id: input.catalogId, date: input.date }
+        : { pkgId: input.catalogId, checkin: input.date }),
     ...(custom ? { custom } : {}),
     ...(performer ? { performed_by: performer } : {}),
     ...(cost !== null ? { manual_cost: String(cost) } : {}),
@@ -92,7 +99,7 @@ export async function createManualOrder(input: {
   const items = [
     {
       id: "m1",
-      kind: input.kind,
+      kind: input.kind === "park" ? ("activity" as const) : input.kind,
       title: input.title.trim(),
       subtitle: "Added manually",
       details,
@@ -118,7 +125,8 @@ export async function createManualOrder(input: {
   if (extraPrice > total) return { ok: false, error: "The extra activity price can't exceed the total." };
 
   // Card payments: 5% fee charged to the client on top of the agreed price.
-  const cardFee = input.paymentMethod === "Card" ? Math.round(total * CARD_FEE_PCT / 100) : 0;
+  const isCard = input.paymentMethod === "Card" || input.paymentMethod === "Stripe";
+  const cardFee = isCard && input.cardSurcharge !== false ? Math.round(total * CARD_FEE_PCT / 100) : 0;
   if (cardFee > 0) {
     items.push({
       id: "m3",
@@ -132,6 +140,12 @@ export async function createManualOrder(input: {
     });
   }
   const grandTotal = total + cardFee;
+
+  // Came from: an affiliate partner → stamped as referrer (commission).
+  const source = input.source?.trim() || "WhatsApp / direct";
+  const affiliate = matchPartner(source, await getPartners());
+  const acct: Record<string, unknown> = { source };
+  if (input.paymentMethod === "Stripe" && (input.stripeFee ?? 0) > 0) acct.fee = Math.round(input.stripeFee!);
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const id = `AMN-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -149,6 +163,8 @@ export async function createManualOrder(input: {
       customer_whatsapp: input.customerPhone?.trim() || null,
       consent: true,
       consent_at: new Date().toISOString(),
+      referrer: affiliate?.affiliate ? affiliate.id : null,
+      acct,
     });
     if (!error) {
       revalidatePath("/admin/orders");

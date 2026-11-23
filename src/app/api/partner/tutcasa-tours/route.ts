@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mirrorTourBookingToOrder } from "@/lib/tutcasaTourOrders";
 
 /* Inbound from TutCasa: every TOUR booking made on their site lands here so
    the team sees it in the admin queue immediately (email + WhatsApp link
@@ -63,6 +64,21 @@ export async function POST(request: NextRequest) {
       { status: 500, headers: { "cache-control": "no-store" } }
     );
   }
+
+  // Also show it in Orders & Bookings, pre-filled. Never fails the push.
+  await mirrorTourBookingToOrder({
+    bookingId,
+    ref: str(body.ref) ?? bookingId.slice(0, 8).toUpperCase(),
+    tourTitle,
+    tourDate: str(body.tourDate),
+    groupSize: Number(body.groupSize) || null,
+    totalLabel: str(body.totalLabel),
+    guestName: str(body.guestName),
+    guestEmail: str(body.guestEmail),
+    guestPhone: str(body.guestPhone),
+    notes: str(body.notes),
+    status: str(body.status),
+  }).catch((e) => console.error("tutcasa-tours mirror:", e instanceof Error ? e.message : e));
 
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }

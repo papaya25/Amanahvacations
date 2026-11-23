@@ -239,6 +239,7 @@ async function sendStayPaymentLink(order: OrderRow, stay: CartItem): Promise<boo
         purpose: "stay_balance",
         request_id: stay.meta?.tutcasa_request_id ?? "",
       },
+      payment_intent_data: { metadata: { order_id: order.id, purpose: "stay_balance" } },
       success_url: `${SITE_URL}/thank-you?id=${order.id}&stay=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/account/orders`,
     });

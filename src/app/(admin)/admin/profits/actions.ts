@@ -20,7 +20,8 @@ export async function unlockProfits(formData: FormData): Promise<{ error: string
     path: "/admin",
     maxAge,
   });
-  redirect("/admin/profits");
+  // Accounting shares this lock; send the admin back where they unlocked from.
+  redirect(formData.get("next") === "/admin/accounting" ? "/admin/accounting" : "/admin/profits");
 }
 
 export async function lockProfits(): Promise<void> {

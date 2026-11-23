@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { unlockProfits } from "./actions";
 
-export default function UnlockForm() {
+export default function UnlockForm({ next, title = "Profits are locked" }: { next?: string; title?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -20,11 +20,12 @@ export default function UnlockForm() {
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-forest/10 text-[24px]">
         🔒
       </div>
-      <h2 className="font-serif text-[22px] font-semibold text-ink">Profits are locked</h2>
+      <h2 className="font-serif text-[22px] font-semibold text-ink">{title}</h2>
       <p className="mx-auto mt-1.5 max-w-[280px] text-[13px] leading-[1.65] text-sage">
         This section has its own password on top of your admin login.
       </p>
       <form action={submit} className="mt-5 space-y-3">
+        {next && <input type="hidden" name="next" value={next} />}
         <input
           name="password"
           type="password"

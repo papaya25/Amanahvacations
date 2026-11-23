@@ -29,6 +29,7 @@ export type TransferJob = {
   amanah_note: string | null;
   kind: "pickup" | "dropoff" | null;
   last_answer: string | null;
+  acct: { source?: string } | null;
   received_at: string;
   updated_at: string;
 };
@@ -107,6 +108,7 @@ export async function updateTransfer(
     provider?: string;
     price?: number;
     paymentMethod?: string;
+    source?: string;
   }
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
@@ -114,6 +116,9 @@ export async function updateTransfer(
     return { ok: false, error: "Name and travel date are required." };
   }
   const supabase = createAdminClient();
+  // "Came from" lives with the other accounting fields in acct.
+  const { data: cur } = await supabase.from("tutcasa_transfers").select("acct").eq("transfer_id", transferId).maybeSingle();
+  const acct = { ...((cur?.acct as object) ?? {}), ...(input.source ? { source: input.source } : {}) };
   const { error } = await supabase
     .from("tutcasa_transfers")
     .update({
@@ -132,6 +137,7 @@ export async function updateTransfer(
       provider: input.provider?.trim() || null,
       price: input.price || null,
       payment_method: input.paymentMethod?.trim() || null,
+      acct,
       updated_at: new Date().toISOString(),
     })
     .eq("transfer_id", transferId);
@@ -173,6 +179,7 @@ export async function addManualTransfer(input: {
   provider?: string;
   price?: number;
   paymentMethod?: string;
+  source?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdminRequest())) return { ok: false, error: "Not signed in." };
   if (!input.fullName?.trim() || !input.travelDate) {
@@ -197,6 +204,7 @@ export async function addManualTransfer(input: {
     provider: input.provider?.trim() || null,
     price: input.price || null,
     payment_method: input.paymentMethod?.trim() || null,
+    acct: input.source ? { source: input.source } : {},
     status: "confirmed",
   });
   if (error) {

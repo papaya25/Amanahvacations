@@ -11,6 +11,7 @@ import { getSavedAddons, getSavedTransfers } from "@/lib/content/addons";
 import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
 import { ACTIVITIES, PKG_TIERS, type PkgId } from "@/app/(public)/[locale]/packages/data";
 import type { OrderRow } from "../dashboard-data";
+import type { CartItem } from "@/lib/cart";
 
 export type CostRow = {
   id: string;
@@ -34,6 +35,26 @@ export async function getCosts(): Promise<CostsContent> {
     .maybeSingle();
   const saved = (data?.data ?? null) as Partial<CostsContent> | null;
   return { taxRate: saved?.taxRate ?? 30, rows: saved?.rows ?? [] };
+}
+
+/** Cost of one booked item, from the admin's cost table (null = no cost set). */
+export function itemCost(item: CartItem, rows: CostRow[]): number | null {
+  // Manual bookings carry the real cost the admin entered — it wins.
+  if (item.meta?.manual_cost !== undefined) return Number(item.meta.manual_cost) || 0;
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const people = Math.max(1, item.people || 1);
+  if (item.title === "Private Airport Transfer") {
+    const tier = people <= 4 ? "transfer-1-4" : people <= 8 ? "transfer-5-8" : "transfer-9plus";
+    const row = byId.get(tier);
+    return row ? row.cost : null; // per group
+  }
+  const key = item.meta?.tour_key || item.meta?.pkgId || item.meta?.activity_id || "";
+  const row = byId.get(COST_ID_ALIASES[key] ?? key);
+  if (!row) return null;
+  // Tours/packages are costed per group size; use that tier when it exists.
+  const tier = Number(row.tiers?.[String(people)]) || 0;
+  if (tier > 0) return tier;
+  return row.cost > 0 ? row.cost * people : null; // per person
 }
 
 /* Some catalogue ids differ from the ids used in the Costs editor. */

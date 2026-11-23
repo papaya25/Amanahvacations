@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { updateTutcasaTourStatus } from "@/lib/tutcasa";
+import { syncTourOrderStatus } from "@/lib/tutcasaTourOrders";
 
 export type TourBookingJob = {
   booking_id: string;
@@ -61,7 +62,11 @@ async function decide(
           }
     )
     .eq("booking_id", bookingId);
+  // Keep the mirrored order in Orders & Bookings in step.
+  if (result === "gone" || action === "deny") await syncTourOrderStatus(bookingId, "Cancelled");
+  else if (action === "accept") await syncTourOrderStatus(bookingId, "Confirmed");
   revalidatePath("/admin/tutcasa-tours");
+  revalidatePath("/admin/orders");
   if (result === "gone") {
     return { ok: false, error: "This booking no longer exists on TutCasa — closed here." };
   }

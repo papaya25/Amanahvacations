@@ -9,6 +9,7 @@ import {
   getCosts,
   getServiceMargins,
   getTransferJobsLedger,
+  itemCost,
   isRealizedSale,
   type TransferJobsLedger,
   type CostRow,
@@ -21,23 +22,6 @@ import { lockProfits } from "./actions";
 import type { CartItem } from "@/lib/cart";
 
 export const dynamic = "force-dynamic";
-
-/** Cost of one booked item, from the admin's cost table (null = no cost set). */
-function itemCost(item: CartItem, rows: CostRow[]): number | null {
-  // Manual bookings carry the real cost the admin entered — it wins.
-  if (item.meta?.manual_cost !== undefined) return Number(item.meta.manual_cost) || 0;
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  if (item.title === "Private Airport Transfer") {
-    const tier =
-      item.people <= 4 ? "transfer-1-4" : item.people <= 8 ? "transfer-5-8" : "transfer-9plus";
-    const row = byId.get(tier);
-    return row ? row.cost : null; // per group
-  }
-  const key = item.meta?.tour_key || item.meta?.pkgId || "";
-  const row = byId.get(key);
-  if (!row) return null;
-  return row.cost * Math.max(1, item.people); // per person
-}
 
 /* Online payment-processor fees, absorbed by Amanah (customers pay the shown
    price). Stripe rate verified against a real charge on this account (foreign

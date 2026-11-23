@@ -17,6 +17,7 @@ import { getSessionUser } from "@/lib/supabase/serverAuth";
 import { getTourLineTotal } from "@/lib/content/tours";
 import { getActivityLineTotal, getPackageLineTotal } from "@/lib/content/packages";
 import { getPublicContent } from "@/lib/content/site";
+import { getPartners } from "@/lib/content/partners";
 import { createTutcasaHold, createTutcasaRequest, releaseTutcasaHold } from "@/lib/tutcasa";
 import { notifyStayRequests, releaseTutcasaStays } from "@/lib/tutcasaBooking";
 import type { CartItem } from "@/lib/cart";
@@ -228,8 +229,12 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     // Attach the customer's account when they're logged in (guests stay null).
     const sessionUser = await getSessionUser();
 
-    // Partner referral (?ref=tutcasa 30-day cookie) → commission tracking.
-    const referrer = (await cookies()).get("amanah_ref")?.value?.toLowerCase() ?? null;
+    // Partner referral (?ref=<code> 30-day cookie) → commission tracking.
+    // Only codes of affiliates listed in admin → Partners count; stored as the partner id.
+    const refCode = (await cookies()).get("amanah_ref")?.value?.toLowerCase() ?? null;
+    const referrer = refCode
+      ? (await getPartners()).find((p) => p.affiliate && (p.code || p.id) === refCode)?.id ?? null
+      : null;
 
     const supabase = createAdminClient();
     const onlinePayment =
@@ -271,7 +276,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         notes: input.notes?.trim() || null,
         consent: true,
         consent_at: new Date().toISOString(),
-        referrer: referrer === "tutcasa" ? referrer : null,
+        referrer,
       });
       if (!error) orderId = id;
       else if (error.code !== "23505") {
@@ -336,12 +341,12 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           mode: "payment",
           currency: "mxn",
           customer_email: input.email.trim(),
-          ...(hasRequestStay
-            ? {
-                customer_creation: "always" as const,
-                payment_intent_data: { setup_future_usage: "off_session" as const },
-              }
-            : {}),
+          ...(hasRequestStay ? { customer_creation: "always" as const } : {}),
+          payment_intent_data: {
+            // order_id on the payment itself lets Accounting read Stripe's exact fee.
+            metadata: { order_id: orderId },
+            ...(hasRequestStay ? { setup_future_usage: "off_session" as const } : {}),
+          },
           line_items: [
             {
               quantity: 1,
