@@ -235,19 +235,20 @@ export function estimateFee(method: string, amount: number): number {
   return Math.round(((amount * r[0]) / 100 + r[1]) * 1.16);
 }
 
-/** Balance one partner: + = they owe us, − = we owe them. */
+/** One thing that moves a partner's balance; amount + = they owe us more.
+    owesUs: a client paid THEM (our share is owed to us) · weOwe: a client paid
+    US for a service they did (their cost) · theyPaid / wePaid: money sent. */
+export type BalanceLine = { date: string; label: string; amount: number; type: "owesUs" | "weOwe" | "theyPaid" | "wePaid" };
+
+/** A partner's running account: + = they owe us, − = we owe them.
+    Commissions are NOT in here — they have their own tab. */
 export type PartnerBalance = {
   name: string;
   partnerId: string | null;
   opening: number;
-  collected: number; // client money THEY received for our services → owed to us
-  ourCost: number; // their earnings for services they performed → we owe them
-  commission: number; // commission they earned → we owe them
-  received: number; // payments they made to us
-  paid: number; // payments we made to them
-  balance: number;
-  /** Every line behind the balance (+ = they owe us more), oldest first. */
-  lines: { date: string; label: string; amount: number }[];
+  from: string; // opening date: the opening balance is what they owed just before it
+  balance: number; // today
+  lines: BalanceLine[]; // oldest first
 };
 
 /* ── The book (site_content "accounting", private) ─────────────────────── */
@@ -302,58 +303,67 @@ export function buildBalances(
   partners: Partner[],
   asOf = new Date().toISOString().slice(0, 10) // services still in the future aren't owed yet
 ): PartnerBalance[] {
-  const map = new Map<string, PartnerBalance & { from: string }>();
+  const map = new Map<string, PartnerBalance>();
   const get = (name: string) => {
     const p = matchPartner(name, partners);
     const k = p?.id ?? norm(name);
     if (!k || k === AMANAH) return null;
     if (!map.has(k)) {
-      map.set(k, {
-        name: p?.name ?? name.trim(), partnerId: p?.id ?? null, from: p?.openingDate ?? "",
-        opening: p?.openingBalance ?? 0, collected: 0, ourCost: 0, commission: 0, received: 0, paid: 0, balance: 0, lines: [],
-      });
+      map.set(k, { name: p?.name ?? name.trim(), partnerId: p?.id ?? null, from: p?.openingDate ?? "", opening: p?.openingBalance ?? 0, balance: 0, lines: [] });
     }
     return map.get(k)!;
   };
   partners.forEach((p) => get(p.name));
   // Anything dated before a partner's opening date is already in its opening balance.
-  const live = (b: { from: string }, date: string) => !b.from || date >= b.from;
+  const live = (b: PartnerBalance | null, date: string): b is PartnerBalance => !!b && (!b.from || date >= b.from);
   for (const r of rows) {
     if (r.date > asOf) continue;
     const who = `${r.name || "—"} · ${r.service}${r.description ? ` (${r.description})` : ""}`;
     const c = r.collectedBy ? get(r.collectedBy) : null;
-    if (c && live(c, r.date)) {
-      c.collected += r.charged;
-      c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged });
-    }
     const p = r.provider ? get(r.provider) : null;
-    if (p && live(p, r.date) && r.cost) {
-      p.ourCost += r.cost;
-      p.lines.push({ date: r.date, label: `${who} — their cost`, amount: -r.cost });
+    if (c && c === p) {
+      // Client paid them for a service they did → they owe us our profit.
+      if (live(c, r.date) && (r.charged || r.cost)) {
+        const profit = r.charged - r.cost;
+        c.lines.push({ date: r.date, label: `${who} — client paid them ${fmt(r.charged)}, their cost ${fmt(r.cost)}`, amount: profit, type: profit >= 0 ? "owesUs" : "weOwe" });
+      }
+      continue;
     }
-    const a = r.affiliate && r.commission ? get(r.affiliate) : null;
-    if (a && live(a, r.date)) {
-      a.commission += r.commission;
-      a.lines.push({ date: r.date, label: `${who} — their commission`, amount: -r.commission });
-    }
+    if (live(c, r.date) && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
+    if (live(p, r.date) && r.cost) p.lines.push({ date: r.date, label: `${who} — client paid us, their cost`, amount: -r.cost, type: "weOwe" });
   }
   for (const pay of payments) {
+    if (pay.kind === "commission") continue; // → Commissions tab
     const b = get(pay.partner);
     // Only spreadsheet imports are already in the opening balance; a payment
     // typed in here always counts, whatever its date.
     if (!b || (pay.imported && !live(b, pay.date))) continue;
-    if (pay.direction === "received") b.received += pay.amount;
-    else b.paid += pay.amount;
-    const kind = pay.kind === "commission" ? "commission" : "payment";
-    b.lines.push({
-      date: pay.date,
-      label: `${pay.direction === "received" ? `They paid us (${kind})` : `We paid them (${kind})`}${pay.note ? ` — ${pay.note}` : ""}`,
-      amount: pay.direction === "received" ? -pay.amount : pay.amount,
-    });
+    const got = pay.direction === "received";
+    b.lines.push({ date: pay.date, label: `${got ? "They paid us" : "We paid them"}${pay.note ? ` — ${pay.note}` : ""}`, amount: got ? -pay.amount : pay.amount, type: got ? "theyPaid" : "wePaid" });
   }
-  for (const b of map.values()) b.lines.sort((x, y) => x.date.localeCompare(y.date));
-  return [...map.values()].map(({ from: _from, ...b }) => ({
-    ...b,
-    balance: b.opening + b.collected - b.ourCost - b.commission - b.received + b.paid,
-  }));
+  return [...map.values()].map((b) => {
+    b.lines.sort((x, y) => x.date.localeCompare(y.date));
+    return { ...b, balance: b.opening + b.lines.reduce((s, l) => s + l.amount, 0) };
+  });
+}
+
+const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+
+/** One month of a partner's account, like the old monthly sheets:
+    from last month → this month's lines → carried to next month. */
+export function monthStatement(b: PartnerBalance, month: string) {
+  const start = `${month}-01`;
+  const lines = b.lines.filter((l) => l.date.startsWith(month));
+  const sum = (t: BalanceLine["type"]) => lines.filter((l) => l.type === t).reduce((s, l) => s + l.amount, 0);
+  const broughtForward = b.opening + b.lines.filter((l) => l.date < start).reduce((s, l) => s + l.amount, 0);
+  return {
+    tracked: !b.from || month >= b.from.slice(0, 7),
+    broughtForward,
+    owesUs: sum("owesUs"),
+    weOwe: -sum("weOwe"),
+    theyPaid: -sum("theyPaid"),
+    wePaid: sum("wePaid"),
+    carried: broughtForward + lines.reduce((s, l) => s + l.amount, 0),
+    lines,
+  };
 }

@@ -11,6 +11,8 @@ import {
   SERVICE_TYPES,
   SOURCES,
   buildBalances,
+  monthStatement,
+  type BalanceLine,
   matchPartner,
   rowMath,
   type AcctRow,
@@ -589,98 +591,105 @@ function EntryForm({ partners, onDone }: { partners: Partner[]; onDone: () => vo
 function BalancesTab({
   rows, book, partners, onSettle,
 }: { rows: AcctRow[]; book: Book; partners: Partner[]; onSettle: (d: Partial<Payment>) => void }) {
-  const balances = buildBalances(rows, book.payments, partners)
-    .filter((b) => b.partnerId || b.balance !== 0 || b.ourCost !== 0)
-    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
-  const owedToUs = balances.filter((b) => b.balance > 0).reduce((s, b) => s + b.balance, 0);
-  const weOwe = balances.filter((b) => b.balance < 0).reduce((s, b) => s - b.balance, 0);
+  const all = buildBalances(rows, book.payments, partners).filter((b) => b.partnerId || b.lines.length || b.opening);
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  // Every month from the first opening date / first line up to now.
+  const first = [...all.map((b) => b.from.slice(0, 7)), ...all.flatMap((b) => b.lines.map((l) => l.date.slice(0, 7)))].filter(Boolean).sort()[0] ?? thisMonth;
+  const months: string[] = [];
+  for (let m = first; m <= thisMonth; m = nextMonth(m)) months.push(m);
+  const [month, setMonth] = useState(thisMonth);
   const [open, setOpen] = useState<string | null>(null);
+  const current = month === thisMonth;
+
+  const owedToUs = all.filter((b) => b.balance > 0).reduce((s, b) => s + b.balance, 0);
+  const weOwe = all.filter((b) => b.balance < 0).reduce((s, b) => s - b.balance, 0);
+  const list = all
+    .map((b) => ({ b, st: monthStatement(b, month) }))
+    .filter(({ st }) => st.tracked)
+    .sort((x, y) => Math.abs(y.st.carried) - Math.abs(x.st.carried));
+  const owe = (n: number) =>
+    n === 0 ? <span className="text-sage">settled</span> : n > 0 ? <span className="text-forest">owes you {mx(n)}</span> : <span className="text-terracotta">you owe {mx(-n)}</span>;
 
   return (
     <>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <Stat label="Partners owe you" value={mx(owedToUs)} />
-        <Stat label="You owe partners" value={mx(weOwe)} bad={weOwe > 0} />
+        <Stat label="Partners owe you (today)" value={mx(owedToUs)} />
+        <Stat label="You owe partners (today)" value={mx(weOwe)} bad={weOwe > 0} />
       </div>
       <Box
-        title="Balances by partner"
-        desc="Balance = opening + client money they collected for us − their cost for services they performed − commission they earned − what they paid us + what we paid them. Record a payment and the balance updates; ‘Settle’ pre-fills it."
+        title={`Balances by partner — ${monthLabel(month)}`}
+        desc="Like the monthly sheets: what was owed from last month, this month's bookings and payments, and what carries over to next month. A client who paid THEM (their terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Commissions are in the Commissions tab."
+        right={
+          <select value={month} onChange={(e) => { setMonth(e.target.value); setOpen(null); }} aria-label="Month" className="rounded-full border border-sand bg-white px-4 py-2 text-[13px] text-ink outline-none focus:border-forest">
+            {[...months].reverse().map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
+        }
       >
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
             <thead>
               <tr>
-                {["Partner", "Opening", "Collected for us", "Their services (our cost)", "Commission earned", "They paid us", "We paid them", "Balance", ""].map((h, i) => (
+                {["Partner", "From last month", "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Now" : "End of month", ""].map((h, i) => (
                   <th key={h + i} className={`${th} ${i > 0 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {balances.map((b) => (
+              {list.map(({ b, st }) => (
                 <Fragment key={b.name}>
-                <tr>
-                  <td className={`${td} font-semibold`}>
-                    <button className="text-left hover:text-forest" onClick={() => setOpen(open === b.name ? null : b.name)} aria-expanded={open === b.name}>
-                      {open === b.name ? "▾" : "▸"} {b.name}
-                    </button>
-                    {!b.partnerId && <span className="ml-1.5 text-[10.5px] font-normal text-sage">(not in Partners)</span>}
-                  </td>
-                  <td className={tdr}>{b.opening ? mx(b.opening) : "—"}</td>
-                  <td className={tdr}>{b.collected ? mx(b.collected) : "—"}</td>
-                  <td className={tdr}>{b.ourCost ? mx(b.ourCost) : "—"}</td>
-                  <td className={tdr}>{b.commission ? mx(b.commission) : "—"}</td>
-                  <td className={tdr}>{b.received ? mx(b.received) : "—"}</td>
-                  <td className={tdr}>{b.paid ? mx(b.paid) : "—"}</td>
-                  <td className={`${tdr} font-semibold`}>
-                    {b.balance === 0 ? (
-                      <span className="text-sage">settled</span>
-                    ) : b.balance > 0 ? (
-                      <span className="text-forest">owes you {mx(b.balance)}</span>
-                    ) : (
-                      <span className="text-terracotta">you owe {mx(-b.balance)}</span>
-                    )}
-                  </td>
-                  <td className={td}>
-                    {b.balance !== 0 && (
-                      <button
-                        className="text-[12px] font-semibold text-forest underline underline-offset-2"
-                        onClick={() =>
-                          onSettle({
-                            partner: b.name,
-                            direction: b.balance > 0 ? "received" : "made",
-                            amount: Math.abs(b.balance),
-                            kind: "settlement",
-                          })
-                        }
-                      >
-                        Settle…
-                      </button>
-                    )}
-                  </td>
-                </tr>
-                {open === b.name && (
                   <tr>
-                    <td colSpan={9} className="border-b border-sand bg-cream/60 px-3 py-3">
-                      <BalanceLines b={b} />
+                    <td className={`${td} font-semibold`}>
+                      <button className="text-left hover:text-forest" onClick={() => setOpen(open === b.name ? null : b.name)} aria-expanded={open === b.name}>
+                        {open === b.name ? "▾" : "▸"} {b.name}
+                      </button>
+                      {!b.partnerId && <span className="ml-1.5 text-[10.5px] font-normal text-sage">(not in Partners)</span>}
+                    </td>
+                    <td className={tdr}>{owe(st.broughtForward)}</td>
+                    <td className={tdr}>{st.owesUs ? mx(st.owesUs) : "—"}</td>
+                    <td className={tdr}>{st.weOwe ? mx(st.weOwe) : "—"}</td>
+                    <td className={tdr}>{st.theyPaid ? mx(st.theyPaid) : "—"}</td>
+                    <td className={tdr}>{st.wePaid ? mx(st.wePaid) : "—"}</td>
+                    <td className={`${tdr} font-semibold`}>{owe(st.carried)}</td>
+                    <td className={td}>
+                      {current && b.balance !== 0 && (
+                        <button
+                          className="text-[12px] font-semibold text-forest underline underline-offset-2"
+                          onClick={() => onSettle({ partner: b.name, direction: b.balance > 0 ? "received" : "made", amount: Math.abs(b.balance), kind: "settlement" })}
+                        >
+                          Settle…
+                        </button>
+                      )}
                     </td>
                   </tr>
-                )}
+                  {open === b.name && (
+                    <tr>
+                      <td colSpan={8} className="border-b border-sand bg-cream/60 px-3 py-3">
+                        <BalanceLines start={st.broughtForward} lines={st.lines} month={month} />
+                      </td>
+                    </tr>
+                  )}
                 </Fragment>
               ))}
             </tbody>
           </table>
         </div>
         <p className="mt-3 text-[12px] text-sage">
-          Opening balances and the date they start from are set per partner in <a href="/admin/partners" className="font-semibold text-forest underline underline-offset-2">Partners &amp; Affiliates</a>.
+          The first month starts from the opening balance set per partner in <a href="/admin/partners" className="font-semibold text-forest underline underline-offset-2">Partners &amp; Affiliates</a>; after that every month starts where the last one ended.
         </p>
       </Box>
     </>
   );
 }
 
-/** Everything behind one partner's balance, with a running total. */
-function BalanceLines({ b }: { b: ReturnType<typeof buildBalances>[number] }) {
-  let run = b.opening;
+const nextMonth = (m: string) => {
+  const [y, mo] = m.split("-").map(Number);
+  return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, "0")}`;
+};
+
+/** One partner's month, line by line, with the running total. */
+function BalanceLines({ start, lines, month }: { start: number; lines: BalanceLine[]; month: string }) {
+  let run = start;
+  const say = (n: number) => (n > 0 ? `owes you ${mx(n)}` : n < 0 ? `you owe ${mx(-n)}` : "settled");
   return (
     <table className="min-w-full border-collapse text-[12.5px]">
       <thead>
@@ -689,18 +698,21 @@ function BalanceLines({ b }: { b: ReturnType<typeof buildBalances>[number] }) {
       <tbody>
         <tr>
           <td className={td} />
-          <td className={`${td} text-sage`}>Opening balance{b.opening ? "" : " (none)"}</td>
+          <td className={`${td} text-sage`}>From last month</td>
           <td className={tdr} />
-          <td className={tdr}>{mx(b.opening)}</td>
+          <td className={tdr}>{say(start)}</td>
         </tr>
-        {b.lines.map((l, i) => {
+        {lines.length === 0 && (
+          <tr><td className={td} /><td className={`${td} italic text-sage`} colSpan={3}>Nothing in {monthLabel(month)}.</td></tr>
+        )}
+        {lines.map((l, i) => {
           run += l.amount;
           return (
             <tr key={i}>
               <td className={`${td} whitespace-nowrap`}>{l.date}</td>
               <td className={td}>{l.label}</td>
               <td className={`${tdr} ${l.amount < 0 ? "text-terracotta" : "text-forest"}`}>{l.amount > 0 ? "+" : "−"}{mx(Math.abs(l.amount))}</td>
-              <td className={tdr}>{run > 0 ? `owes you ${mx(run)}` : run < 0 ? `you owe ${mx(-run)}` : "settled"}</td>
+              <td className={tdr}>{say(run)}</td>
             </tr>
           );
         })}

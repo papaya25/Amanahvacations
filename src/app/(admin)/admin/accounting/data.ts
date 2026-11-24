@@ -106,6 +106,7 @@ const groupKeyOf = (phone: string | null | undefined, name: string) => {
   return d.length >= 7 ? `p${d.slice(-9)}` : `n${name.toLowerCase().replace(/[^a-z]/g, "")}`;
 };
 
+const COMMISSION_ON_COST_FROM = "2026-11-01";
 const ONLINE_METHODS = new Set(["Credit / Debit Card", "Stripe", "PayPal", "Wise", "Mercado Pago"]);
 const realizedOrder = (s: string) => s !== "Cancelled" && s !== "Pending payment";
 const paidOnline = (o: OrderRaw) => o.source !== "manual" && o.status.startsWith("Paid");
@@ -271,9 +272,12 @@ export async function getAccounting(): Promise<AccountingData> {
     if (ours.length) {
       const provider = a.provider ?? ours.find((it) => it.meta?.performed_by)?.meta?.performed_by ?? "";
       const providerPartner = matchPartner(provider, partners);
-      const commissionBase = rest
-        .filter((it) => !isFeeLine(it) && !isTransferLine(it))
-        .reduce((s, it) => s + (Number(it.total) || 0), 0);
+      const tourItems = rest.filter((it) => !isFeeLine(it) && !isTransferLine(it));
+      // From Nov 2026 the affiliate's % is on OUR COST of the tour, before that on the price.
+      const commissionBase =
+        date >= COMMISSION_ON_COST_FROM
+          ? a.cost ?? tourItems.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0)
+          : tourItems.reduce((s, it) => s + (Number(it.total) || 0), 0);
       rows.push({
         ...common,
         key: `o:${o.id}`,

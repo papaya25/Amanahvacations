@@ -1,6 +1,6 @@
 // Run: node --experimental-strip-types scripts/accounting-check.mts
 import assert from "node:assert";
-import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge, parseStripeRef } from "../src/lib/accounting.ts";
+import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, monthStatement, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge, parseStripeRef } from "../src/lib/accounting.ts";
 assert.equal(countryFromPhone("+1 8196647489")?.name, "Canada");
 assert.equal(countryFromPhone("+1 (678) 717-7781")?.name, "USA");
 assert.equal(countryFromPhone("+44 7946 472769")?.name, "United Kingdom");
@@ -24,7 +24,8 @@ const b = buildBalances([
   { ...base, date: "2099-01-01", provider: "Moussa", collectedBy: "Moussa", charged: 5000, cost: 0, affiliate: null, commission: 0 }, // future: not owed yet
 ], [{ id: "p", date: "2026-09-05", partner: "TutCasa", direction: "received", kind: "settlement", method: "Transfer", amount: 1000, note: "" }], DEFAULT_PARTNERS);
 const by = Object.fromEntries(b.map((x) => [x.name, x.balance]));
-assert.deepEqual(by, { TutCasa: 1300 - 370 - 1000, Moussa: 400, JF: -1000, "Azul Riviera": -6400 });
+// Commission (370) is NOT in balances — it lives in the Commissions tab.
+assert.deepEqual(by, { TutCasa: 1300 - 1000, Moussa: 400, JF: -1000, "Azul Riviera": -6400 });
 // Transfer cost tiers by seated people; babies (under 2) don't take a seat.
 assert.deepEqual([1, 2, 3, 4, 6, 7, 9].map(transferCostId), ["transfer-1", "transfer-2", "transfer-3", "transfer-4-6", "transfer-4-6", "transfer-7-8", "transfer-9plus"]);
 assert.equal(seatPax({ adults: 2, kids: 2, kids_ages: "1, 6", passengers: 4 }), 3);
@@ -48,3 +49,19 @@ const pay = (id: string, amount: number, imported?: boolean) => ({ id, date: "20
 const mb = buildBalances([], [pay("y-3", 1000, true), pay("p-1", 850)], opened).find((x) => x.name === "Moussa")!;
 assert.equal(mb.balance, 0);
 console.log("opening-date payments ok");
+
+// Month by month: September ends where October starts (like the monthly sheets).
+const jf = DEFAULT_PARTNERS.map((p) => (p.id === "jf" ? { ...p, openingDate: "2026-09-01", openingBalance: 500 } : p));
+const jb = buildBalances([
+  { ...base, date: "2026-09-10", provider: "JF", collectedBy: "JF", charged: 7850, cost: 6700, affiliate: null, commission: 0 }, // card on JF's terminal → +1150
+  { ...base, date: "2026-10-05", provider: "JF", collectedBy: "Amanah", charged: 9000, cost: 8000, affiliate: null, commission: 0, method: "Stripe" }, // → −8000
+], [
+  { id: "c", date: "2026-10-06", partner: "JF", direction: "made", kind: "commission", method: "Cash", amount: 99, note: "" }, // ignored here
+  { id: "w", date: "2026-10-20", partner: "JF", direction: "made", kind: "settlement", method: "Wise", amount: 3000, note: "" },
+], jf).find((x) => x.name === "JF")!;
+const sep = monthStatement(jb, "2026-09"), oct = monthStatement(jb, "2026-10");
+assert.deepEqual([sep.broughtForward, sep.owesUs, sep.carried], [500, 1150, 1650]);
+assert.deepEqual([oct.broughtForward, oct.weOwe, oct.wePaid, oct.carried], [1650, 8000, 3000, 1650 - 8000 + 3000]);
+assert.equal(jb.balance, oct.carried);
+assert.equal(monthStatement(jb, "2026-08").tracked, false);
+console.log("monthly statement ok");
