@@ -21,7 +21,6 @@ const b = buildBalances([
   { ...base, date: "2026-09-02", provider: "Moussa", collectedBy: "Moussa", charged: 1200, cost: 800, affiliate: null, commission: 0 },
   { ...base, date: "2026-09-03", provider: "JF Tours", collectedBy: "TutCasa", charged: 1300, cost: 1000, affiliate: "TutCasa", commission: 0 },
   { ...base, date: "2026-09-04", provider: "Azul Riviera", collectedBy: "Amanah", charged: 7400, cost: 6400, affiliate: "TutCasa", commission: 370 },
-  { ...base, date: "2099-01-01", provider: "Moussa", collectedBy: "Moussa", charged: 5000, cost: 0, affiliate: null, commission: 0 }, // future: not owed yet
 ], [{ id: "p", date: "2026-09-05", partner: "TutCasa", direction: "received", kind: "settlement", method: "Transfer", amount: 1000, note: "" }], DEFAULT_PARTNERS);
 const by = Object.fromEntries(b.map((x) => [x.name, x.balance]));
 // Commission (370) is NOT in balances — it lives in the Commissions tab.

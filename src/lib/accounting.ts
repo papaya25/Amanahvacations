@@ -304,9 +304,9 @@ const AMANAH = "amanah";
 export function buildBalances(
   rows: AcctRow[],
   payments: Payment[],
-  partners: Partner[],
-  asOf = new Date().toISOString().slice(0, 10) // services still in the future aren't owed yet
+  partners: Partner[]
 ): PartnerBalance[] {
+  // Every booked service counts in its own month, upcoming ones too (often prepaid).
   const map = new Map<string, PartnerBalance>();
   const get = (name: string) => {
     const p = matchPartner(name, partners);
@@ -319,7 +319,6 @@ export function buildBalances(
   };
   partners.forEach((p) => get(p.name));
   for (const r of rows) {
-    if (r.date > asOf) continue;
     const who = `${r.name || "—"} · ${r.service}${r.description ? ` (${r.description})` : ""}`;
     const c = r.collectedBy ? get(r.collectedBy) : null;
     if (r.parts?.length) {
