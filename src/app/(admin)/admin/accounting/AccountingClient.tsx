@@ -607,7 +607,7 @@ function BalancesTab({
   const owedToUs = all.filter((b) => b.balance > 0).reduce((s, b) => s + b.balance, 0);
   const weOwe = all.filter((b) => b.balance < 0).reduce((s, b) => s - b.balance, 0);
   const list = all
-    .map((b) => ({ b, st: periodStatement(b, year) }))
+    .map((b) => ({ b, st: periodStatement(b, year, current) }))
     .sort((x, y) => Math.abs(y.st.carried) - Math.abs(x.st.carried));
   const owe = (n: number) =>
     n === 0 ? <span className="text-sage">settled</span> : n > 0 ? <span className="text-forest">owes you {mx(n)}</span> : <span className="text-terracotta">you owe {mx(-n)}</span>;
@@ -632,7 +632,7 @@ function BalancesTab({
           <table className="min-w-full border-collapse">
             <thead>
               <tr>
-                {["Partner", `From last ${span}`, "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Balance now" : `End of ${span}`, ""].map((h, i) => (
+                {["Partner", `From last ${span}`, "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Balance now (incl. upcoming)" : `End of ${span}`, ""].map((h, i) => (
                   <th key={h + i} className={`${th} ${i > 0 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
