@@ -251,9 +251,7 @@ export type BalanceLine = { date: string; label: string; amount: number; type: "
 export type PartnerBalance = {
   name: string;
   partnerId: string | null;
-  opening: number;
-  from: string; // opening date: the opening balance is what they owed just before it
-  balance: number; // today
+  balance: number; // today — built from every booking and payment on record, no opening number
   lines: BalanceLine[]; // oldest first
 };
 
@@ -315,50 +313,46 @@ export function buildBalances(
     const k = p?.id ?? norm(name);
     if (!k || k === AMANAH) return null;
     if (!map.has(k)) {
-      map.set(k, { name: p?.name ?? name.trim(), partnerId: p?.id ?? null, from: p?.openingDate ?? "", opening: p?.openingBalance ?? 0, balance: 0, lines: [] });
+      map.set(k, { name: p?.name ?? name.trim(), partnerId: p?.id ?? null, balance: 0, lines: [] });
     }
     return map.get(k)!;
   };
   partners.forEach((p) => get(p.name));
-  // Anything dated before a partner's opening date is already in its opening balance.
-  const live = (b: PartnerBalance | null, date: string): b is PartnerBalance => !!b && (!b.from || date >= b.from);
   for (const r of rows) {
     if (r.date > asOf) continue;
     const who = `${r.name || "—"} · ${r.service}${r.description ? ` (${r.description})` : ""}`;
     const c = r.collectedBy ? get(r.collectedBy) : null;
     if (r.parts?.length) {
-      if (live(c, r.date) && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
+      if (c && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
       for (const part of r.parts) {
         if (/^amanah/i.test(part.partner.trim())) continue; // paid by us directly — just shown on the booking
         const s = get(part.partner);
-        if (live(s, r.date) && part.cost) s.lines.push({ date: r.date, label: `${who} — their part${part.what ? `: ${part.what}` : ""}`, amount: -part.cost, type: "weOwe" });
+        if (s && part.cost) s.lines.push({ date: r.date, label: `${who} — their part${part.what ? `: ${part.what}` : ""}`, amount: -part.cost, type: "weOwe" });
       }
       continue;
     }
     const p = r.provider ? get(r.provider) : null;
     if (c && c === p) {
       // Client paid them for a service they did → they owe us our profit.
-      if (live(c, r.date) && (r.charged || r.cost)) {
+      if (c && (r.charged || r.cost)) {
         const profit = r.charged - r.cost;
         c.lines.push({ date: r.date, label: `${who} — client paid them ${fmt(r.charged)}, their cost ${fmt(r.cost)}`, amount: profit, type: profit >= 0 ? "owesUs" : "weOwe" });
       }
       continue;
     }
-    if (live(c, r.date) && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
-    if (live(p, r.date) && r.cost) p.lines.push({ date: r.date, label: `${who} — client paid us, their cost`, amount: -r.cost, type: "weOwe" });
+    if (c && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
+    if (p && r.cost) p.lines.push({ date: r.date, label: `${who} — client paid us, their cost`, amount: -r.cost, type: "weOwe" });
   }
   for (const pay of payments) {
     if (pay.kind === "commission") continue; // → Commissions tab
     const b = get(pay.partner);
-    // Only spreadsheet imports are already in the opening balance; a payment
-    // typed in here always counts, whatever its date.
-    if (!b || (pay.imported && !live(b, pay.date))) continue;
+    if (!b) continue;
     const got = pay.direction === "received";
     b.lines.push({ date: pay.date, label: `${got ? "They paid us" : "We paid them"}${pay.note ? ` — ${pay.note}` : ""}`, amount: got ? -pay.amount : pay.amount, type: got ? "theyPaid" : "wePaid" });
   }
   return [...map.values()].map((b) => {
     b.lines.sort((x, y) => x.date.localeCompare(y.date));
-    return { ...b, balance: b.opening + b.lines.reduce((s, l) => s + l.amount, 0) };
+    return { ...b, balance: b.lines.reduce((s, l) => s + l.amount, 0) };
   });
 }
 
@@ -370,9 +364,8 @@ export function periodStatement(b: PartnerBalance, period: string) {
   const start = period.length === 4 ? `${period}-01-01` : `${period}-01`;
   const lines = b.lines.filter((l) => l.date.startsWith(period));
   const sum = (t: BalanceLine["type"]) => lines.filter((l) => l.type === t).reduce((s, l) => s + l.amount, 0);
-  const broughtForward = b.opening + b.lines.filter((l) => l.date < start).reduce((s, l) => s + l.amount, 0);
+  const broughtForward = b.lines.filter((l) => l.date < start).reduce((s, l) => s + l.amount, 0);
   return {
-    tracked: !b.from || period >= b.from.slice(0, period.length),
     broughtForward,
     owesUs: sum("owesUs"),
     weOwe: -sum("weOwe"),

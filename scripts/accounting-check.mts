@@ -42,16 +42,17 @@ assert.equal(parseStripeRef(" ch_123abc "), "ch_123abc");
 assert.equal(parseStripeRef("1262"), "");
 console.log("stripe ref ok");
 
-// Payments before the opening date: spreadsheet imports are already in the opening
-// balance (skipped); a payment typed in later always counts (Moussa paid 850 on Aug 29).
-const opened = DEFAULT_PARTNERS.map((p) => ({ ...p, openingDate: "2026-09-01", openingBalance: p.id === "moussa" ? 850 : 0 }));
-const pay = (id: string, amount: number, imported?: boolean) => ({ id, date: "2026-08-29", partner: "Moussa", direction: "received" as const, kind: "settlement" as const, method: "Cash", amount, note: "", imported });
-const mb = buildBalances([], [pay("y-3", 1000, true), pay("p-1", 850)], opened).find((x) => x.name === "Moussa")!;
+// No opening numbers: history lines count like any other (Moussa: profit 850, then paid 850).
+const mb = buildBalances(
+  [{ ...base, date: "2026-08-01", provider: "Moussa", collectedBy: "Moussa", charged: 1650, cost: 800, affiliate: null, commission: 0 }],
+  [{ id: "y", date: "2026-08-29", partner: "Moussa", direction: "received", kind: "settlement", method: "Cash", amount: 850, note: "", imported: true }],
+  DEFAULT_PARTNERS
+).find((x) => x.name === "Moussa")!;
 assert.equal(mb.balance, 0);
-console.log("opening-date payments ok");
+console.log("history ok");
 
 // Statements per month or year: each period starts where the last one ended.
-const jf = DEFAULT_PARTNERS.map((p) => (p.id === "jf" ? { ...p, openingDate: "2026-09-01", openingBalance: 500 } : p));
+const jf = DEFAULT_PARTNERS;
 const jb = buildBalances([
   { ...base, date: "2026-09-10", provider: "JF", collectedBy: "JF", charged: 7850, cost: 6700, affiliate: null, commission: 0 }, // card on JF's terminal → +1150
   { ...base, date: "2026-10-05", provider: "JF", collectedBy: "Amanah", charged: 9000, cost: 8000, affiliate: null, commission: 0, method: "Stripe" }, // → −8000
@@ -60,12 +61,11 @@ const jb = buildBalances([
   { id: "w", date: "2026-10-20", partner: "JF", direction: "made", kind: "settlement", method: "Wise", amount: 3000, note: "" },
 ], jf).find((x) => x.name === "JF")!;
 const sep = periodStatement(jb, "2026-09"), oct = periodStatement(jb, "2026-10");
-assert.deepEqual([sep.broughtForward, sep.owesUs, sep.carried], [500, 1150, 1650]);
-assert.deepEqual([oct.broughtForward, oct.weOwe, oct.wePaid, oct.carried], [1650, 8000, 3000, 1650 - 8000 + 3000]);
+assert.deepEqual([sep.broughtForward, sep.owesUs, sep.carried], [0, 1150, 1150]);
+assert.deepEqual([oct.broughtForward, oct.weOwe, oct.wePaid, oct.carried], [1150, 8000, 3000, 1150 - 8000 + 3000]);
 assert.equal(jb.balance, oct.carried);
-assert.equal(periodStatement(jb, "2026-08").tracked, false);
 const y = periodStatement(jb, "2026");
-assert.deepEqual([y.broughtForward, y.owesUs, y.weOwe, y.wePaid, y.carried], [500, 1150, 8000, 3000, jb.balance]);
+assert.deepEqual([y.broughtForward, y.owesUs, y.weOwe, y.wePaid, y.carried], [0, 1150, 8000, 3000, jb.balance]);
 assert.equal(periodStatement(jb, "2027").broughtForward, jb.balance);
 console.log("statements ok");
 

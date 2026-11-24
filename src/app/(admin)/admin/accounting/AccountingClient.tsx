@@ -591,9 +591,9 @@ function EntryForm({ partners, onDone }: { partners: Partner[]; onDone: () => vo
 function BalancesTab({
   rows, book, partners, onSettle,
 }: { rows: AcctRow[]; book: Book; partners: Partner[]; onSettle: (d: Partial<Payment>) => void }) {
-  const all = buildBalances(rows, book.payments, partners).filter((b) => b.partnerId || b.lines.length || b.opening);
+  const all = buildBalances(rows, book.payments, partners).filter((b) => b.partnerId || b.lines.length);
   const thisYear = new Date().toISOString().slice(0, 4);
-  const first = [...all.map((b) => b.from.slice(0, 4)), ...all.flatMap((b) => b.lines.map((l) => l.date.slice(0, 4)))].filter(Boolean).sort()[0] ?? thisYear;
+  const first = all.flatMap((b) => b.lines.map((l) => l.date.slice(0, 4))).filter(Boolean).sort()[0] ?? thisYear;
   const years: string[] = [];
   for (let y = Number(thisYear); y >= Number(first); y--) years.push(String(y));
   const [year, setYear] = useState(thisYear);
@@ -604,7 +604,6 @@ function BalancesTab({
   const weOwe = all.filter((b) => b.balance < 0).reduce((s, b) => s - b.balance, 0);
   const list = all
     .map((b) => ({ b, st: periodStatement(b, year) }))
-    .filter(({ st }) => st.tracked)
     .sort((x, y) => Math.abs(y.st.carried) - Math.abs(x.st.carried));
   const owe = (n: number) =>
     n === 0 ? <span className="text-sage">settled</span> : n > 0 ? <span className="text-forest">owes you {mx(n)}</span> : <span className="text-terracotta">you owe {mx(-n)}</span>;
@@ -628,7 +627,7 @@ function BalancesTab({
           <table className="min-w-full border-collapse">
             <thead>
               <tr>
-                {["Partner", "Opening", "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Balance now" : `End of ${year}`, ""].map((h, i) => (
+                {["Partner", "From last year", "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Balance now" : `End of ${year}`, ""].map((h, i) => (
                   <th key={h + i} className={`${th} ${i > 0 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -673,7 +672,7 @@ function BalancesTab({
           </table>
         </div>
         <p className="mt-3 text-[12px] text-sage">
-          Opening = the balance set per partner in <a href="/admin/partners" className="font-semibold text-forest underline underline-offset-2">Partners &amp; Affiliates</a> (from your 2026 sheets); next year it starts automatically where this year ended.
+          No opening numbers: every balance is built from the bookings and payments on record (your July–August spreadsheet lines included), so each amount can be traced to a line. Each new year starts where the last one ended.
         </p>
       </Box>
     </>
@@ -692,7 +691,7 @@ function BalanceLines({ start, lines }: { start: number; lines: BalanceLine[] })
       <tbody>
         <tr>
           <td className={td} />
-          <td className={`${td} text-sage`}>Opening</td>
+          <td className={`${td} text-sage`}>From last year</td>
           <td className={tdr} />
           <td className={tdr}>{say(start)}</td>
         </tr>

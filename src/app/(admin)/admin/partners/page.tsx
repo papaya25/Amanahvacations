@@ -71,8 +71,6 @@ export default function PartnersPage() {
           </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Opening balance (+ they owe you)" type="number" prefix="$" suffix="MXN" value={p.openingBalance} onChange={(v) => set(p.id, { openingBalance: num(v) })} />
-            <Field label="Balance counted from" type="date" value={p.openingDate} onChange={(v) => set(p.id, { openingDate: v })} />
             <div className="lg:col-span-2">
               <Field label="Notes" value={p.notes} onChange={(v) => set(p.id, { notes: v })} />
             </div>
