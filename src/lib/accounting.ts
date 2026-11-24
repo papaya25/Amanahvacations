@@ -47,7 +47,7 @@ export const DEFAULT_PARTNERS: Partner[] = [
 /** Where a client came from (besides partners, which are added to the list). */
 export const SOURCES = ["Website", "WhatsApp / direct", "Mosque", "Connections", "Other"];
 
-export const PAYMENT_METHODS = ["Cash", "Card", "Stripe", "Bank transfer", "PayPal", "Other"];
+export const PAYMENT_METHODS = ["Cash", "Card", "Stripe", "PayPal", "Wise", "Bank transfer", "Other"];
 
 const norm = (s: string) => s.toLowerCase().replace(/\btours?\b/g, "").replace(/[^a-z0-9]/g, "");
 

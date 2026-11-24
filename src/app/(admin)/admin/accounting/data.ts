@@ -106,7 +106,7 @@ const groupKeyOf = (phone: string | null | undefined, name: string) => {
   return d.length >= 7 ? `p${d.slice(-9)}` : `n${name.toLowerCase().replace(/[^a-z]/g, "")}`;
 };
 
-const ONLINE_METHODS = new Set(["Credit / Debit Card", "Stripe", "PayPal", "Mercado Pago"]);
+const ONLINE_METHODS = new Set(["Credit / Debit Card", "Stripe", "PayPal", "Wise", "Mercado Pago"]);
 const realizedOrder = (s: string) => s !== "Cancelled" && s !== "Pending payment";
 const paidOnline = (o: OrderRaw) => o.source !== "manual" && o.status.startsWith("Paid");
 
@@ -285,7 +285,7 @@ export async function getAccounting(): Promise<AccountingData> {
         affiliate: affiliate?.name ?? null,
         provider,
         // A partner who runs the tour (JF, Azul Riviera…) collects the client's
-        // money themselves — unless we took it online (Stripe / PayPal).
+        // money themselves — unless we took it ourselves (Stripe / PayPal / Wise).
         collectedBy: a.collectedBy ?? (providerPartner?.provider && !ONLINE_METHODS.has(method) ? providerPartner.name : "Amanah"),
         charged: a.charged ?? (stripeGross && !paidStays.length ? stripeGross : o.total - stayTotal - passThroughTotal),
         cost: a.cost ?? ours.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0),
