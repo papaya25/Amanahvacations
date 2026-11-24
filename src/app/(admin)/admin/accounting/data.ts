@@ -289,20 +289,11 @@ export async function getAccounting(): Promise<AccountingData> {
         description: rest.filter((it) => !isFeeLine(it)).map((it) => it.title).join(" + "),
         affiliate: affiliate?.name ?? null,
         provider,
-        // Unless we took the money ourselves (Stripe / PayPal / Wise): a partner who
-        // runs the tour (JF, Azul Riviera…) collects it on their terminal / in cash;
-        // otherwise a partner that bills us for its guests (TutCasa) collects it —
-        // by transfer, never cash: a cash booking was paid to us.
-        // Exceptions (e.g. Jennifer) are set per row with "Collected by".
-        collectedBy:
-          a.collectedBy ??
-          (ONLINE_METHODS.has(method)
-            ? "Amanah"
-            : providerPartner?.provider
-              ? providerPartner.name
-              : affiliate && method !== "Cash" && partnerTransferRate(affiliate, people) > 0
-                ? affiliate.name
-                : "Amanah"),
+        // A partner who runs the tour (JF, Azul Riviera…) collects the client's
+        // money on their terminal / in cash — unless we took it ourselves
+        // (Stripe / PayPal / Wise). TutCasa only ever collects for airport
+        // transfers (see below); other exceptions are set per row ("Collected by").
+        collectedBy: a.collectedBy ?? (providerPartner?.provider && !ONLINE_METHODS.has(method) ? providerPartner.name : "Amanah"),
         charged: a.charged ?? (stripeGross && !paidStays.length ? stripeGross : o.total - stayTotal - passThroughTotal),
         cost: a.cost ?? ours.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0),
         fee: orderFee,
