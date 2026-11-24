@@ -1046,7 +1046,7 @@ function YearTab({ rows, book, partners, rate }: { rows: AcctRow[]; book: Book; 
         <Breakdown title="Where clients came from" rows={yr} tax={tax} by={(r) => r.source} />
         <Breakdown title="By payment method" rows={yr} tax={tax} by={(r) => r.method} />
         <Breakdown title="By country" rows={yr} tax={tax} by={(r) => r.country} />
-        <Breakdown title="By provider" rows={yr} tax={tax} by={(r) => matchPartner(r.provider, partners)?.name ?? (r.provider || "Amanah (ourselves)")} />
+        <Breakdown title="By provider" rows={yr} tax={tax} by={(r) => matchPartner(r.provider, partners)?.name ?? (!r.provider.trim() || /^amanah/i.test(r.provider.trim()) ? "Amanah (ourselves)" : r.provider)} />
       </div>
 
       <p className="text-[12.5px] text-sage">Business expenses (RFC, accountant, ads…) are in their own tab and come off the year&apos;s profit above.</p>
