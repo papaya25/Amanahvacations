@@ -1,6 +1,6 @@
 // Run: node --experimental-strip-types scripts/accounting-check.mts
 import assert from "node:assert";
-import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, monthStatement, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge, parseStripeRef } from "../src/lib/accounting.ts";
+import { countryFromPhone, matchPartner, DEFAULT_PARTNERS, buildBalances, periodStatement, rowMath, partnerTransferRate, seatPax, transferCostId, isBabyAge, parseStripeRef } from "../src/lib/accounting.ts";
 assert.equal(countryFromPhone("+1 8196647489")?.name, "Canada");
 assert.equal(countryFromPhone("+1 (678) 717-7781")?.name, "USA");
 assert.equal(countryFromPhone("+44 7946 472769")?.name, "United Kingdom");
@@ -50,7 +50,7 @@ const mb = buildBalances([], [pay("y-3", 1000, true), pay("p-1", 850)], opened).
 assert.equal(mb.balance, 0);
 console.log("opening-date payments ok");
 
-// Month by month: September ends where October starts (like the monthly sheets).
+// Statements per month or year: each period starts where the last one ended.
 const jf = DEFAULT_PARTNERS.map((p) => (p.id === "jf" ? { ...p, openingDate: "2026-09-01", openingBalance: 500 } : p));
 const jb = buildBalances([
   { ...base, date: "2026-09-10", provider: "JF", collectedBy: "JF", charged: 7850, cost: 6700, affiliate: null, commission: 0 }, // card on JF's terminal → +1150
@@ -59,9 +59,12 @@ const jb = buildBalances([
   { id: "c", date: "2026-10-06", partner: "JF", direction: "made", kind: "commission", method: "Cash", amount: 99, note: "" }, // ignored here
   { id: "w", date: "2026-10-20", partner: "JF", direction: "made", kind: "settlement", method: "Wise", amount: 3000, note: "" },
 ], jf).find((x) => x.name === "JF")!;
-const sep = monthStatement(jb, "2026-09"), oct = monthStatement(jb, "2026-10");
+const sep = periodStatement(jb, "2026-09"), oct = periodStatement(jb, "2026-10");
 assert.deepEqual([sep.broughtForward, sep.owesUs, sep.carried], [500, 1150, 1650]);
 assert.deepEqual([oct.broughtForward, oct.weOwe, oct.wePaid, oct.carried], [1650, 8000, 3000, 1650 - 8000 + 3000]);
 assert.equal(jb.balance, oct.carried);
-assert.equal(monthStatement(jb, "2026-08").tracked, false);
-console.log("monthly statement ok");
+assert.equal(periodStatement(jb, "2026-08").tracked, false);
+const y = periodStatement(jb, "2026");
+assert.deepEqual([y.broughtForward, y.owesUs, y.weOwe, y.wePaid, y.carried], [500, 1150, 8000, 3000, jb.balance]);
+assert.equal(periodStatement(jb, "2027").broughtForward, jb.balance);
+console.log("statements ok");

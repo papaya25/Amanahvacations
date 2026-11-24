@@ -11,7 +11,7 @@ import {
   SERVICE_TYPES,
   SOURCES,
   buildBalances,
-  monthStatement,
+  periodStatement,
   type BalanceLine,
   matchPartner,
   rowMath,
@@ -592,19 +592,18 @@ function BalancesTab({
   rows, book, partners, onSettle,
 }: { rows: AcctRow[]; book: Book; partners: Partner[]; onSettle: (d: Partial<Payment>) => void }) {
   const all = buildBalances(rows, book.payments, partners).filter((b) => b.partnerId || b.lines.length || b.opening);
-  const thisMonth = new Date().toISOString().slice(0, 7);
-  // Every month from the first opening date / first line up to now.
-  const first = [...all.map((b) => b.from.slice(0, 7)), ...all.flatMap((b) => b.lines.map((l) => l.date.slice(0, 7)))].filter(Boolean).sort()[0] ?? thisMonth;
-  const months: string[] = [];
-  for (let m = first; m <= thisMonth; m = nextMonth(m)) months.push(m);
-  const [month, setMonth] = useState(thisMonth);
+  const thisYear = new Date().toISOString().slice(0, 4);
+  const first = [...all.map((b) => b.from.slice(0, 4)), ...all.flatMap((b) => b.lines.map((l) => l.date.slice(0, 4)))].filter(Boolean).sort()[0] ?? thisYear;
+  const years: string[] = [];
+  for (let y = Number(thisYear); y >= Number(first); y--) years.push(String(y));
+  const [year, setYear] = useState(thisYear);
   const [open, setOpen] = useState<string | null>(null);
-  const current = month === thisMonth;
+  const current = year === thisYear;
 
   const owedToUs = all.filter((b) => b.balance > 0).reduce((s, b) => s + b.balance, 0);
   const weOwe = all.filter((b) => b.balance < 0).reduce((s, b) => s - b.balance, 0);
   const list = all
-    .map((b) => ({ b, st: monthStatement(b, month) }))
+    .map((b) => ({ b, st: periodStatement(b, year) }))
     .filter(({ st }) => st.tracked)
     .sort((x, y) => Math.abs(y.st.carried) - Math.abs(x.st.carried));
   const owe = (n: number) =>
@@ -617,11 +616,11 @@ function BalancesTab({
         <Stat label="You owe partners (today)" value={mx(weOwe)} bad={weOwe > 0} />
       </div>
       <Box
-        title={`Balances by partner — ${monthLabel(month)}`}
-        desc="Like the monthly sheets: what was owed from last month, this month's bookings and payments, and what carries over to next month. A client who paid THEM (their terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Commissions are in the Commissions tab."
+        title={`Balances by partner — ${year}`}
+        desc="A client who paid THEM (their card terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Then the payments either way. Commissions are in the Commissions tab."
         right={
-          <select value={month} onChange={(e) => { setMonth(e.target.value); setOpen(null); }} aria-label="Month" className="rounded-full border border-sand bg-white px-4 py-2 text-[13px] text-ink outline-none focus:border-forest">
-            {[...months].reverse().map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          <select value={year} onChange={(e) => { setYear(e.target.value); setOpen(null); }} aria-label="Year" className="rounded-full border border-sand bg-white px-4 py-2 text-[13px] text-ink outline-none focus:border-forest">
+            {years.map((y) => <option key={y}>{y}</option>)}
           </select>
         }
       >
@@ -629,7 +628,7 @@ function BalancesTab({
           <table className="min-w-full border-collapse">
             <thead>
               <tr>
-                {["Partner", "From last month", "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Now" : "End of month", ""].map((h, i) => (
+                {["Partner", "Opening", "They owe you (clients paid them)", "You owe them (clients paid you)", "They paid you", "You paid them", current ? "Balance now" : `End of ${year}`, ""].map((h, i) => (
                   <th key={h + i} className={`${th} ${i > 0 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -664,7 +663,7 @@ function BalancesTab({
                   {open === b.name && (
                     <tr>
                       <td colSpan={8} className="border-b border-sand bg-cream/60 px-3 py-3">
-                        <BalanceLines start={st.broughtForward} lines={st.lines} month={month} />
+                        <BalanceLines start={st.broughtForward} lines={st.lines} />
                       </td>
                     </tr>
                   )}
@@ -674,20 +673,15 @@ function BalancesTab({
           </table>
         </div>
         <p className="mt-3 text-[12px] text-sage">
-          The first month starts from the opening balance set per partner in <a href="/admin/partners" className="font-semibold text-forest underline underline-offset-2">Partners &amp; Affiliates</a>; after that every month starts where the last one ended.
+          Opening = the balance set per partner in <a href="/admin/partners" className="font-semibold text-forest underline underline-offset-2">Partners &amp; Affiliates</a> (from your 2026 sheets); next year it starts automatically where this year ended.
         </p>
       </Box>
     </>
   );
 }
 
-const nextMonth = (m: string) => {
-  const [y, mo] = m.split("-").map(Number);
-  return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, "0")}`;
-};
-
-/** One partner's month, line by line, with the running total. */
-function BalanceLines({ start, lines, month }: { start: number; lines: BalanceLine[]; month: string }) {
+/** Everything behind one partner's balance, with the running total. */
+function BalanceLines({ start, lines }: { start: number; lines: BalanceLine[] }) {
   let run = start;
   const say = (n: number) => (n > 0 ? `owes you ${mx(n)}` : n < 0 ? `you owe ${mx(-n)}` : "settled");
   return (
@@ -698,12 +692,12 @@ function BalanceLines({ start, lines, month }: { start: number; lines: BalanceLi
       <tbody>
         <tr>
           <td className={td} />
-          <td className={`${td} text-sage`}>From last month</td>
+          <td className={`${td} text-sage`}>Opening</td>
           <td className={tdr} />
           <td className={tdr}>{say(start)}</td>
         </tr>
         {lines.length === 0 && (
-          <tr><td className={td} /><td className={`${td} italic text-sage`} colSpan={3}>Nothing in {monthLabel(month)}.</td></tr>
+          <tr><td className={td} /><td className={`${td} italic text-sage`} colSpan={3}>Nothing yet.</td></tr>
         )}
         {lines.map((l, i) => {
           run += l.amount;

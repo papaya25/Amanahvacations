@@ -349,15 +349,15 @@ export function buildBalances(
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
-/** One month of a partner's account, like the old monthly sheets:
-    from last month → this month's lines → carried to next month. */
-export function monthStatement(b: PartnerBalance, month: string) {
-  const start = `${month}-01`;
-  const lines = b.lines.filter((l) => l.date.startsWith(month));
+/** A partner's account for one year ("2026") or month ("2026-11"):
+    what was owed before it → its lines → what's owed at the end. */
+export function periodStatement(b: PartnerBalance, period: string) {
+  const start = period.length === 4 ? `${period}-01-01` : `${period}-01`;
+  const lines = b.lines.filter((l) => l.date.startsWith(period));
   const sum = (t: BalanceLine["type"]) => lines.filter((l) => l.type === t).reduce((s, l) => s + l.amount, 0);
   const broughtForward = b.opening + b.lines.filter((l) => l.date < start).reduce((s, l) => s + l.amount, 0);
   return {
-    tracked: !b.from || month >= b.from.slice(0, 7),
+    tracked: !b.from || period >= b.from.slice(0, period.length),
     broughtForward,
     owesUs: sum("owesUs"),
     weOwe: -sum("weOwe"),
