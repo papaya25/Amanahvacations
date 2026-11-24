@@ -591,7 +591,7 @@ function EntryForm({ partners, onDone }: { partners: Partner[]; onDone: () => vo
 function BalancesTab({
   rows, book, partners, onSettle,
 }: { rows: AcctRow[]; book: Book; partners: Partner[]; onSettle: (d: Partial<Payment>) => void }) {
-  const all = buildBalances(rows, book.payments, partners).filter((b) => b.partnerId || b.lines.length);
+  const all = buildBalances(rows, book.payments, partners).filter((b) => b.partnerId || b.lines.length || b.upcoming.length);
   // Month by month like the Excel sheets (each month starts where the last ended), or a whole year.
   const thisMonth = new Date().toISOString().slice(0, 7);
   const first = all.flatMap((b) => b.lines.map((l) => l.date.slice(0, 7))).filter(Boolean).sort()[0] ?? thisMonth;
@@ -620,7 +620,7 @@ function BalancesTab({
       </div>
       <Box
         title={`Balances by partner — ${isYear ? year : monthLabel(year)}`}
-        desc="A client who paid THEM (their card terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Commission they earn is in “You owe them”, commission you send is in “You paid them” (detail in the Commissions tab)."
+        desc="Only tours and transfers that have happened count; upcoming ones are listed under the balance. A client who paid THEM (their card terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Commission they earn is in “You owe them”, commission you send is in “You paid them” (detail in the Commissions tab)."
         right={
           <select value={year} onChange={(e) => { setYear(e.target.value); setOpen(null); }} aria-label="Month or year" className="rounded-full border border-sand bg-white px-4 py-2 text-[13px] text-ink outline-none focus:border-forest">
             <optgroup label="Month">{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</optgroup>
@@ -652,7 +652,17 @@ function BalancesTab({
                     <td className={tdr}>{st.weOwe ? mx(st.weOwe) : "—"}</td>
                     <td className={tdr}>{st.theyPaid ? mx(st.theyPaid) : "—"}</td>
                     <td className={tdr}>{st.wePaid ? mx(st.wePaid) : "—"}</td>
-                    <td className={`${tdr} font-semibold`}>{owe(st.carried)}</td>
+                    <td className={`${tdr} font-semibold`}>
+                      {owe(st.carried)}
+                      {current && b.upcoming.length > 0 && (() => {
+                        const up = b.upcoming.reduce((s, l) => s + l.amount, 0);
+                        return (
+                          <span className="mt-0.5 block text-[11.5px] font-normal text-sage">
+                            {b.upcoming.length} upcoming ({up > 0 ? "+" : "−"}{mx(Math.abs(up))}) → after: {owe(st.carried + up)}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className={td}>
                       {current && b.balance !== 0 && (
                         <button
@@ -667,7 +677,7 @@ function BalancesTab({
                   {open === b.name && (
                     <tr>
                       <td colSpan={8} className="border-b border-sand bg-cream/60 px-3 py-3">
-                        <BalanceLines start={st.broughtForward} lines={st.lines} span={span} />
+                        <BalanceLines start={st.broughtForward} lines={st.lines} span={span} upcoming={current ? b.upcoming : []} />
                       </td>
                     </tr>
                   )}
@@ -690,7 +700,7 @@ const prevMonth = (m: string) => {
 };
 
 /** Everything behind one partner's balance, with the running total. */
-function BalanceLines({ start, lines, span }: { start: number; lines: BalanceLine[]; span: string }) {
+function BalanceLines({ start, lines, span, upcoming }: { start: number; lines: BalanceLine[]; span: string; upcoming: BalanceLine[] }) {
   let run = start;
   const say = (n: number) => (n > 0 ? `owes you ${mx(n)}` : n < 0 ? `you owe ${mx(-n)}` : "settled");
   return (
@@ -719,6 +729,14 @@ function BalanceLines({ start, lines, span }: { start: number; lines: BalanceLin
             </tr>
           );
         })}
+        {upcoming.map((l, i) => (
+          <tr key={`u${i}`} className="text-sage">
+            <td className={`${td} whitespace-nowrap`}>{l.date}</td>
+            <td className={td}>Upcoming — {l.label}</td>
+            <td className={tdr}>({l.amount > 0 ? "+" : "−"}{mx(Math.abs(l.amount))})</td>
+            <td className={`${tdr} italic`}>counts after it happens</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );

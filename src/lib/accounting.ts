@@ -253,7 +253,8 @@ export type PartnerBalance = {
   name: string;
   partnerId: string | null;
   balance: number; // today — built from every booking and payment on record, no opening number
-  lines: BalanceLine[]; // oldest first
+  lines: BalanceLine[]; // oldest first — services that HAPPENED + every payment
+  upcoming: BalanceLine[]; // booked services not done yet: shown, not counted
 };
 
 /* ── The book (site_content "accounting", private) ─────────────────────── */
@@ -305,16 +306,18 @@ const AMANAH = "amanah";
 export function buildBalances(
   rows: AcctRow[],
   payments: Payment[],
-  partners: Partner[]
+  partners: Partner[],
+  today = new Date().toISOString().slice(0, 10)
 ): PartnerBalance[] {
-  // Every booked service counts in its own month, upcoming ones too (often prepaid).
+  // Only services that have happened count; payments count when made (a
+  // prepayment shows as paid in advance until the service is done).
   const map = new Map<string, PartnerBalance>();
   const get = (name: string) => {
     const p = matchPartner(name, partners);
     const k = p?.id ?? norm(name);
     if (!k || k === AMANAH) return null;
     if (!map.has(k)) {
-      map.set(k, { name: p?.name ?? name.trim(), partnerId: p?.id ?? null, balance: 0, lines: [] });
+      map.set(k, { name: p?.name ?? name.trim(), partnerId: p?.id ?? null, balance: 0, lines: [], upcoming: [] });
     }
     return map.get(k)!;
   };
@@ -355,8 +358,10 @@ export function buildBalances(
     b.lines.push({ date: pay.date, label: `${got ? "They paid us" : "We paid them"}${what}${pay.note ? ` — ${pay.note}` : ""}`, amount: got ? -pay.amount : pay.amount, type: got ? "theyPaid" : "wePaid" });
   }
   return [...map.values()].map((b) => {
-    b.lines.sort((x, y) => x.date.localeCompare(y.date));
-    return { ...b, balance: b.lines.reduce((s, l) => s + l.amount, 0) };
+    const isService = (l: BalanceLine) => l.type === "owesUs" || l.type === "weOwe";
+    const lines = b.lines.filter((l) => !(isService(l) && l.date > today)).sort((x, y) => x.date.localeCompare(y.date));
+    const upcoming = b.lines.filter((l) => isService(l) && l.date > today).sort((x, y) => x.date.localeCompare(y.date));
+    return { ...b, lines, upcoming, balance: lines.reduce((s, l) => s + l.amount, 0) };
   });
 }
 

@@ -21,6 +21,7 @@ const b = buildBalances([
   { ...base, date: "2026-09-02", provider: "Moussa", collectedBy: "Moussa", charged: 1200, cost: 800, affiliate: null, commission: 0 },
   { ...base, date: "2026-09-03", provider: "JF Tours", collectedBy: "TutCasa", charged: 1300, cost: 1000, affiliate: "TutCasa", commission: 0 },
   { ...base, date: "2026-09-04", provider: "Azul Riviera", collectedBy: "Amanah", charged: 7400, cost: 6400, affiliate: "TutCasa", commission: 370 },
+  { ...base, date: "2099-01-01", provider: "Moussa", collectedBy: "Moussa", charged: 5000, cost: 0, affiliate: null, commission: 0 }, // upcoming: not counted yet
 ], [{ id: "p", date: "2026-09-05", partner: "TutCasa", direction: "received", kind: "settlement", method: "Transfer", amount: 1000, note: "" }], DEFAULT_PARTNERS);
 const by = Object.fromEntries(b.map((x) => [x.name, x.balance]));
 // Commission (370) counts as owed to TutCasa (no column of its own).
@@ -76,3 +77,12 @@ const ab = buildBalances([
 assert.equal(ab.find((x) => x.name === "JF")!.balance, -8250);
 assert.ok(!ab.some((x) => x.name.toLowerCase() === "amanah"));
 console.log("package split ok");
+
+// Prepaid upcoming transfer: payment counts now, the service only after it happens.
+const pre = buildBalances([
+  { ...base, date: "2026-12-02", provider: "JF", collectedBy: "TutCasa", charged: 1300, cost: 1200, affiliate: null, commission: 0 },
+], [{ id: "t", date: "2026-11-20", partner: "TutCasa", direction: "received", kind: "settlement", method: "Transfer", amount: 1300, note: "" }], DEFAULT_PARTNERS, "2026-11-24");
+const tcu = pre.find((x) => x.name === "TutCasa")!, jfu = pre.find((x) => x.name === "JF")!;
+assert.deepEqual([tcu.balance, tcu.upcoming.length, jfu.balance, jfu.upcoming.length], [-1300, 1, 0, 1]);
+assert.equal(buildBalances([{ ...base, date: "2026-12-02", provider: "JF", collectedBy: "TutCasa", charged: 1300, cost: 1200, affiliate: null, commission: 0 }], [], DEFAULT_PARTNERS, "2026-12-03").find((x) => x.name === "JF")!.balance, -1200);
+console.log("happened-only ok");
