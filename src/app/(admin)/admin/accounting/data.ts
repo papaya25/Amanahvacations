@@ -326,9 +326,8 @@ export async function getAccounting(): Promise<AccountingData> {
 
   for (const t of (transferData ?? []) as TransferRaw[]) {
     const a = t.acct ?? {};
-    const pushed = !t.transfer_id.startsWith("manual-");
     const pax = t.passengers ?? ((t.adults ?? 0) + (t.kids ?? 0) || 1);
-    const source = a.source ?? (pushed ? "TutCasa" : "WhatsApp / direct");
+    const source = a.source ?? "TutCasa"; // transfers are TutCasa guests unless set otherwise
     const srcPartner = matchPartner(source, partners);
     const billedRate = srcPartner ? partnerTransferRate(srcPartner, pax) : 0;
     const ctry = country(a.country, t.guest_phone);

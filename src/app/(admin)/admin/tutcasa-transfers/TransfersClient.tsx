@@ -19,9 +19,8 @@ import {
 import { deleteTransferJob } from "../tutcasa-tours/actions";
 import { PAYMENT_METHODS, SOURCES } from "@/lib/accounting";
 
-/** Where the transfer came from: pushed jobs are TutCasa's, manual ones direct. */
-const sourceOf = (j: TransferJob) =>
-  j.acct?.source ?? (j.transfer_id.startsWith("manual-") ? "WhatsApp / direct" : "TutCasa");
+/** Where the transfer came from: TutCasa unless set otherwise (manual ones too — Maher: they are TutCasa guests). */
+const sourceOf = (j: TransferJob) => j.acct?.source ?? "TutCasa";
 
 /* One form, two jobs: "add manually" (blank) and per-card "Edit" (prefilled). */
 export type TransferFields = {
@@ -35,7 +34,7 @@ export type TransferFields = {
 const BLANK: TransferFields = {
   fullName: "", travelDate: "", kind: "pickup", flightNumber: "", adults: 2, kids: 0, kidsAges: [],
   babySeat: false, guestPhone: "", home: "", note: "", provider: "", price: 0, paymentMethod: "",
-  source: "WhatsApp / direct",
+  source: "TutCasa",
   collectedBy: "",
 };
 
