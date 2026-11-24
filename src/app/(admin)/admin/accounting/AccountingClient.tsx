@@ -620,7 +620,7 @@ function BalancesTab({
       </div>
       <Box
         title={`Balances by partner — ${isYear ? year : monthLabel(year)}`}
-        desc="A client who paid THEM (their card terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Then the payments either way. Commissions are in the Commissions tab."
+        desc="A client who paid THEM (their card terminal, cash) → they owe you your profit. A client who paid YOU (Stripe, PayPal, Wise) → you owe them their cost. Commission they earn is in “You owe them”, commission you send is in “You paid them” (detail in the Commissions tab)."
         right={
           <select value={year} onChange={(e) => { setYear(e.target.value); setOpen(null); }} aria-label="Month or year" className="rounded-full border border-sand bg-white px-4 py-2 text-[13px] text-ink outline-none focus:border-forest">
             <optgroup label="Month">{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</optgroup>

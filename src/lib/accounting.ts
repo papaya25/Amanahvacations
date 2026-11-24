@@ -247,7 +247,8 @@ export function estimateFee(method: string, amount: number): number {
 export type BalanceLine = { date: string; label: string; amount: number; type: "owesUs" | "weOwe" | "theyPaid" | "wePaid" };
 
 /** A partner's running account: + = they owe us, − = we owe them.
-    Commissions are NOT in here — they have their own tab. */
+    Commission they earn counts as owed to them, commission sent as paid
+    (no column of its own — the Commissions tab has the detail). */
 export type PartnerBalance = {
   name: string;
   partnerId: string | null;
@@ -342,12 +343,16 @@ export function buildBalances(
     if (c && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
     if (p && r.cost) p.lines.push({ date: r.date, label: `${who} — client paid us, their cost`, amount: -r.cost, type: "weOwe" });
   }
+  for (const r of rows) {
+    const a = r.affiliate && r.commission ? get(r.affiliate) : null;
+    if (a) a.lines.push({ date: r.date, label: `${r.name || "—"} · ${r.service}${r.description ? ` (${r.description})` : ""} — their commission`, amount: -r.commission, type: "weOwe" });
+  }
   for (const pay of payments) {
-    if (pay.kind === "commission") continue; // → Commissions tab
     const b = get(pay.partner);
     if (!b) continue;
     const got = pay.direction === "received";
-    b.lines.push({ date: pay.date, label: `${got ? "They paid us" : "We paid them"}${pay.note ? ` — ${pay.note}` : ""}`, amount: got ? -pay.amount : pay.amount, type: got ? "theyPaid" : "wePaid" });
+    const what = pay.kind === "commission" ? " (commission)" : "";
+    b.lines.push({ date: pay.date, label: `${got ? "They paid us" : "We paid them"}${what}${pay.note ? ` — ${pay.note}` : ""}`, amount: got ? -pay.amount : pay.amount, type: got ? "theyPaid" : "wePaid" });
   }
   return [...map.values()].map((b) => {
     b.lines.sort((x, y) => x.date.localeCompare(y.date));

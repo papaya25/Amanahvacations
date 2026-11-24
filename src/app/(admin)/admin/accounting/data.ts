@@ -291,7 +291,8 @@ export async function getAccounting(): Promise<AccountingData> {
         provider,
         // Unless we took the money ourselves (Stripe / PayPal / Wise): a partner who
         // runs the tour (JF, Azul Riviera…) collects it on their terminal / in cash;
-        // otherwise a partner that bills us for its guests (TutCasa) collects it.
+        // otherwise a partner that bills us for its guests (TutCasa) collects it —
+        // by transfer, never cash: a cash booking was paid to us.
         // Exceptions (e.g. Jennifer) are set per row with "Collected by".
         collectedBy:
           a.collectedBy ??
@@ -299,7 +300,7 @@ export async function getAccounting(): Promise<AccountingData> {
             ? "Amanah"
             : providerPartner?.provider
               ? providerPartner.name
-              : affiliate && partnerTransferRate(affiliate, people) > 0
+              : affiliate && method !== "Cash" && partnerTransferRate(affiliate, people) > 0
                 ? affiliate.name
                 : "Amanah"),
         charged: a.charged ?? (stripeGross && !paidStays.length ? stripeGross : o.total - stayTotal - passThroughTotal),
