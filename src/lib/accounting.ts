@@ -364,11 +364,9 @@ const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
 /** A partner's account for one year ("2026") or month ("2026-11"):
     what was owed before it → its lines → what's owed at the end. */
-/** `withUpcoming`: the current month/year also takes everything booked after it
-    (prepaid transfers…), so its end is the real balance today. */
-export function periodStatement(b: PartnerBalance, period: string, withUpcoming = false) {
+export function periodStatement(b: PartnerBalance, period: string) {
   const start = period.length === 4 ? `${period}-01-01` : `${period}-01`;
-  const lines = b.lines.filter((l) => l.date.startsWith(period) || (withUpcoming && l.date > start));
+  const lines = b.lines.filter((l) => l.date.startsWith(period));
   const sum = (t: BalanceLine["type"]) => lines.filter((l) => l.type === t).reduce((s, l) => s + l.amount, 0);
   const broughtForward = b.lines.filter((l) => l.date < start).reduce((s, l) => s + l.amount, 0);
   return {

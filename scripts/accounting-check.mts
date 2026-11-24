@@ -76,11 +76,3 @@ const ab = buildBalances([
 assert.equal(ab.find((x) => x.name === "JF")!.balance, -8250);
 assert.ok(!ab.some((x) => x.name.toLowerCase() === "amanah"));
 console.log("package split ok");
-
-// Current month with upcoming: prepaid future transfers land in it → end = balance today.
-const pre = buildBalances([
-  { ...base, date: "2026-12-02", provider: "JF", collectedBy: "TutCasa", charged: 1300, cost: 1200, affiliate: null, commission: 0 },
-], [{ id: "t", date: "2026-11-20", partner: "TutCasa", direction: "received", kind: "settlement", method: "Transfer", amount: 1300, note: "" }], DEFAULT_PARTNERS).find((x) => x.name === "TutCasa")!;
-assert.equal(periodStatement(pre, "2026-11").carried, -1300);
-assert.equal(periodStatement(pre, "2026-11", true).carried, 0);
-console.log("upcoming ok");
