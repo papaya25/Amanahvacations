@@ -68,3 +68,12 @@ const y = periodStatement(jb, "2026");
 assert.deepEqual([y.broughtForward, y.owesUs, y.weOwe, y.wePaid, y.carried], [500, 1150, 8000, 3000, jb.balance]);
 assert.equal(periodStatement(jb, "2027").broughtForward, jb.balance);
 console.log("statements ok");
+
+// Package split between suppliers: JF is owed only its parts, the rest Amanah paid directly.
+const ab = buildBalances([
+  { ...base, date: "2026-11-03", provider: "Amanah", collectedBy: "Amanah", charged: 26463, cost: 21287, affiliate: null, commission: 0, method: "Stripe",
+    parts: [{ partner: "JF", what: "Round-trip transportation", cost: 2000 }, { partner: "JF", what: "Akumal + Tulum", cost: 6250 }] },
+], [], DEFAULT_PARTNERS);
+assert.equal(ab.find((x) => x.name === "JF")!.balance, -8250);
+assert.ok(!ab.some((x) => x.name.toLowerCase() === "amanah"));
+console.log("package split ok");

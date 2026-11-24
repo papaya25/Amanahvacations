@@ -6,7 +6,7 @@ import { createFromOrder } from "../invoices/actions";
 import { PageHead } from "../AdminUI";
 import { createManualOrder, updateOrder, updateOrderStatus } from "./actions";
 import { ORDER_STATUSES, type AdminOrder } from "./types";
-import { PAYMENT_METHODS, SOURCES, estimateFee } from "@/lib/accounting";
+import { PAYMENT_METHODS, SOURCES, estimateFee, type CostPart } from "@/lib/accounting";
 
 const fmtMXN = (n: number) => `$${n.toLocaleString("en-US")} MXN`;
 const fmtDate = (iso: string) =>
@@ -52,13 +52,13 @@ type Fields = {
   kind: Kind; catalogId: string; title: string; customerName: string; customerPhone: string; customerEmail: string;
   people: number; date: string; totalMXN: number; paymentMethod: string; cardSurcharge: boolean; stripeFee: number; stripeRef: string;
   source: string; extraActivity: string; extraActivityPrice: number; customization: string; costMXN: number;
-  performedBy: string; notes: string;
+  performedBy: string; notes: string; parts: CostPart[];
 };
 
 const BLANK: Fields = {
   kind: "tour", catalogId: "", title: "", customerName: "", customerPhone: "", customerEmail: "", people: 2, date: "",
   totalMXN: 0, paymentMethod: "Cash", cardSurcharge: true, stripeFee: 0, stripeRef: "", source: "WhatsApp / direct",
-  extraActivity: "", extraActivityPrice: 0, customization: "", costMXN: 0, performedBy: "", notes: "",
+  extraActivity: "", extraActivityPrice: 0, customization: "", costMXN: 0, performedBy: "", notes: "", parts: [],
 };
 
 /** "2026-10-29" or "August 26, 2026" → YYYY-MM-DD for the date input. */
@@ -99,6 +99,7 @@ function fieldsFromOrder(o: AdminOrder, partners: PartnerOption[]): Fields {
     costMXN: Number(m.manual_cost ?? o.acct?.cost) || 0,
     performedBy: m.performed_by ?? o.acct?.provider ?? "",
     notes: o.notes ?? "",
+    parts: o.acct?.parts ?? [],
   };
 }
 
@@ -221,6 +222,31 @@ function OrderForm({
         <span className={labelCls}>Performed by</span>
         <input list="order-providers" className={inputCls} value={f.performedBy} onChange={(e) => set("performedBy", e.target.value)} placeholder="Guide / provider" />
         <datalist id="order-providers">{partners.filter((p) => p.provider).map((p) => <option key={p.name} value={p.name} />)}</datalist>
+      </div>
+      <div className="sm:col-span-2 lg:col-span-4 rounded-xl border border-sand bg-cream/50 p-3">
+        <span className={labelCls}>Split between suppliers (packages)</span>
+        <p className="mb-2 text-[12px] text-sage">
+          When several suppliers did parts of it, list each partner&apos;s part here. Only that part counts as owed to them; the rest of the cost is what you paid directly. Leave empty when one provider did everything.
+        </p>
+        {f.parts.map((p, i) => {
+          const setPart = (k: keyof CostPart, v: string | number) => setF((x) => ({ ...x, parts: x.parts.map((q, j) => (j === i ? { ...q, [k]: v } : q)) }));
+          return (
+            <div key={i} className="mb-2 grid gap-2 sm:grid-cols-[180px_minmax(0,1fr)_140px_auto]">
+              <input list="order-providers" aria-label="Partner" className={inputCls} value={p.partner} onChange={(e) => setPart("partner", e.target.value)} placeholder="Partner (JF…)" />
+              <input aria-label="What they did" className={inputCls} value={p.what} onChange={(e) => setPart("what", e.target.value)} placeholder="What — e.g. Akumal + Tulum" />
+              <input aria-label="Their part (MXN)" type="number" min={0} className={inputCls} value={p.cost || ""} onChange={(e) => setPart("cost", Number(e.target.value) || 0)} placeholder="MXN" />
+              <button type="button" className="px-2 text-[12px] text-sage hover:text-terracotta" onClick={() => setF((x) => ({ ...x, parts: x.parts.filter((_, j) => j !== i) }))}>Remove</button>
+            </div>
+          );
+        })}
+        <div className="flex flex-wrap items-center gap-3 text-[12px]">
+          <button type="button" className="font-semibold text-forest hover:underline" onClick={() => setF((x) => ({ ...x, parts: [...x.parts, { partner: "", what: "", cost: 0 }] }))}>+ Add a partner&apos;s part</button>
+          {f.parts.length > 0 && (
+            <span className="text-sage">
+              Partners: ${f.parts.reduce((s, p) => s + (p.cost || 0), 0).toLocaleString("en-US")} · paid by you directly: ${Math.max(0, f.costMXN - f.parts.reduce((s, p) => s + (p.cost || 0), 0)).toLocaleString("en-US")}
+            </span>
+          )}
+        </div>
       </div>
       <div className="sm:col-span-2"><span className={labelCls}>Notes</span><input className={inputCls} value={f.notes} onChange={(e) => set("notes", e.target.value)} /></div>
       <div className="flex items-end">

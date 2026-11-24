@@ -157,6 +157,10 @@ export const parseStripeRef = (s: string | null | undefined) => (s ?? "").match(
 
 export const SERVICE_TYPES: ServiceType[] = ["Airport pickup", "Airport drop-off", "Airport transfer", "Tour", "Package", "Park", "Stay", "Activity", "Other"];
 
+/** A partner's share of a booking's cost (packages are spread over suppliers);
+    the rest of the cost is what Amanah paid directly. */
+export type CostPart = { partner: string; what: string; cost: number };
+
 /** Per-row overrides stored in orders.acct / tutcasa_transfers.acct. */
 export type AcctOverrides = {
   source?: string;
@@ -171,6 +175,7 @@ export type AcctOverrides = {
   net?: number; // what Stripe actually paid out
   received?: number; // what Stripe charged, in MXN at ITS exchange rate (client paid in USD)
   stripeRef?: string; // pi_… / ch_… for manual Stripe charges
+  parts?: CostPart[]; // package split between suppliers
   commission?: number;
   country?: string;
   note?: string;
@@ -201,6 +206,7 @@ export type AcctRow = {
   commission: number;
   note: string;
   stripeRef: string;
+  parts?: CostPart[]; // when set, these partners are owed their part (not `provider` the whole cost)
 };
 
 export type RowMath = {
@@ -320,6 +326,14 @@ export function buildBalances(
     if (r.date > asOf) continue;
     const who = `${r.name || "—"} · ${r.service}${r.description ? ` (${r.description})` : ""}`;
     const c = r.collectedBy ? get(r.collectedBy) : null;
+    if (r.parts?.length) {
+      if (live(c, r.date) && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
+      for (const part of r.parts) {
+        const s = get(part.partner);
+        if (live(s, r.date) && part.cost) s.lines.push({ date: r.date, label: `${who} — their part${part.what ? `: ${part.what}` : ""}`, amount: -part.cost, type: "weOwe" });
+      }
+      continue;
+    }
     const p = r.provider ? get(r.provider) : null;
     if (c && c === p) {
       // Client paid them for a service they did → they owe us our profit.

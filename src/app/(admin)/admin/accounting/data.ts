@@ -270,7 +270,8 @@ export async function getAccounting(): Promise<AccountingData> {
     );
 
     if (ours.length) {
-      const provider = a.provider ?? ours.find((it) => it.meta?.performed_by)?.meta?.performed_by ?? "";
+      const parts = (a.parts ?? []).filter((p) => p.partner && p.cost > 0);
+      const provider = parts.length ? "Amanah" : a.provider ?? ours.find((it) => it.meta?.performed_by)?.meta?.performed_by ?? "";
       const providerPartner = matchPartner(provider, partners);
       const tourItems = rest.filter((it) => !isFeeLine(it) && !isTransferLine(it));
       // From Nov 2026 the affiliate's % is on OUR COST of the tour, before that on the price.
@@ -295,6 +296,7 @@ export async function getAccounting(): Promise<AccountingData> {
         cost: a.cost ?? ours.reduce((s, it) => s + (itemCost(it, costs.rows) ?? 0), 0),
         fee: orderFee,
         feeExact: Boolean(a.feeExact),
+        parts,
         commission:
           a.commission ?? (affiliate ? Math.round((commissionBase * commissionPctFor(affiliate, people)) / 100) : 0),
       });

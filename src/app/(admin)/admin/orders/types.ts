@@ -1,3 +1,4 @@
+import type { CostPart } from "@/lib/accounting";
 import type { CartItem } from "@/lib/cart";
 
 export type AdminOrder = {
@@ -19,7 +20,7 @@ export type AdminOrder = {
   consent_at: string | null;
   referrer: string | null; // affiliate partner id (commission)
   source: string | null; // null = website, "manual", "tutcasa"
-  acct: { source?: string; fee?: number; cost?: number; provider?: string; stripeRef?: string } | null;
+  acct: { source?: string; fee?: number; cost?: number; provider?: string; stripeRef?: string; parts?: CostPart[] } | null;
 };
 
 export const ORDER_STATUSES = [

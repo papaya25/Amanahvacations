@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { ORDER_STATUSES, type AdminOrder } from "./types";
 import { getPartners } from "@/lib/content/partners";
-import { matchPartner, parseStripeRef } from "@/lib/accounting";
+import { matchPartner, parseStripeRef, type CostPart } from "@/lib/accounting";
 
 export async function listOrders(): Promise<AdminOrder[] | null> {
   if (!(await isAdminRequest())) return null;
@@ -64,8 +64,14 @@ export type OrderInput = {
   customization?: string; // customized activity / changes under this tour
   costMXN?: number; // what the whole booking costs US — drives Profits
   performedBy?: string; // guide / provider who ran it
+  parts?: CostPart[]; // package: each partner's part of the cost
   notes?: string;
 };
+
+const cleanParts = (parts: CostPart[] | undefined) =>
+  (parts ?? [])
+    .map((p) => ({ partner: p.partner.trim(), what: p.what.trim(), cost: Math.round(Number(p.cost) || 0) }))
+    .filter((p) => p.partner && p.cost > 0);
 
 type Built = { items: Record<string, unknown>[]; total: number; referrer: string | null; acct: Record<string, unknown> };
 
@@ -155,6 +161,8 @@ async function buildManualOrder(input: OrderInput, keepMeta: Record<string, stri
   if (input.paymentMethod === "Stripe" && (input.stripeFee ?? 0) > 0) acct.fee = Math.round(input.stripeFee!);
   const ref = input.paymentMethod === "Stripe" ? parseStripeRef(input.stripeRef) : "";
   if (ref) acct.stripeRef = ref;
+  const parts = cleanParts(input.parts);
+  if (parts.length) acct.parts = parts;
   return { items, total: total + cardFee, referrer: affiliate?.affiliate ? affiliate.id : null, acct };
 }
 
@@ -221,7 +229,7 @@ export async function updateOrder(id: string, input: OrderInput): Promise<{ ok: 
     const built = await buildManualOrder(input, keep);
     if ("error" in built) return { ok: false, error: built.error };
     // The form now owns price, cost, provider and fee: drop older overrides.
-    const { fee: _fee, feeExact: _fx, cost: _c, provider: _p, charged: _ch, received: _r, net: _n, stripeRef: _sr, ...rest } = prevAcct;
+    const { fee: _fee, feeExact: _fx, cost: _c, provider: _p, charged: _ch, received: _r, net: _n, stripeRef: _sr, parts: _pt, ...rest } = prevAcct;
     patch = {
       ...customer,
       items: built.items,
@@ -235,12 +243,14 @@ export async function updateOrder(id: string, input: OrderInput): Promise<{ ok: 
   } else {
     const source = input.source?.trim() || "Website";
     const affiliate = matchPartner(source, await getPartners());
-    const { cost: _c, provider: _p, ...rest } = prevAcct;
+    const { cost: _c, provider: _p, parts: _pt, ...rest } = prevAcct;
+    const parts = cleanParts(input.parts);
     const acct: Record<string, unknown> = {
       ...rest,
       source,
       ...(input.costMXN && input.costMXN > 0 ? { cost: Math.round(input.costMXN) } : {}),
       ...(input.performedBy?.trim() ? { provider: input.performedBy.trim() } : {}),
+      ...(parts.length ? { parts } : {}),
     };
     patch = { ...customer, referrer: affiliate?.affiliate ? affiliate.id : null, acct };
   }
