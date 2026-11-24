@@ -226,7 +226,7 @@ function OrderForm({
       <div className="sm:col-span-2 lg:col-span-4 rounded-xl border border-sand bg-cream/50 p-3">
         <span className={labelCls}>Split between suppliers (packages)</span>
         <p className="mb-2 text-[12px] text-sage">
-          When several suppliers did parts of it, list each partner&apos;s part here. Only that part counts as owed to them; the rest of the cost is what you paid directly. Leave empty when one provider did everything.
+          When several suppliers did parts of it, list each partner&apos;s part here. Only that part counts as owed to them; the rest of the cost is what you paid directly. You can also list what you paid yourself with “Amanah” as the partner (tickets, driver expenses…) — it is only shown, never owed. Leave empty when one provider did everything.
         </p>
         {f.parts.map((p, i) => {
           const setPart = (k: keyof CostPart, v: string | number) => setF((x) => ({ ...x, parts: x.parts.map((q, j) => (j === i ? { ...q, [k]: v } : q)) }));
@@ -243,7 +243,7 @@ function OrderForm({
           <button type="button" className="font-semibold text-forest hover:underline" onClick={() => setF((x) => ({ ...x, parts: [...x.parts, { partner: "", what: "", cost: 0 }] }))}>+ Add a partner&apos;s part</button>
           {f.parts.length > 0 && (
             <span className="text-sage">
-              Partners: ${f.parts.reduce((s, p) => s + (p.cost || 0), 0).toLocaleString("en-US")} · paid by you directly: ${Math.max(0, f.costMXN - f.parts.reduce((s, p) => s + (p.cost || 0), 0)).toLocaleString("en-US")}
+              Partners: ${f.parts.filter((p) => !/^amanah/i.test(p.partner.trim())).reduce((s, p) => s + (p.cost || 0), 0).toLocaleString("en-US")} · paid by you directly: ${Math.max(0, f.costMXN - f.parts.filter((p) => !/^amanah/i.test(p.partner.trim())).reduce((s, p) => s + (p.cost || 0), 0)).toLocaleString("en-US")}
             </span>
           )}
         </div>

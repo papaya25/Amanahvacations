@@ -329,6 +329,7 @@ export function buildBalances(
     if (r.parts?.length) {
       if (live(c, r.date) && r.charged) c.lines.push({ date: r.date, label: `${who} — client paid them`, amount: r.charged, type: "owesUs" });
       for (const part of r.parts) {
+        if (/^amanah/i.test(part.partner.trim())) continue; // paid by us directly — just shown on the booking
         const s = get(part.partner);
         if (live(s, r.date) && part.cost) s.lines.push({ date: r.date, label: `${who} — their part${part.what ? `: ${part.what}` : ""}`, amount: -part.cost, type: "weOwe" });
       }
