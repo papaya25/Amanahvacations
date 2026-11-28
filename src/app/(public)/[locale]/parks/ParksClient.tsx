@@ -146,6 +146,10 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
                       <a className="at-buy-btn" style={{ display: "block", textAlign: "center", textDecoration: "none" }} href={localizeHref("/packages", locale)}>
                         {dict.parks_see_packages}
                       </a>
+                      {/* Same line as the bookable cards so the buttons line up across the row. */}
+                      <div className="at-private-note">
+                        🔒 {dict.tourc_private_note}
+                      </div>
                     </div>
                   ) : (
                   <div className="at-controls-c">
