@@ -161,7 +161,10 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
                         />
                       </div>
                       <div className="at-field">
-                        <label>{dict.tourc_people}</label>
+                        <label>
+                          {dict.tourc_people}{" "}
+                          <span className="at-info" data-tip={dict.parks_people_tip}>i</span>
+                        </label>
                         <div className="at-stepper">
                           <button type="button" onClick={() => step(park.id, -1)}>−</button>
                           <div className="at-count">{ppl}</div>
