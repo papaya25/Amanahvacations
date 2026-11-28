@@ -9,7 +9,7 @@
    any saved tour that predates tiers. */
 
 import { getSavedContent } from "@/lib/content/site";
-import { TOURS, parseTierPrices, tourTotalFor } from "@/app/(public)/[locale]/tours/data";
+import { MIN_TOUR_PEOPLE, TOURS, parseTierPrices, tourTotalFor } from "@/app/(public)/[locale]/tours/data";
 
 export type TourStop = { time: string; place: string; desc: string };
 
@@ -54,7 +54,7 @@ export async function getTourLineTotal(key: string, people: number): Promise<num
     // Legacy saved tour without tiers: flat per-person price × people.
     if (t.price <= 0) return null;
     const unit = t.offer > 0 && t.offer < t.price ? t.offer : t.price;
-    return unit * Math.max(1, people);
+    return unit * Math.max(MIN_TOUR_PEOPLE, people);
   }
   const builtin = TOURS.find((x) => x.key === key);
   if (!builtin || builtin.onreq) return null;

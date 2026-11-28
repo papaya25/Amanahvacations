@@ -14,7 +14,7 @@ import type { AdminTour as AdminTourInput } from "@/lib/content/tours";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 import { slugify, tourPath } from "@/lib/catalogSlugs";
-import { TOURS, parseTierPrices, tourPaxOptions, tourTotalFor, type Tour, type Stop } from "./data";
+import { MIN_TOUR_PEOPLE, TOURS, parseTierPrices, tourPaxOptions, tourTotalFor, type Tour, type Stop } from "./data";
 import type { Activity } from "../packages/data";
 import ActivityPicker, { activityChargeTotal } from "@/components/ActivityPicker";
 import TourParkTabs from "@/components/TourParkTabs";
@@ -125,10 +125,11 @@ export default function ToursClient({
 
   /* Group-size limits per tour: tiered tours book between their smallest and
      largest priced group (e.g. 2–6, Cozumel 3–6); legacy flat-priced tours
-     keep the old 1–6 range. */
+     keep a 2–6 range. Never fewer than MIN_TOUR_PEOPLE. */
   const paxRange = (t: Tour): { min: number; max: number } => {
     const opts = tourPaxOptions(t);
-    return opts.length ? { min: opts[0], max: opts[opts.length - 1] } : { min: 1, max: 6 };
+    const max = opts.length ? opts[opts.length - 1] : 6;
+    return { min: Math.min(max, Math.max(MIN_TOUR_PEOPLE, opts[0] ?? 0)), max };
   };
   const paxOf = (idx: number) => {
     const { min, max } = paxRange(TOURS_EFFECTIVE[idx]);

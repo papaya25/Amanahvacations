@@ -38,6 +38,9 @@ export function parseTierPrices(prices?: Record<string, number>): Record<number,
 }
 
 /** Selectable group sizes for a tour, smallest first. */
+/** Every tour is booked for at least 2 people (Maher, Nov 2026). */
+export const MIN_TOUR_PEOPLE = 2;
+
 export function tourPaxOptions(t: Pick<Tour, "groupPrices">): number[] {
   return t.groupPrices
     ? Object.keys(t.groupPrices).map(Number).filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b)
@@ -46,7 +49,8 @@ export function tourPaxOptions(t: Pick<Tour, "groupPrices">): number[] {
 
 /** Total group price (MXN) for `pax` people, clamping to the nearest offered
     tier (below-minimum pays the minimum-group price). Null when unpriced. */
-export function tourTotalFor(t: Pick<Tour, "groupPrices" | "price">, pax: number): number | null {
+export function tourTotalFor(t: Pick<Tour, "groupPrices" | "price">, people: number): number | null {
+  const pax = Math.max(MIN_TOUR_PEOPLE, people);
   const opts = tourPaxOptions(t);
   if (opts.length) {
     const clamped = Math.min(Math.max(pax, opts[0]), opts[opts.length - 1]);
@@ -54,7 +58,7 @@ export function tourTotalFor(t: Pick<Tour, "groupPrices" | "price">, pax: number
     const tier = opts.filter((n) => n <= clamped).pop() ?? opts[0];
     return t.groupPrices![tier] ?? null;
   }
-  return t.price != null && t.price > 0 ? t.price * Math.max(1, pax) : null;
+  return t.price != null && t.price > 0 ? t.price * pax : null;
 }
 
 export const TOURS: Tour[] = [

@@ -212,7 +212,7 @@ export const EN_DICT = {
   tourc_private_onreq: "Private for your group · arranged personally with you",
   tourc_date: "Date",
   tourc_people: "People",
-  tourc_people_tip: "For groups of more than 6, contact us to arrange your private tour.",
+  tourc_people_tip: "Minimum 2 people. For groups of more than 6, contact us to arrange your private tour.",
   tourc_total: "Total",
   tourc_buy_now: "Buy Now",
   tourc_private_note: "Just your group — never combined with other people",
