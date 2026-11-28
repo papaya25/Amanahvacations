@@ -21,6 +21,7 @@ import { getPartners } from "@/lib/content/partners";
 import { createTutcasaHold, createTutcasaRequest, releaseTutcasaHold } from "@/lib/tutcasa";
 import { notifyStayRequests, releaseTutcasaStays } from "@/lib/tutcasaBooking";
 import type { CartItem } from "@/lib/cart";
+import { PACKAGE_ONLY_PARKS } from "../parks/data";
 
 export type PlaceOrderInput = {
   items: CartItem[];
@@ -53,6 +54,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   try {
     // Basic validation.
     if (!input.items?.length) return { ok: false, error: "Your cart is empty." };
+    // Xel-Há / Monkey Sanctuary: only inside a package (Build Your Own Plan lines carry custom_plan).
+    const alone = input.items.find((it) => it.kind === "activity" && PACKAGE_ONLY_PARKS.has(it.meta?.activity_id ?? "") && it.meta?.custom_plan !== "1");
+    if (alone) return { ok: false, error: `${alone.title} is only available as part of a package. Please remove it from your cart and add it to a package instead.` };
     if (!input.name?.trim() || !/.+@.+\..+/.test(input.email ?? ""))
       return { ok: false, error: "Please provide your name and a valid email." };
     if (!input.consent)

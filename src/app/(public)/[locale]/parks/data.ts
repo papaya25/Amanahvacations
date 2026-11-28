@@ -19,6 +19,9 @@ export type Park = {
   desc: string;
 };
 
+/** Parks sold only inside a package (incl. Build Your Own Plan), never alone (Maher, Nov 2026). */
+export const PACKAGE_ONLY_PARKS = new Set(["xelha", "monkey"]);
+
 export const PARKS: Park[] = [
   {
     id: "xcaret",

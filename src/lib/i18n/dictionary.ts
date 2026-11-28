@@ -247,6 +247,8 @@ export const EN_DICT = {
   parks_title: "Parks & Experiences",
   parks_intro: "The Riviera Maya's world-famous parks — booked with your ticket and private round-trip transportation from your hotel or villa, all arranged by us.",
   parks_included: "Park ticket + private round-trip transportation included",
+  parks_package_only: "Available only as part of a package — not sold on its own.",
+  parks_see_packages: "See our packages",
   parks_ticket_badge: "Ticket + Transport",
 
   /* Packages — TutCasa partner homes (Airbnb / Villa tier) */

@@ -14,7 +14,7 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { localizeHref } from "@/lib/i18n/config";
 import { parkPath } from "@/lib/catalogSlugs";
 import TourParkTabs from "@/components/TourParkTabs";
-import { PARKS, type Park } from "./data";
+import { PACKAGE_ONLY_PARKS, PARKS, type Park } from "./data";
 
 const MAX_PEOPLE = 10;
 
@@ -137,6 +137,16 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
                   <div className="pk-included">✓ {dict.parks_included}</div>
 
                   <div className="at-divider" />
+                  {PACKAGE_ONLY_PARKS.has(park.id) ? (
+                    <div className="at-controls-c">
+                      <div className="at-private-note" style={{ fontSize: 13.5, fontWeight: 600 }}>
+                        {dict.parks_package_only}
+                      </div>
+                      <a className="at-buy-btn" style={{ display: "block", textAlign: "center", textDecoration: "none" }} href={localizeHref("/packages", locale)}>
+                        {dict.parks_see_packages}
+                      </a>
+                    </div>
+                  ) : (
                   <div className="at-controls-c">
                     <div className="at-field-row">
                       <div className="at-field">
@@ -179,6 +189,7 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
                       🔒 {dict.tourc_private_note}
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
             );

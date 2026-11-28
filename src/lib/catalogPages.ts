@@ -10,7 +10,7 @@ import { getSavedTours } from "@/lib/content/tours";
 import { getPublicPackages } from "@/lib/content/packages";
 import { getSavedAddons } from "@/lib/content/addons";
 import { TOURS, parseTierPrices } from "@/app/(public)/[locale]/tours/data";
-import { PARKS } from "@/app/(public)/[locale]/parks/data";
+import { PARKS, PACKAGE_ONLY_PARKS } from "@/app/(public)/[locale]/parks/data";
 import { PKG_DETAILS, PKG_TIERS, type PkgId } from "@/app/(public)/[locale]/packages/data";
 import { packageSlug, parkSlug, slugify, tourSlug } from "@/lib/catalogSlugs";
 
@@ -147,7 +147,7 @@ export async function getParkPages(): Promise<CatalogPage[]> {
       id: p.id,
       slug,
       path: `/parks/${slug}`,
-      bookHref: `/parks#park-${p.id}`,
+      bookHref: PACKAGE_ONLY_PARKS.has(p.id) ? "/packages" : `/parks#park-${p.id}`,
       name: p.name,
       sub: p.sub,
       dur: p.dur,
