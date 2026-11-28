@@ -178,7 +178,8 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         } else if (it.kind === "activity" && it.meta?.activity_id) {
           // Single activities (Build Your Own Plan / tours-page singles) are
           // re-priced from the catalogue the same way.
-          const serverTotal = await getActivityLineTotal(it.meta.activity_id, people);
+          // A park booked on its own: at least 2 people (packages keep their own count).
+          const serverTotal = await getActivityLineTotal(it.meta.activity_id, it.meta.custom_plan === "1" ? people : Math.max(2, people));
           if (serverTotal !== null) return { ...it, total: serverTotal };
         } else if (it.kind === "stay") {
           const held = holdByLine[it.id];

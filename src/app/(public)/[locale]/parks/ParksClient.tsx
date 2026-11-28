@@ -17,6 +17,7 @@ import TourParkTabs from "@/components/TourParkTabs";
 import { PACKAGE_ONLY_PARKS, PARKS, type Park } from "./data";
 
 const MAX_PEOPLE = 10;
+const MIN_PEOPLE = 2; // parks are booked for at least 2 people, like tours
 
 const fmtDate = (v: string) =>
   v ? new Date(v + "T00:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Not selected";
@@ -63,9 +64,9 @@ export default function ParksClient({ parks }: { parks?: Park[] }) {
     toastTimer.current = setTimeout(() => setToast(""), 3200);
   };
 
-  const paxOf = (id: string) => Math.max(1, Math.min(MAX_PEOPLE, people[id] || 2));
+  const paxOf = (id: string) => Math.max(MIN_PEOPLE, Math.min(MAX_PEOPLE, people[id] || 2));
   const step = (id: string, d: number) =>
-    setPeople((p) => ({ ...p, [id]: Math.max(1, Math.min(MAX_PEOPLE, (p[id] || 2) + d)) }));
+    setPeople((p) => ({ ...p, [id]: Math.max(MIN_PEOPLE, Math.min(MAX_PEOPLE, (p[id] || 2) + d)) }));
 
   const buy = (park: Park) => {
     const date = dates[park.id];
